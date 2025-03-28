@@ -65,6 +65,7 @@ class GetCookiesService
 
             // 11. (Опционально) Сохраняем куки для yt-dlp
             $cookies = $driver->manage()->getCookies();
+            dd($cookies);
             file_put_contents($path . '/' . 'youtube_cookies.json', json_encode($cookies));
         } catch (\Exception $e) {
             dd($e->getMessage());
