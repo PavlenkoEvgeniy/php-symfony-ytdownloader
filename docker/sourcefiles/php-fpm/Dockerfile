@@ -39,6 +39,12 @@ RUN apt-get install -y ffmpeg
 RUN pip install --upgrade yt-dlp --break-system-packages
 RUN apt install -y mc
 
+# Install google-chrome
+RUN apt-get install -y wget \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
+    && apt-get update && apt-get install -y google-chrome-stable
+
 # Create download directory
 RUN mkdir -p /application/var/downloads/
 RUN chmod -R 775 /application/var/downloads/
