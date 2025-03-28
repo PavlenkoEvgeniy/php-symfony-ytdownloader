@@ -12,7 +12,7 @@ class GetCookiesService
     public function getCookies(string $youtubeLogin, string $youtubePassword, string $path): void
     {
         // 1. Подключение к Selenium (локально на порту 4444)
-        $host         = 'http://localhost:4444'; 
+        $host         = 'http://selenium:4444'; 
         $capabilities = DesiredCapabilities::chrome();
         $driver       = RemoteWebDriver::create($host, $capabilities);
 

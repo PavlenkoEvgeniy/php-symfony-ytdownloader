@@ -40,6 +40,15 @@ services:
             - "${DB_PORT}:3306"
         networks:
             - internal
+    
+    selenium:
+        image: selenium/standalone-chrome:latest
+        container_name: selenium
+        ports:
+        - "4444:4444"
+        shm_size: 2gb
+        networks:
+            - internal
 
 volumes:
     mysql-data:
