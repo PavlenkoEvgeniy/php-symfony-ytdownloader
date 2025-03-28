@@ -67,6 +67,7 @@ class GetCookiesService
             $cookies = $driver->manage()->getCookies();
             file_put_contents($path . '/' . 'youtube_cookies.json', json_encode($cookies));
         } catch (\Exception $e) {
+            dd($e->getMessage());
             throw new \Exception($e->getMessage());
         } finally {
             // Закрываем браузер
