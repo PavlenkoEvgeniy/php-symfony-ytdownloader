@@ -63,14 +63,11 @@ class GetCookiesService
                 )
             );
 
-            dump('Успешный вход!');
-
             // 11. (Опционально) Сохраняем куки для yt-dlp
             $cookies = $driver->manage()->getCookies();
-            dd($cookies);
             file_put_contents($path . '/' . 'youtube_cookies.json', json_encode($cookies));
         } catch (\Exception $e) {
-            echo 'Ошибка: ' . $e->getMessage();
+            throw new \Exception('Error at get cookies');
         } finally {
             // Закрываем браузер
             $driver->quit();
