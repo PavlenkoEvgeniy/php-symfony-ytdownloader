@@ -22,7 +22,7 @@ class GetCookiesService
 
             // 3. Кликаем "Войти" (кнопка может меняться)
             $loginButton = $driver->findElement(
-                WebDriverBy::cssSelector('a[href="https://accounts.google.com/ServiceLogin?service=youtube"]')
+                WebDriverBy::cssSelector('a[aria-label="Sign in"]')
             );
             $loginButton->click();
 
