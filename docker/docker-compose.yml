@@ -23,6 +23,7 @@ services:
             - ./sourcefiles/php-fpm/php-ini-overrides.ini:/usr/local/etc/php/conf.d/99-overrides.ini
         networks:
             - internal
+
     mysql:
         image: mariadb:10.11
         container_name: ${PROJECT_NAME}-mysql
@@ -38,15 +39,6 @@ services:
             - "./../database/mysql-data:/var/lib/mysql"
         ports:
             - "${DB_PORT}:3306"
-        networks:
-            - internal
-    
-    selenium:
-        image: selenium/standalone-chrome:latest
-        container_name: selenium
-        ports:
-        - "4444:4444"
-        shm_size: 2gb
         networks:
             - internal
 

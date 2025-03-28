@@ -14,7 +14,6 @@
         "gedmo/doctrine-extensions": "^3.19",
         "norkunas/youtube-dl-php": "^2.10",
         "oskarstark/readable-filesize-extension": "^1.2.1",
-        "php-webdriver/webdriver": "^1.15.2",
         "phpdocumentor/reflection-docblock": "^5.6.1",
         "phpstan/phpdoc-parser": "^2.1",
         "symfony/asset": "7.2.*",

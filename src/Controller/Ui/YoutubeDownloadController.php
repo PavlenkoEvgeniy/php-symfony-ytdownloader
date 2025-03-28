@@ -6,7 +6,6 @@ use App\Entity\Source;
 use YoutubeDl\Options;
 use YoutubeDl\YoutubeDl;
 use App\Form\DownloadType;
-use App\Service\GetCookiesService;
 use App\Repository\SourceRepository;
 use App\Service\DiskSpaceCheckerService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,9 +23,8 @@ final class YoutubeDownloadController extends AbstractController
         SourceRepository $sourceRepository,
         EntityManagerInterface $entityManager,
         DiskSpaceCheckerService $diskSpaceCheckerService,
-        GetCookiesService $getCookiesService, 
         string $youtubeLogin, 
-        string $youtubePassword
+        string $youtubePassword,
     ): Response|RedirectResponse {
         $form = $this->createForm(DownloadType::class);
         $form->handleRequest($request);
@@ -37,8 +35,6 @@ final class YoutubeDownloadController extends AbstractController
             $yt = new YoutubeDl();
 
             $projectDir = $this->getParameter('kernel.project_dir');
-
-            $getCookiesService->getCookies($youtubeLogin, $youtubePassword, $projectDir . '/google-chrome/cookies.txt');
 
             $collection = $yt->download(
                 Options::create()
