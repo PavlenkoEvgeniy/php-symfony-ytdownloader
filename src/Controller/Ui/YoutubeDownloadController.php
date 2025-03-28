@@ -23,8 +23,8 @@ final class YoutubeDownloadController extends AbstractController
         SourceRepository $sourceRepository,
         EntityManagerInterface $entityManager,
         DiskSpaceCheckerService $diskSpaceCheckerService,
-        string $youtubeLogin, 
-        string $youtubePassword,
+        // string $youtubeLogin, 
+        // string $youtubePassword,
     ): Response|RedirectResponse {
         $form = $this->createForm(DownloadType::class);
         $form->handleRequest($request);
