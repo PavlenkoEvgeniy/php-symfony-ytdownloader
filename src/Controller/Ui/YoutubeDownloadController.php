@@ -3,17 +3,18 @@
 namespace App\Controller\Ui;
 
 use App\Entity\Source;
+use YoutubeDl\Options;
+use YoutubeDl\YoutubeDl;
 use App\Form\DownloadType;
+use App\Service\GetCookiesService;
 use App\Repository\SourceRepository;
-use App\Service\DiskSpaceChecker;
+use App\Service\DiskSpaceCheckerService;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use YoutubeDl\Options;
-use YoutubeDl\YoutubeDl;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 final class YoutubeDownloadController extends AbstractController
 {
@@ -22,7 +23,10 @@ final class YoutubeDownloadController extends AbstractController
         Request $request,
         SourceRepository $sourceRepository,
         EntityManagerInterface $entityManager,
-        DiskSpaceChecker $diskSpaceChecker,
+        DiskSpaceCheckerService $diskSpaceCheckerService,
+        GetCookiesService $getCookiesService, 
+        string $youtubeLogin, 
+        string $youtubePassword
     ): Response|RedirectResponse {
         $form = $this->createForm(DownloadType::class);
         $form->handleRequest($request);
@@ -34,6 +38,8 @@ final class YoutubeDownloadController extends AbstractController
 
             $projectDir = $this->getParameter('kernel.project_dir');
 
+            $getCookiesService->getCookies($youtubeLogin, $youtubePassword, $projectDir . '/google-chrome/cookies.txt');
+
             $collection = $yt->download(
                 Options::create()
                     ->downloadPath("{$projectDir}/var/downloads")
@@ -41,7 +47,7 @@ final class YoutubeDownloadController extends AbstractController
                     ->format('bestvideo[height<=1080]+bestaudio/best')
                     ->mergeOutputFormat('mp4')
                     ->output('%(title)s.%(ext)s')
-                    ->cookies('--cookies-from-browser chrome')
+                    ->cookies($projectDir . '/google-chrome/cookies.txt')
             );
 
             foreach ($collection->getVideos() as $video) {
@@ -74,7 +80,7 @@ final class YoutubeDownloadController extends AbstractController
 
         return $this->render('ui/youtube_download/index.html.twig', [
             'form'       => $form,
-            'disk_space' => $diskSpaceChecker->getFreeSpace(),
+            'disk_space' => $diskSpaceCheckerService->getFreeSpace(),
         ]);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Service;
 
-class DiskSpaceChecker
+class DiskSpaceCheckerService
 {
     public function getFreeSpace(): array
     {
