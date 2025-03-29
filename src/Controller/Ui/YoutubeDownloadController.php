@@ -19,10 +19,6 @@ use YoutubeDl\YoutubeDl;
 
 final class YoutubeDownloadController extends AbstractController
 {
-    public function __construct(private YoutubeAuthService $authenticator)
-    {
-    }
-
     #[Route('/ui/youtube/download', name: 'ui_youtube_download_index', methods: [Request::METHOD_GET, Request::METHOD_POST])]
     public function index(
         Request $request,
@@ -31,7 +27,6 @@ final class YoutubeDownloadController extends AbstractController
         DiskSpaceCheckerService $diskSpaceCheckerService,
         string $youtubeLogin,
         string $youtubePassword,
-        Client $client,
     ): Response|RedirectResponse {
         $form = $this->createForm(DownloadType::class);
         $form->handleRequest($request);
