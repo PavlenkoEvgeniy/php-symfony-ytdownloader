@@ -16,8 +16,6 @@ class YoutubeAuthService
 
     public function authenticate(string $email, string $password): string
     {
-        $tempDir = $this->createTempProfileDir();
-
         try {
             // Переходим на YouTube
             $this->client->request('GET', 'https://www.youtube.com');
@@ -52,7 +50,6 @@ class YoutubeAuthService
             throw new \RuntimeException('YouTube authentication failed: ' . $e->getMessage());
         } finally {
             $this->client->quit();
-            $this->removeTempDir($tempDir); // Очистка временных файлов
         }
     }
 
@@ -70,17 +67,5 @@ class YoutubeAuthService
         }
 
         (new Filesystem())->dumpFile($this->cookiesPath, $fileContent);
-    }
-
-    private function createTempProfileDir(): string
-    {
-        $tempDir = sys_get_temp_dir() . '/chrome_yt_' . uniqid();
-        mkdir($tempDir, 0777, true);
-        return $tempDir;
-    }
-    
-    private function removeTempDir(string $dir): void
-    {
-        (new Filesystem())->remove($dir);
     }
 }
