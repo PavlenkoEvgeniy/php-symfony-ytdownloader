@@ -31,6 +31,8 @@ class YoutubeAuthService
                     ]
                 ]
             ]);
+
+            dd(111);
             
             // Процесс аутентификации
             $client->request('GET', 'https://www.youtube.com');
