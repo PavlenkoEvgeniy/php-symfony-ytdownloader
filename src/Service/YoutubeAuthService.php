@@ -20,8 +20,6 @@ class YoutubeAuthService
     {
         $profileDir = $this->createProfileDir();
 
-        dd($profileDir);
-        
         try {
             $client = $this->createChromeClient($profileDir);
             
