@@ -61,6 +61,6 @@ services:
     #         - []
     #         - { capabilities: { 'goog:chromeOptions': { args: ['--headless', '--disable-gpu', '--no-sandbox'] } } }
 
-    App\Service\YouTubeAuthenticator:
+    App\Service\YoutubeAuthService:
         arguments:
             $chromeProfileBaseDir: '%kernel.project_dir%/var/chrome_profiles'
