@@ -49,3 +49,8 @@ RUN apt-get install -y wget \
 RUN mkdir -p /application/var/downloads/
 RUN chmod -R 775 /application/var/downloads/
 RUN chown -R www-data:www-data /application/var/downloads/
+
+# Create google-chrome directory
+RUN mkdir -p /application/var/google-chrome/
+RUN chmod -R 775 /application/var/google-chrome/
+RUN chown -R www-data:www-data /application/var/google-chrome/

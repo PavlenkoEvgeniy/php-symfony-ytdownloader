@@ -3,34 +3,47 @@
 namespace App\Controller\Ui;
 
 use App\Entity\Source;
-use YoutubeDl\Options;
-use YoutubeDl\YoutubeDl;
 use App\Form\DownloadType;
 use App\Repository\SourceRepository;
 use App\Service\DiskSpaceCheckerService;
+use App\Service\YoutubeAuthService;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use YoutubeDl\Options;
+use YoutubeDl\YoutubeDl;
 
 final class YoutubeDownloadController extends AbstractController
 {
+    public function __construct(private readonly YoutubeAuthService $authenticator)
+    {
+    }
+
     #[Route('/ui/youtube/download', name: 'ui_youtube_download_index', methods: [Request::METHOD_GET, Request::METHOD_POST])]
     public function index(
         Request $request,
         SourceRepository $sourceRepository,
         EntityManagerInterface $entityManager,
         DiskSpaceCheckerService $diskSpaceCheckerService,
-        // string $youtubeLogin, 
-        // string $youtubePassword,
+        string $youtubeLogin,
+        string $youtubePassword,
     ): Response|RedirectResponse {
         $form = $this->createForm(DownloadType::class);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $url = $form->get('link')->getViewData();
+
+            try {
+                $cookies = $this->getYoutubeCookies($youtubeLogin, $youtubePassword);
+            } catch (\Exception $e) {
+                $this->addFlash('error', "Error downloading video: {$e->getMessage()}");
+
+                return $this->redirectToRoute('ui_source_index');
+            }
 
             $yt = new YoutubeDl();
 
@@ -48,7 +61,7 @@ final class YoutubeDownloadController extends AbstractController
 
             foreach ($collection->getVideos() as $video) {
                 if (null !== $video->getError()) {
-                    $this->addFlash('error', "Error downloading video: {$video->getError()}.");
+                    $this->addFlash('error', 'Error downloading video: cannot make playlist file');
                 } else {
                     $filename = $video->getFile()->getBasename();
                     $path     = $video->getFile()->getPath();
@@ -78,5 +91,12 @@ final class YoutubeDownloadController extends AbstractController
             'form'       => $form,
             'disk_space' => $diskSpaceCheckerService->getFreeSpace(),
         ]);
+    }
+
+    public function getYoutubeCookies(string $youtubeLogin, string $youtubePassword): string
+    {
+        $cookiesFile = $this->authenticator->authenticate($youtubeLogin, $youtubePassword);
+
+        return $cookiesFile;
     }
 }

@@ -31,6 +31,7 @@
         "symfony/mime": "7.2.*",
         "symfony/monolog-bundle": "^3.10",
         "symfony/notifier": "7.2.*",
+        "symfony/panther": "^2.2",
         "symfony/process": "7.2.*",
         "symfony/property-access": "7.2.*",
         "symfony/property-info": "7.2.*",
