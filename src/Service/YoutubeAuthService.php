@@ -3,7 +3,7 @@
 namespace App\Service;
 
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Panther\Client as PantherClient;
+use Symfony\Component\Panther\Client;
 
 class YoutubeAuthService
 {
@@ -16,7 +16,7 @@ class YoutubeAuthService
 
     public function authenticate(string $email, string $password): string
     {
-        $client = PantherClient::createChromeClient();
+        $client = Client::createChromeClient();
 
         try {
             // Переходим на YouTube
