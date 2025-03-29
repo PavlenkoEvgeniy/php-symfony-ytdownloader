@@ -31,7 +31,7 @@ class PantherClientFactory
                         '--disable-gpu',
                         '--remote-debugging-port=9222',
                         '--window-size=1920,1080',
-                        // '--user-data-dir=' . $tempDir,
+                        '--user-data-dir=' . $tempDir,
                     ],
                     'binary' => '/usr/bin/google-chrome',
                 ],
