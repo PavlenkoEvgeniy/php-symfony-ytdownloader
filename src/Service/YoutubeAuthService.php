@@ -26,7 +26,7 @@ class YoutubeAuthService
                             '--no-sandbox',
                             '--disable-dev-shm-usage',
                             '--window-size=1920,1080',
-                            '--user-data-dir='.$profileDir,
+                            '--profile-directory='.$profileDir,
                             '--remote-debugging-port='.rand(9200, 9299)
                         ]
                     ]
@@ -65,7 +65,7 @@ class YoutubeAuthService
             // $this->cleanProfileDir($profileDir);
         }
     }
-    
+
     private function saveCookies(array $cookies, string $cookiesPath): void
     {
         $content = '';
