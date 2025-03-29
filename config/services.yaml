@@ -52,3 +52,13 @@ services:
     # File size human view extension
     OskarStark\Twig\ReadableFilesizeExtension:
         tags: ['twig.extension']
+
+    # Panther Client
+    Symfony\Component\Panther\Client:
+        factory: ['Symfony\Component\Panther\Client', 'createChromeClient']
+        arguments:
+            - null
+            - []
+            - { capabilities: { 'goog:chromeOptions': { args: ['--headless', '--disable-gpu'] } } }
+        calls:
+            - [setServerParameters, [ { webServerDir: '%kernel.project_dir%/public' } ]]
