@@ -18,6 +18,8 @@ class YoutubeAuthService
     {
         $tempDir = $this->createTempProfileDir();
 
+        dd($tempDir);
+
         $client = Client::createChromeClient(null, [], [
             'capabilities' => [
                 'goog:chromeOptions' => [
