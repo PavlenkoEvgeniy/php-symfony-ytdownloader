@@ -14,6 +14,8 @@ class YoutubeAuthService
     public function authenticate(string $email, string $password): string
     {
         $profileDir = $this->profileManager->createProfile();
+
+        dd($profileDir);
         $cookiesPath = $profileDir . '/' . 'youtube_cookies.txt';
         
         try {
@@ -37,8 +39,6 @@ class YoutubeAuthService
             $client->waitFor('#avatar-btn', 10);
             $client->getCrawler()->filter('#avatar-btn')->click();
 
-            dd(111);
-            
             // Ждем появление формы входа
             $client->waitFor('input[type="email"]');
 
