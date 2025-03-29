@@ -36,6 +36,8 @@ class YoutubeAuthService
             $client->request('GET', 'https://www.youtube.com');
             $client->waitFor('#avatar-btn', 10);
             $client->getCrawler()->filter('#avatar-btn')->click();
+
+            dd(111);
             
             // Ждем появление формы входа
             $client->waitFor('input[type="email"]');
@@ -53,8 +55,6 @@ class YoutubeAuthService
 
             // Ждем завершения входа (появление аватара)
             $client->waitFor('#avatar-btn', 15);
-
-            dd($client->getCookieJar()->all());
             
             $this->saveCookies($client->getCookieJar()->all(), $cookiesPath);
             return $cookiesPath;
