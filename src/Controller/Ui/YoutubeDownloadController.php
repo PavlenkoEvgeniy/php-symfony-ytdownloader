@@ -46,6 +46,8 @@ final class YoutubeDownloadController extends AbstractController
             $yt = new YoutubeDl();
 
             $projectDir = $this->getParameter('kernel.project_dir');
+            
+            dump($projectDir);
 
             dd($cookies);
 
