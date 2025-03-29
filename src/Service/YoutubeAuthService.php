@@ -80,8 +80,9 @@ class YoutubeAuthService
         $dir = $this->chromeProfileBaseDir.'/'.uniqid('yt_', true);
         (new Filesystem())->mkdir($dir, 0777);
         
-        $process = new Process(['chown', '-R', 'www-data:www-data', $dir]);
+        // $process = new Process(['chown', '-R', 'www-data:www-data', $dir]);
         $process->run();
+
         return $dir;
     }
 
