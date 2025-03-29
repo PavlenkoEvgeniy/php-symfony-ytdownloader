@@ -34,6 +34,8 @@ class YoutubeAuthService
                 ],
             ]);
 
+            dump($profileDir);
+
             // Процесс аутентификации
             $client->request('GET', 'https://www.youtube.com');
             $client->waitFor('#avatar-btn', 10);
