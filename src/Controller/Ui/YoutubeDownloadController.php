@@ -18,10 +18,6 @@ use YoutubeDl\YoutubeDl;
 
 final class YoutubeDownloadController extends AbstractController
 {
-    public function __construct(private readonly YoutubeAuthService $authenticator)
-    {
-    }
-
     #[Route('/ui/youtube/download', name: 'ui_youtube_download_index', methods: [Request::METHOD_GET, Request::METHOD_POST])]
     public function index(
         Request $request,
@@ -56,7 +52,7 @@ final class YoutubeDownloadController extends AbstractController
                     ->format('bestvideo[height<=1080]+bestaudio/best')
                     ->mergeOutputFormat('mp4')
                     ->output('%(title)s.%(ext)s')
-                    ->cookies($projectDir . '/google-chrome/cookies.txt')
+                    ->cookies($cookies)
             );
 
             foreach ($collection->getVideos() as $video) {
@@ -95,7 +91,11 @@ final class YoutubeDownloadController extends AbstractController
 
     public function getYoutubeCookies(string $youtubeLogin, string $youtubePassword): string
     {
-        $cookiesFile = $this->authenticator->authenticate($youtubeLogin, $youtubePassword);
+        $projectDir = $this->getParameter('kernel.project_dir');
+
+        $authenticator = new YoutubeAuthService($projectDir);
+
+        $cookiesFile = $authenticator->authenticate($youtubeLogin, $youtubePassword);
 
         return $cookiesFile;
     }
