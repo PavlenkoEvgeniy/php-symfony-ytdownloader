@@ -15,7 +15,6 @@ class YoutubeAuthService
     {
         $profileDir = $this->profileManager->createProfile();
 
-        dd($profileDir);
         $cookiesPath = $profileDir . '/' . 'youtube_cookies.txt';
         
         try {
