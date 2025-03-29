@@ -52,6 +52,8 @@ class YoutubeAuthService
             if (isset($client)) {
                 $client->quit();
             }
+            dd(111);
+
             $this->cleanProfileDir($profileDir);
         }
     }
