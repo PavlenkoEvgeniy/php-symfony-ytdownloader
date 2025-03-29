@@ -35,7 +35,7 @@ final class YoutubeDownloadController extends AbstractController
             $url = $form->get('link')->getViewData();
 
             try {
-                $cookies = $this->getYoutubeCookies($youtubeLogin, $youtubePassword, $client);
+                $cookies = $this->getYoutubeCookies($youtubeLogin, $youtubePassword);
             } catch (\Exception $e) {
                 $this->addFlash('error', "Error downloading video: {$e->getMessage()}");
 
