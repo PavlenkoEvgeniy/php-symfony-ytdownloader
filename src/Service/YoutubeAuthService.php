@@ -51,7 +51,7 @@ class YoutubeAuthService
         } catch (\Exception $e) {
             throw new \RuntimeException('YouTube authentication failed: ' . $e->getMessage());
         } finally {
-            $client->quit();
+            $this->client->quit();
             $this->removeTempDir($tempDir); // Очистка временных файлов
         }
     }
