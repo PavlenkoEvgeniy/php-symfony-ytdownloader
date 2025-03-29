@@ -16,6 +16,24 @@ class YoutubeAuthService
 
     public function authenticate(string $email, string $password): string
     {
+        $tempDir = $this->createTempProfileDir();
+
+        $client = Client::createChromeClient(null, [], [
+            'capabilities' => [
+                'goog:chromeOptions' => [
+                    'args' => [
+                        '--headless=new',
+                        '--no-sandbox',
+                        '--disable-dev-shm-usage',
+                        '--disable-gpu',
+                        '--remote-debugging-port=9222',
+                        '--window-size=1920,1080',
+                        '--user-data-dir=' . $tempDir
+                    ]
+                ]
+            ]
+        ]);
+
         try {
             // Переходим на YouTube
             $this->client->request('GET', 'https://www.youtube.com');
@@ -49,7 +67,8 @@ class YoutubeAuthService
         } catch (\Exception $e) {
             throw new \RuntimeException('YouTube authentication failed: ' . $e->getMessage());
         } finally {
-            $this->client->quit();
+            $client->quit();
+            $this->removeTempDir($tempDir); // Очистка временных файлов
         }
     }
 
@@ -67,5 +86,17 @@ class YoutubeAuthService
         }
 
         (new Filesystem())->dumpFile($this->cookiesPath, $fileContent);
+    }
+
+    private function createTempProfileDir(): string
+    {
+        $tempDir = sys_get_temp_dir() . '/chrome_yt_' . uniqid();
+        mkdir($tempDir, 0777, true);
+        return $tempDir;
+    }
+    
+    private function removeTempDir(string $dir): void
+    {
+        (new Filesystem())->remove($dir);
     }
 }
