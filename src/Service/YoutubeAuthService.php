@@ -2,70 +2,81 @@
 
 namespace App\Service;
 
-use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Panther\Client;
+use Symfony\Component\Filesystem\Filesystem;
 
 class YoutubeAuthService
 {
     private string $cookiesPath;
-
-    public function __construct(string $projectDir,  private Client $client)
+    private string $chromeProfileBaseDir;
+    
+    public function __construct(string $projectDir, string $chromeProfileBaseDir = null)
     {
-        $this->cookiesPath = $projectDir . '/var/google-chrome/youtube_cookies.txt';
+        $this->cookiesPath = $projectDir.'/var/youtube_cookies.txt';
+        $this->chromeProfileBaseDir = $chromeProfileBaseDir ?: sys_get_temp_dir().'/chrome_profiles';
     }
 
     public function authenticate(string $email, string $password): string
     {
+        $profileDir = $this->createProfileDir();
+        
         try {
-            // Переходим на YouTube
-            $this->client->request('GET', 'https://www.youtube.com');
-
-            // Ждем кнопку входа и кликаем
-            $this->client->waitFor('#avatar-btn');
-            $this->client->getCrawler()->filter('#avatar-btn')->click();
-
-            // Ждем появление формы входа
-            $this->client->waitFor('input[type="email"]');
-
-            // Заполняем email
-            $this->client->getCrawler()->filter('input[type="email"]')->sendKeys($email);
-            $this->client->getCrawler()->filter('#identifierNext button')->click();
-
-            // Ждем поле пароля
-            $this->client->waitFor('input[type="password"]', 10);
-
-            // Заполняем пароль
-            $this->client->getCrawler()->filter('input[type="password"]')->sendKeys($password);
-            $this->client->getCrawler()->filter('#passwordNext button')->click();
-
-            // Ждем завершения входа (появление аватара)
-            $this->client->waitFor('#avatar-btn', 15);
-
-            // Получаем cookies и сохраняем в файл
-            $cookies = $this->client->getCookieJar()->all();
-            $this->saveCookies($cookies);
-
+            $client = $this->createChromeClient($profileDir);
+            
+            // Процесс аутентификации
+            $client->request('GET', 'https://www.youtube.com');
+            $client->waitFor('#avatar-btn', 10);
+            $client->getCrawler()->filter('#avatar-btn')->click();
+            
+            // ... остальные шаги аутентификации
+            
+            $this->saveCookies($client->getCookieJar()->all());
             return $this->cookiesPath;
-        } catch (\Exception $e) {
-            throw new \RuntimeException('YouTube authentication failed: ' . $e->getMessage());
+            
         } finally {
-            $this->client->quit();
+            if (isset($client)) {
+                $client->quit();
+            }
+            $this->cleanProfileDir($profileDir);
         }
+    }
+
+    private function createChromeClient(string $profileDir): Client
+    {
+        return Client::createChromeClient(null, [], [
+            'capabilities' => [
+                'goog:chromeOptions' => [
+                    'args' => [
+                        '--headless=new',
+                        '--no-sandbox',
+                        '--disable-dev-shm-usage',
+                        '--window-size=1920,1080',
+                        '--user-data-dir='.$profileDir,
+                        '--remote-debugging-port='.rand(9222, 9322)
+                    ]
+                ]
+            ]
+        ]);
+    }
+
+    private function createProfileDir(): string
+    {
+        $dir = $this->chromeProfileBaseDir.'/'.uniqid('yt_', true);
+        (new Filesystem())->mkdir($dir, 0777);
+        return $dir;
+    }
+
+    private function cleanProfileDir(string $dir): void
+    {
+        (new Filesystem())->remove($dir);
     }
 
     private function saveCookies(array $cookies): void
     {
-        $fileContent = '';
+        $content = '';
         foreach ($cookies as $cookie) {
-            $fileContent .= $cookie->getName() . '=' . $cookie->getValue() . '; ';
-            $fileContent .= 'Domain=' . $cookie->getDomain() . '; ';
-            $fileContent .= 'Path=' . $cookie->getPath() . '; ';
-            $fileContent .= 'Expires=' . $cookie->getExpires() . '; ';
-            $fileContent .= $cookie->isSecure() ? 'Secure; ' : '';
-            $fileContent .= $cookie->isHttpOnly() ? 'HttpOnly; ' : '';
-            $fileContent .= "\n";
+            $content .= "{$cookie->getName()}={$cookie->getValue()}\n";
         }
-
-        (new Filesystem())->dumpFile($this->cookiesPath, $fileContent);
+        file_put_contents($this->cookiesPath, $content);
     }
 }

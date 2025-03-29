@@ -54,9 +54,13 @@ services:
         tags: ['twig.extension']
 
     # Panther Client
-    Symfony\Component\Panther\Client:
-        factory: ['Symfony\Component\Panther\Client', 'createChromeClient']
+    # Symfony\Component\Panther\Client:
+    #     factory: ['Symfony\Component\Panther\Client', 'createChromeClient']
+    #     arguments:
+    #         - null
+    #         - []
+    #         - { capabilities: { 'goog:chromeOptions': { args: ['--headless', '--disable-gpu', '--no-sandbox'] } } }
+
+    App\Service\YouTubeAuthenticator:
         arguments:
-            - null
-            - []
-            - { capabilities: { 'goog:chromeOptions': { args: ['--headless', '--disable-gpu', '--no-sandbox'] } } }
+            $chromeProfileBaseDir: '%kernel.project_dir%/var/chrome_profiles'

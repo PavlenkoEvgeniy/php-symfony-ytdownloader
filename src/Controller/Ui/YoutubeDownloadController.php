@@ -3,22 +3,26 @@
 namespace App\Controller\Ui;
 
 use App\Entity\Source;
-use YoutubeDl\Options;
-use YoutubeDl\YoutubeDl;
 use App\Form\DownloadType;
-use App\Service\YoutubeAuthService;
 use App\Repository\SourceRepository;
-use Symfony\Component\Panther\Client;
 use App\Service\DiskSpaceCheckerService;
+use App\Service\YoutubeAuthService;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Panther\Client;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use YoutubeDl\Options;
+use YoutubeDl\YoutubeDl;
 
 final class YoutubeDownloadController extends AbstractController
 {
+    public function __construct(private YoutubeAuthService $authenticator)
+    {
+    }
+
     #[Route('/ui/youtube/download', name: 'ui_youtube_download_index', methods: [Request::METHOD_GET, Request::METHOD_POST])]
     public function index(
         Request $request,
@@ -91,14 +95,17 @@ final class YoutubeDownloadController extends AbstractController
         ]);
     }
 
-    public function getYoutubeCookies(string $youtubeLogin, string $youtubePassword, Client $client): string
+    public function getYoutubeCookies(string $youtubeLogin, string $youtubePassword): string
     {
-        $projectDir = $this->getParameter('kernel.project_dir');
+        try {
+            $cookiesPath = $this->authenticator->authenticate(
+                $youtubeLogin,
+                $youtubePassword,
+            );
 
-        $authenticator = new YoutubeAuthService($projectDir, $client);
-
-        $cookiesFile = $authenticator->authenticate($youtubeLogin, $youtubePassword);
-
-        return $cookiesFile;
+            return $cookiesPath;
+        } catch (\Exception $e) {
+            return new Response('Error: ' . $e->getMessage(), 500);
+        }
     }
 }
