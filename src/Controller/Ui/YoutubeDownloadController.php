@@ -27,6 +27,7 @@ final class YoutubeDownloadController extends AbstractController
         DiskSpaceCheckerService $diskSpaceCheckerService,
         string $youtubeLogin,
         string $youtubePassword,
+        Client $client,
     ): Response|RedirectResponse {
         $form = $this->createForm(DownloadType::class);
         $form->handleRequest($request);
@@ -35,7 +36,7 @@ final class YoutubeDownloadController extends AbstractController
             $url = $form->get('link')->getViewData();
 
             try {
-                $cookies = $this->getYoutubeCookies($youtubeLogin, $youtubePassword);
+                $cookies = $this->getYoutubeCookies($youtubeLogin, $youtubePassword, $client);
             } catch (\Exception $e) {
                 $this->addFlash('error', "Error downloading video: {$e->getMessage()}");
 
