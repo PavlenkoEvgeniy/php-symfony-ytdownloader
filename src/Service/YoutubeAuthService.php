@@ -19,6 +19,8 @@ class YoutubeAuthService
     public function authenticate(string $email, string $password): string
     {
         $profileDir = $this->createProfileDir();
+
+        dd($profileDir);
         
         try {
             $client = $this->createChromeClient($profileDir);
@@ -52,9 +54,7 @@ class YoutubeAuthService
             if (isset($client)) {
                 $client->quit();
             }
-            dd(111);
-
-            $this->cleanProfileDir($profileDir);
+            // $this->cleanProfileDir($profileDir);
         }
     }
 
