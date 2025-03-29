@@ -25,7 +25,7 @@ class YoutubeAuthService
                             '--no-sandbox',
                             '--disable-dev-shm-usage',
                             '--window-size=1920,1080',
-                            '--user-data-dir='.$profileDir,
+                            // '--user-data-dir='.$profileDir,
                             '--remote-debugging-port='.rand(9200, 9299)
                         ]
                     ]
