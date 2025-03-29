@@ -3,8 +3,6 @@
 namespace App\Service;
 
 use Symfony\Component\Panther\Client;
-use Symfony\Component\Process\Process;
-use Symfony\Component\Filesystem\Filesystem;
 
 class YoutubeAuthService
 {

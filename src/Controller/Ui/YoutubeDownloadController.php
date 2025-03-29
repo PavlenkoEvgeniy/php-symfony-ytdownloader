@@ -3,19 +3,20 @@
 namespace App\Controller\Ui;
 
 use App\Entity\Source;
-use App\Form\DownloadType;
-use App\Repository\SourceRepository;
-use App\Service\DiskSpaceCheckerService;
-use App\Service\YoutubeAuthService;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Panther\Client;
-use Symfony\Component\Routing\Attribute\Route;
 use YoutubeDl\Options;
 use YoutubeDl\YoutubeDl;
+use App\Form\DownloadType;
+use App\Service\YoutubeAuthService;
+use App\Repository\SourceRepository;
+use Symfony\Component\Panther\Client;
+use App\Service\BrowserProfileManager;
+use App\Service\DiskSpaceCheckerService;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 final class YoutubeDownloadController extends AbstractController
 {
@@ -97,7 +98,9 @@ final class YoutubeDownloadController extends AbstractController
         try {
             $projectDir = $this->getParameter('kernel.project_dir');
 
-            $authenticator = new YoutubeAuthService($projectDir);
+            $profile = new BrowserProfileManager($projectDir);
+
+            $authenticator = new YoutubeAuthService($profile, $projectDir);
 
             $cookiesPath = $authenticator->authenticate(
                 $youtubeLogin,
