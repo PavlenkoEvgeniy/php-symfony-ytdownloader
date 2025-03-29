@@ -61,6 +61,10 @@ services:
     #         - []
     #         - { capabilities: { 'goog:chromeOptions': { args: ['--headless', '--disable-gpu', '--no-sandbox'] } } }
 
+    App\Service\BrowserProfileManager:
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+
     App\Service\YoutubeAuthService:
         arguments:
-            $chromeProfileBaseDir: '%kernel.project_dir%/var/chrome_profiles'
+            $projectDir: '%kernel.project_dir%'

@@ -8,21 +8,31 @@ use Symfony\Component\Filesystem\Filesystem;
 
 class YoutubeAuthService
 {
-    private string $cookiesPath;
-    private string $chromeProfileBaseDir;
-    
-    public function __construct(string $projectDir, ?string $chromeProfileBaseDir = null)
-    {
-        $this->cookiesPath = $projectDir.'/var/youtube_cookies.txt';
-        $this->chromeProfileBaseDir = $chromeProfileBaseDir ?: sys_get_temp_dir().'/chrome_profiles';
-    }
+    public function __construct(
+        private BrowserProfileManager $profileManager,
+        private string $projectDir
+    ) {}
 
     public function authenticate(string $email, string $password): string
     {
-        $profileDir = $this->createProfileDir();
-
+        $profileDir = $this->profileManager->createProfile();
+        $cookiesPath = $profileDir . 'youtube_cookies.txt';
+        
         try {
-            $client = $this->createChromeClient($profileDir);
+            $client = Client::createChromeClient(null, [], [
+                'capabilities' => [
+                    'goog:chromeOptions' => [
+                        'args' => [
+                            '--headless=new',
+                            '--no-sandbox',
+                            '--disable-dev-shm-usage',
+                            '--window-size=1920,1080',
+                            '--user-data-dir='.$profileDir,
+                            '--remote-debugging-port='.rand(9200, 9299)
+                        ]
+                    ]
+                ]
+            ]);
             
             // Процесс аутентификации
             $client->request('GET', 'https://www.youtube.com');
@@ -46,8 +56,8 @@ class YoutubeAuthService
             // Ждем завершения входа (появление аватара)
             $client->waitFor('#avatar-btn', 15);
             
-            $this->saveCookies($client->getCookieJar()->all());
-            return $this->cookiesPath;
+            $this->saveCookies($client->getCookieJar()->all(), $cookiesPath);
+            return $cookiesPath;
             
         } finally {
             if (isset($client)) {
@@ -75,28 +85,12 @@ class YoutubeAuthService
         ]);
     }
 
-    private function createProfileDir(): string
-    {
-        $dir = $this->chromeProfileBaseDir.'/'.uniqid('yt_', true);
-        (new Filesystem())->mkdir($dir, 0777);
-        
-        // $process = new Process(['chown', '-R', 'www-data:www-data', $dir]);
-        // $process->run();
-
-        return $dir;
-    }
-
-    private function cleanProfileDir(string $dir): void
-    {
-        (new Filesystem())->remove($dir);
-    }
-
-    private function saveCookies(array $cookies): void
+    private function saveCookies(array $cookies, string $cookiesPath): void
     {
         $content = '';
         foreach ($cookies as $cookie) {
             $content .= "{$cookie->getName()}={$cookie->getValue()}\n";
         }
-        file_put_contents($this->cookiesPath, $content);
+        file_put_contents($cookiesPath, $content);
     }
 }
