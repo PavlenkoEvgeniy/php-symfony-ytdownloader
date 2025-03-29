@@ -8,12 +8,10 @@ use Symfony\Component\Panther\Client;
 class YoutubeAuthService
 {
     private string $cookiesPath;
-    private Client $client;
 
-    public function __construct(string $projectDir,  Client $client)
+    public function __construct(string $projectDir,  private Client $client)
     {
         $this->cookiesPath = $projectDir . '/var/google-chrome/youtube_cookies.txt';
-        $this->$client = $client;
     }
 
     public function authenticate(string $email, string $password): string
