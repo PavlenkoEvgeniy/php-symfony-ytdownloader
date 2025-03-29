@@ -8,15 +8,16 @@ class YoutubeAuthService
 {
     public function __construct(
         private BrowserProfileManager $profileManager,
-        private string $projectDir
-    ) {}
+        private string $projectDir,
+    ) {
+    }
 
     public function authenticate(string $email, string $password): string
     {
         $profileDir = $this->profileManager->createProfile();
 
-        $cookiesPath = $profileDir . '/' . 'youtube_cookies.txt';
-        
+        $cookiesPath = $profileDir . '/youtube_cookies.txt';
+
         try {
             $client = Client::createChromeClient(null, [], [
                 'capabilities' => [
@@ -26,11 +27,11 @@ class YoutubeAuthService
                             '--no-sandbox',
                             '--disable-dev-shm-usage',
                             '--window-size=1920,1080',
-                            '--user-data-dir='.$profileDir,
-                            '--remote-debugging-port='.rand(9200, 9299)
-                        ]
-                    ]
-                ]
+                            '--user-data-dir=' . $profileDir,
+                            '--remote-debugging-port=' . rand(9200, 9299),
+                        ],
+                    ],
+                ],
             ]);
 
             // Процесс аутентификации
@@ -54,10 +55,10 @@ class YoutubeAuthService
 
             // Ждем завершения входа (появление аватара)
             $client->waitFor('#avatar-btn', 15);
-            
+
             $this->saveCookies($client->getCookieJar()->all(), $cookiesPath);
+
             return $cookiesPath;
-            
         } finally {
             if (isset($client)) {
                 $client->quit();
@@ -65,7 +66,7 @@ class YoutubeAuthService
             // $this->cleanProfileDir($profileDir);
         }
     }
-    
+
     private function saveCookies(array $cookies, string $cookiesPath): void
     {
         $content = '';

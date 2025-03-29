@@ -3,20 +3,19 @@
 namespace App\Controller\Ui;
 
 use App\Entity\Source;
-use YoutubeDl\Options;
-use YoutubeDl\YoutubeDl;
 use App\Form\DownloadType;
-use App\Service\YoutubeAuthService;
 use App\Repository\SourceRepository;
-use Symfony\Component\Panther\Client;
 use App\Service\BrowserProfileManager;
 use App\Service\DiskSpaceCheckerService;
+use App\Service\YoutubeAuthService;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use YoutubeDl\Options;
+use YoutubeDl\YoutubeDl;
 
 final class YoutubeDownloadController extends AbstractController
 {
@@ -46,7 +45,7 @@ final class YoutubeDownloadController extends AbstractController
             $yt = new YoutubeDl();
 
             $projectDir = $this->getParameter('kernel.project_dir');
-            
+
             dd($cookies);
 
             $collection = $yt->download(
@@ -61,7 +60,7 @@ final class YoutubeDownloadController extends AbstractController
 
             foreach ($collection->getVideos() as $video) {
                 if (null !== $video->getError()) {
-                    $this->addFlash('error', 'Error downloading video: '. $video->getError());
+                    $this->addFlash('error', 'Error downloading video: ' . $video->getError());
                 } else {
                     $filename = $video->getFile()->getBasename();
                     $path     = $video->getFile()->getPath();
