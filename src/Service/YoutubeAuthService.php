@@ -14,9 +14,7 @@ class YoutubeAuthService
     public function authenticate(string $email, string $password): string
     {
         $profileDir = $this->profileManager->createProfile();
-        $cookiesPath = $profileDir . 'youtube_cookies.txt';
-
-        dd($cookiesPath);
+        $cookiesPath = $profileDir . '/' . 'youtube_cookies.txt';
         
         try {
             $client = Client::createChromeClient(null, [], [
