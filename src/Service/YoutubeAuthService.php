@@ -28,7 +28,22 @@ class YoutubeAuthService
             $client->waitFor('#avatar-btn', 10);
             $client->getCrawler()->filter('#avatar-btn')->click();
             
-            // ... остальные шаги аутентификации
+            // Ждем появление формы входа
+            $client->waitFor('input[type="email"]');
+
+            // Заполняем email
+            $client->getCrawler()->filter('input[type="email"]')->sendKeys($email);
+            $client->getCrawler()->filter('#identifierNext button')->click();
+
+            // Ждем поле пароля
+            $client->waitFor('input[type="password"]', 10);
+
+            // Заполняем пароль
+            $client->getCrawler()->filter('input[type="password"]')->sendKeys($password);
+            $client->getCrawler()->filter('#passwordNext button')->click();
+
+            // Ждем завершения входа (появление аватара)
+            $client->waitFor('#avatar-btn', 15);
             
             $this->saveCookies($client->getCookieJar()->all());
             return $this->cookiesPath;
