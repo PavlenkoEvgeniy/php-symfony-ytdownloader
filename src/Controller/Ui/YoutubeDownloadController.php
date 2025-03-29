@@ -98,7 +98,11 @@ final class YoutubeDownloadController extends AbstractController
     public function getYoutubeCookies(string $youtubeLogin, string $youtubePassword): string
     {
         try {
-            $cookiesPath = $this->authenticator->authenticate(
+            $projectDir = $this->getParameter('kernel.project_dir');
+
+            $authenticator = new YoutubeAuthService($projectDir);
+
+            $cookiesPath = $authenticator->authenticate(
                 $youtubeLogin,
                 $youtubePassword,
             );

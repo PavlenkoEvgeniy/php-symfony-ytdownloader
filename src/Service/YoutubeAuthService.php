@@ -10,7 +10,7 @@ class YoutubeAuthService
     private string $cookiesPath;
     private string $chromeProfileBaseDir;
     
-    public function __construct(string $projectDir, string $chromeProfileBaseDir = null)
+    public function __construct(string $projectDir, ?string $chromeProfileBaseDir = null)
     {
         $this->cookiesPath = $projectDir.'/var/youtube_cookies.txt';
         $this->chromeProfileBaseDir = $chromeProfileBaseDir ?: sys_get_temp_dir().'/chrome_profiles';
