@@ -15,6 +15,8 @@ class YoutubeAuthService
     {
         $profileDir = $this->profileManager->createProfile();
         $cookiesPath = $profileDir . 'youtube_cookies.txt';
+
+        dd($cookiesPath);
         
         try {
             $client = Client::createChromeClient(null, [], [
@@ -25,7 +27,7 @@ class YoutubeAuthService
                             '--no-sandbox',
                             '--disable-dev-shm-usage',
                             '--window-size=1920,1080',
-                            // '--user-data-dir='.$profileDir,
+                            '--user-data-dir='.$profileDir,
                             '--remote-debugging-port='.rand(9200, 9299)
                         ]
                     ]
