@@ -17,8 +17,6 @@ class PantherClientFactory
     {
         $tempDir = sys_get_temp_dir() . '/chrome_profiles/' . uniqid('yt_', true);
 
-        dd($tempDir);
-
         if (!file_exists($tempDir)) {
             mkdir($tempDir, 0777, true);
         }

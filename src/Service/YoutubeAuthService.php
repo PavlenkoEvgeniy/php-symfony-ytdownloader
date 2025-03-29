@@ -18,24 +18,6 @@ class YoutubeAuthService
     {
         $tempDir = $this->createTempProfileDir();
 
-        dd($tempDir);
-
-        $client = Client::createChromeClient(null, [], [
-            'capabilities' => [
-                'goog:chromeOptions' => [
-                    'args' => [
-                        '--headless=new',
-                        '--no-sandbox',
-                        '--disable-dev-shm-usage',
-                        '--disable-gpu',
-                        '--remote-debugging-port=9222',
-                        '--window-size=1920,1080',
-                        '--user-data-dir=' . $tempDir
-                    ]
-                ]
-            ]
-        ]);
-
         try {
             // Переходим на YouTube
             $this->client->request('GET', 'https://www.youtube.com');
