@@ -59,6 +59,6 @@ RUN chmod -R 775 /application/var/google-chrome/
 RUN chown -R www-data:www-data /application/var/google-chrome/
 
 # Create google-chrome tmp directory
-RUN mkdir -p /app/var/chrome_profiles \
-    && chmod -R 777 /app/var/chrome_profiles \
+RUN mkdir -p /application/var/chrome_profiles \
+    && chmod -R 777 /application/var/chrome_profiles \
     && chown -R www-data:www-data /application/var
