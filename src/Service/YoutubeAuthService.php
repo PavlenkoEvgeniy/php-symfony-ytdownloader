@@ -32,8 +32,6 @@ class YoutubeAuthService
                 ]
             ]);
 
-            dd(111);
-            
             // Процесс аутентификации
             $client->request('GET', 'https://www.youtube.com');
             $client->waitFor('#avatar-btn', 10);
@@ -55,6 +53,8 @@ class YoutubeAuthService
 
             // Ждем завершения входа (появление аватара)
             $client->waitFor('#avatar-btn', 15);
+
+            dd($client->getCookieJar()->all());
             
             $this->saveCookies($client->getCookieJar()->all(), $cookiesPath);
             return $cookiesPath;
