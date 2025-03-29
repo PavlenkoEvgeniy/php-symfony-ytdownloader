@@ -53,14 +53,6 @@ services:
     OskarStark\Twig\ReadableFilesizeExtension:
         tags: ['twig.extension']
 
-    # Panther Client
-    # Symfony\Component\Panther\Client:
-    #     factory: ['Symfony\Component\Panther\Client', 'createChromeClient']
-    #     arguments:
-    #         - null
-    #         - []
-    #         - { capabilities: { 'goog:chromeOptions': { args: ['--headless', '--disable-gpu', '--no-sandbox'] } } }
-
     App\Service\BrowserProfileManager:
         arguments:
             $projectDir: '%kernel.project_dir%'

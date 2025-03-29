@@ -65,25 +65,7 @@ class YoutubeAuthService
             // $this->cleanProfileDir($profileDir);
         }
     }
-
-    private function createChromeClient(string $profileDir): Client
-    {
-        return Client::createChromeClient(null, [], [
-            'capabilities' => [
-                'goog:chromeOptions' => [
-                    'args' => [
-                        '--headless=new',
-                        '--no-sandbox',
-                        '--disable-dev-shm-usage',
-                        '--window-size=1920,1080',
-                        '--user-data-dir='.$profileDir,
-                        '--remote-debugging-port='.rand(9222, 9322)
-                    ]
-                ]
-            ]
-        ]);
-    }
-
+    
     private function saveCookies(array $cookies, string $cookiesPath): void
     {
         $content = '';
