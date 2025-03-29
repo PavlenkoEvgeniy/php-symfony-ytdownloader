@@ -58,7 +58,7 @@ final class YoutubeDownloadController extends AbstractController
 
             foreach ($collection->getVideos() as $video) {
                 if (null !== $video->getError()) {
-                    $this->addFlash('error', 'Error downloading video: cannot make playlist file');
+                    $this->addFlash('error', 'Error downloading video: '. $video->getError());
                 } else {
                     $filename = $video->getFile()->getBasename();
                     $path     = $video->getFile()->getPath();
