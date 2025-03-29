@@ -45,6 +45,9 @@ RUN apt-get install -y wget \
     && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
     && apt-get update && apt-get install -y google-chrome-stable
 
+# Install chromium
+RUN apt install -y chromium chromium-driver
+
 # Create download directory
 RUN mkdir -p /application/var/downloads/
 RUN chmod -R 775 /application/var/downloads/
