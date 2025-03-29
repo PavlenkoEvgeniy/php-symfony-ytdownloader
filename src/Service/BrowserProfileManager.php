@@ -11,19 +11,19 @@ class BrowserProfileManager
 
     public function __construct(string $projectDir)
     {
-        $this->profilesBaseDir = $projectDir.'/var/chrome_profiles';
+        $this->profilesBaseDir = $projectDir . '/var/chrome_profiles';
         $this->ensureBaseDirExists();
     }
 
     public function createProfile(): string
     {
-        $profileDir = $this->profilesBaseDir.'/'.uniqid('profile_'.microtime(false).'_');
-        
+        $profileDir = $this->profilesBaseDir . '/profile_' . time();
+
         (new Filesystem())->mkdir($profileDir, 0777);
-        
+
         // Важно: устанавливаем правильные права
         $this->fixPermissions($profileDir);
-        
+
         return $profileDir;
     }
 
@@ -44,11 +44,11 @@ class BrowserProfileManager
     private function fixPermissions(string $path): void
     {
         // Если работает под root (например, в Docker)
-        if (\posix_geteuid() === 0) {
+        if (0 === \posix_geteuid()) {
             $process = new Process(['chown', '-R', 'www-data:www-data', $path]);
             $process->run();
         }
-        
+
         // Всегда устанавливаем полные права на папку профиля
         (new Filesystem())->chmod($path, 0777, 0000, true);
     }
