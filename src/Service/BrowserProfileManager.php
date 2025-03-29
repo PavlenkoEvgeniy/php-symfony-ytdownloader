@@ -17,7 +17,7 @@ class BrowserProfileManager
 
     public function createProfile(): string
     {
-        $profileDir = $this->profilesBaseDir.'/'.uniqid('profile_'.microtime(true).'_');
+        $profileDir = $this->profilesBaseDir.'/'.uniqid('profile_'.microtime(false).'_');
         
         (new Filesystem())->mkdir($profileDir, 0777);
         
