@@ -59,6 +59,6 @@ services:
         arguments:
             - null
             - []
-            - { capabilities: { 'goog:chromeOptions': { args: ['--headless', '--disable-gpu'] } } }
+            - '%panther.chrome_options%'
         calls:
             - [setServerParameters, [ { webServerDir: '%kernel.project_dir%/public' } ]]

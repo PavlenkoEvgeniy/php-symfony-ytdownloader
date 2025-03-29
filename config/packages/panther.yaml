@@ -1,3 +1,9 @@
-panther:
-    chrome_driver: '/usr/bin/chromedriver'
-    webdriver_dir: '%kernel.project_dir%/var/webdriver'
+# panther:
+#     chrome_driver: '/usr/bin/chromedriver'
+#     webdriver_dir: '%kernel.project_dir%/var/webdriver'
+parameters:
+    panther.chrome_args: ['--headless', '--disable-gpu', '--no-sandbox']
+    panther.chrome_options:
+        capabilities:
+            'goog:chromeOptions':
+                args: '%panther.chrome_args%'
