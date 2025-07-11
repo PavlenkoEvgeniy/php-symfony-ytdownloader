@@ -35,7 +35,9 @@ class DashboardController extends AbstractDashboardController
     {
         $totalUsers = $this->userRepository->getTotalCount();
 
-        $totalDownloads = $this->logRepository->getTotalCount();
+        $totalDownloads = $this->logRepository->getTotalSuccessCount();
+
+        $totalErrors = $this->logRepository->getTotalErrorCount();
 
         $totalSize = $this->logRepository->getTotalSize();
 
@@ -44,6 +46,7 @@ class DashboardController extends AbstractDashboardController
         return $this->render('admin/index.html.twig', [
             'totalUsers'          => $totalUsers,
             'totalDownloads'      => $totalDownloads,
+            'totalErrors'         => $totalErrors,
             'totalSize'           => Helper::formatBytes($totalSize),
             'maxSize'             => Helper::formatBytes($maxSize),
         ]);

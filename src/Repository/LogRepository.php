@@ -18,10 +18,22 @@ class LogRepository extends ServiceEntityRepository
         parent::__construct($registry, Log::class);
     }
 
-    public function getTotalCount(): int
+    public function getTotalSuccessCount(): int
     {
         return (int) $this->createQueryBuilder('l')
             ->select('COUNT(l.id)')
+            ->andWhere('l.type = :type')
+            ->setParameter('type', 'success')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function getTotalErrorCount(): int
+    {
+        return (int) $this->createQueryBuilder('l')
+            ->select('COUNT(l.id)')
+            ->andWhere('l.type = :type')
+            ->setParameter('type', 'error')
             ->getQuery()
             ->getSingleScalarResult();
     }

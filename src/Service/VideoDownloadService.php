@@ -84,7 +84,7 @@ readonly class VideoDownloadService
                 $log = new Log();
                 $log
                     ->setType('error')
-                    ->setMessage(sprintf("Error during downloading: %s", $video->getError()))
+                    ->setMessage(sprintf('Error during downloading: %s', $video->getError()))
                 ;
 
                 $this->entityManager->persist($log);
