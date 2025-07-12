@@ -9,7 +9,7 @@ class Helper
     /**
      * @psalm-suppress InvalidOperand
      */
-    public static function formatBytes($bytes, $precision = 2): string
+    public static function formatBytes(int|float|null $bytes, int $precision = 2): string
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
 
