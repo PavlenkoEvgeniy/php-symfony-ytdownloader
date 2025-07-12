@@ -1,56 +1,62 @@
 # 🎬 YouTube, Rutube, VK Video Downloader  
 
-*A lightweight service for downloading videos from YouTube, Rutube, and Vkontakte*  
+*A lightweight service for downloading videos from YouTube, Rutube, Instagram, Ok, and Vkontakte*  
 
 **🛠 Tech Stack**:  
 - PHP 8 🐘  
-- Symfony 7 🎼  
+- Symfony 7 🎼 
+- EasyAdmin 4 🛠️
 - Docker 🐳  
 - PostgreSQL 🐘  
 - yt-dlp ⚡  
 - norkunas/youtube-dl-php 📦  
 
 ## 📸 Preview  
-<img src="documentation/readme-img/1.jpg" alt="Login page" height="300"> <img src="documentation/readme-img/2.jpg" alt="Login page" height="300"> <img src="documentation/readme-img/3.jpg" alt="Login page" height="300">  
+<img src="documentation/readme-img/1.jpg" alt="Login page" height="300"> 
+<img src="documentation/readme-img/2.jpg" alt="Login page" height="300"> 
+<img src="documentation/readme-img/3.jpg" alt="Login page" height="300">  
 
 ## 🚀 Quick Start  
 
-### ⚡ Run the Project:  
-1. **Start containers**:  
-   ```bash
-   cd docker/
-   docker-compose up -d
+### ⚡ Run the Project:
+1. **Environment**
+   > 📝 **Note**: Create `.env.local` with DB config (host name must be `ytdownloader-pgsql`)
+   ```yaml
+   DATABASE_URL="postgresql://example_user_name:example_passwd12345@'ytdownloader-pgsql':5432/ytdownloader?serverVersion=16&charset=utf8"
    ```
 
-2. **Install dependencies**:  
+1. **Initialize new application**:  
    ```bash
-   docker exec ytdownloader-php-fpm composer install
-   docker exec ytdownloader-php-fpm composer update
+   sudo make init
    ```
 
-3. **Setup database**:  
+2. **Restart application**:  
    ```bash
-   docker exec ytdownloader-php-fpm php bin/console doctrine:database:create --if-not-exists
-   docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate
-   ```
-   > 📝 **Note**: Create `.env.local` with DB config (host must be `ytdownloader-pgsql`)
-
-4. **Start queue worker**:  
-   ```bash
-   docker exec ytdownloader-php-fpm /etc/init.d/supervisor start
+   sudo make restart
    ```
 
-5. **Create user**:  
+3. **Setup database (if needed)**:  
    ```bash
-   docker exec ytdownloader-php-fpm php bin/console user:add <username>
+   sudo make db-setup
+   ```
+
+4. **Start queue worker (if needed)**:  
+   ```bash
+   sudo make supervisor-start
+   ```
+
+5. **Create admin by console command**:  
+   ```bash
+   sudo make docker-php
+   php bin/console user:add <username> [password]
    ```
 
 6. **Run tests**:  
    ```bash
-   docker exec ytdownloader-php-fpm sh bin/test.sh
+   sudo make test
    ```
 
-7. **Health check**:  
+7. **Health check url**:  
    ```
    GET http://host.tld/health
    ```
@@ -64,7 +70,8 @@
 ✅ ~~Refactor to services~~  
 ✅ ~~Health check endpoint~~  
 🔳 YouTube cache optimization (avoid bot detection)  
-🔳 Download statistics counter  
+✅ ~~Download statistics counter~~  
 🔳 REST API implementation  
 🔳 Telegram bot integration  
-🔳 Setup automation script  
+✅ ~~Setup automation script~~  
+✅ ~~Admin dashboard~~
