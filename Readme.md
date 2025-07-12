@@ -1,6 +1,6 @@
 # 🎬 YouTube, Rutube, VK Video Downloader  
 
-*A lightweight service for downloading videos from YouTube, Rutube, Instagram, Ok, and Vkontakte*  
+*A lightweight service for downloading videos from YouTube, Rutube, Instagram, Ok and Vk*  
 
 **🛠 Tech Stack**:  
 - PHP 8 🐘  
