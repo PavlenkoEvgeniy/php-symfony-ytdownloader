@@ -29,7 +29,7 @@ class LogCrudController extends AbstractCrudController
     public function configureActions(Actions $actions): Actions
     {
         return parent::configureActions($actions)
-            ->disable(Action::NEW, Action::EDIT, Action::DELETE);
+            ->disable(Action::NEW, Action::DELETE);
     }
 
     #[\Override]
