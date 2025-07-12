@@ -18,6 +18,26 @@ class LogRepository extends ServiceEntityRepository
         parent::__construct($registry, Log::class);
     }
 
+    public function getTotalProcessingCount(): int
+    {
+        return (int) $this->createQueryBuilder('l')
+            ->select('COUNT(l.id)')
+            ->andWhere('l.type = :type')
+            ->setParameter('type', 'processing')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function getTotalInProgressCount(): int
+    {
+        return (int) $this->createQueryBuilder('l')
+            ->select('COUNT(l.id)')
+            ->andWhere('l.type = :type')
+            ->setParameter('type', 'in progress')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function getTotalSuccessCount(): int
     {
         return (int) $this->createQueryBuilder('l')

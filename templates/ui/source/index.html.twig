@@ -21,41 +21,45 @@
             {{ include('ui/source/_delete_all_form.html.twig') }}
         {% endif %}
     </div>
+    <div class="text-center">
+        <span class="fw-bold">Downloads in queue: {{ totalPending }}</span> |
+        <span class="fw-bold">Downloads in progress: {{ totalInProgress }}</span>
+    </div>
     <div class="table-responsive-lg">
-    <table class="table table-sm">
-        <thead class="text-center">
-        <tr>
-            <th>No</th>
-            <th>Filename</th>
-            <th>Size</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for source in sources %}
+        <table class="table table-sm">
+            <thead class="text-center">
             <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ source.filename }}</td>
-                <td class="text-center">{{ source.size|readable_filesize(2) }}</td>
-                <td class="d-grid gap-2 text-center">
-                    <div>
-                        <a class="btn btn-primary" href="{{ path('ui_source_download', {'id': source.id}) }}">📂</a>
-                    </div>
-                    <div>
-                        <a class="btn btn-secondary" href="{{ path('ui_source_show', {'id': source.id}) }}">👁</a>
-                    </div>
-                    <div>
-                        <a class="btn btn-warning" href="{{ path('ui_source_edit', {'id': source.id}) }}">🖊</a>
-                    </div>
-                    {{ include('ui/source/_delete_form.html.twig') }}
-                </td>
+                <th>No</th>
+                <th>Filename</th>
+                <th>Size</th>
+                <th>Actions</th>
             </tr>
-        {% else %}
-            <tr>
-                <td class="text-center" colspan="8">No records found...</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+            {% for source in sources %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ source.filename }}</td>
+                    <td class="text-center">{{ source.size|readable_filesize(2) }}</td>
+                    <td class="d-grid gap-2 text-center">
+                        <div>
+                            <a class="btn btn-primary" href="{{ path('ui_source_download', {'id': source.id}) }}">📂</a>
+                        </div>
+                        <div>
+                            <a class="btn btn-secondary" href="{{ path('ui_source_show', {'id': source.id}) }}">👁</a>
+                        </div>
+                        <div>
+                            <a class="btn btn-warning" href="{{ path('ui_source_edit', {'id': source.id}) }}">🖊</a>
+                        </div>
+                        {{ include('ui/source/_delete_form.html.twig') }}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td class="text-center" colspan="8">No records found...</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
 {% endblock %}

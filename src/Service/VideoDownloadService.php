@@ -9,6 +9,7 @@ use App\Entity\Source;
 use App\Repository\SourceRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Stopwatch\Stopwatch;
 use YoutubeDl\Options;
 use YoutubeDl\YoutubeDl;
 
@@ -33,7 +34,18 @@ readonly class VideoDownloadService
 
     public function process(string $videoUrl, string $format): void
     {
+        $stopwatch = new Stopwatch();
+        $stopwatch->start('process_timer');
+
         $yt = new YoutubeDl();
+
+        $log = new Log();
+        $log
+            ->setType('processing')
+            ->setMessage('Processing. Video or Audio Download will be downloaded soon.');
+
+        $this->entityManager->persist($log);
+        $this->entityManager->flush();
 
         $downloadFormat = '';
         $mergeAsVideo   = true;
@@ -58,6 +70,14 @@ readonly class VideoDownloadService
         }
 
         if ($mergeAsVideo) {
+            $log
+                ->setType('in progress')
+                ->setMessage('Video Download is in progress.')
+            ;
+
+            $this->entityManager->persist($log);
+            $this->entityManager->flush();
+
             $collection = $yt->download(
                 Options::create()
                     ->downloadPath($this->downloadsDir)
@@ -67,6 +87,14 @@ readonly class VideoDownloadService
                     ->output(sprintf('%s quality --- %s', ucfirst($format), self::OUTPUT_FILE_FORMAT))
             );
         } else {
+            $log
+                ->setType('in progress')
+                ->setMessage('Audio Download is in progress.')
+            ;
+
+            $this->entityManager->persist($log);
+            $this->entityManager->flush();
+
             $collection = $yt->download(
                 Options::create()
                     ->downloadPath($this->downloadsDir)
@@ -81,7 +109,6 @@ readonly class VideoDownloadService
             if (null !== $video->getError()) {
                 $this->logger->error('Error during downloading', ['error' => $video->getError()]);
 
-                $log = new Log();
                 $log
                     ->setType('error')
                     ->setMessage(sprintf('Error during downloading: %s', $video->getError()))
@@ -105,10 +132,11 @@ readonly class VideoDownloadService
 
                     $this->entityManager->persist($source);
 
-                    $log = new Log();
+                    $processDuration = $stopwatch->stop('process_timer')->getDuration() / 1000;
+
                     $log
                         ->setType('success')
-                        ->setMessage(sprintf('Video download complete - %s', $filename))
+                        ->setMessage(sprintf('File download complete in %.2f seconds - %s', $processDuration, $filename))
                         ->setSize((float) $size)
                     ;
 

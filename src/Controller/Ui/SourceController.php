@@ -6,7 +6,9 @@ namespace App\Controller\Ui;
 
 use App\Entity\Source;
 use App\Form\SourceType;
+use App\Repository\LogRepository;
 use App\Repository\SourceRepository;
+use App\Service\QueueCounterService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -21,14 +23,22 @@ final class SourceController extends AbstractController
 {
     public function __construct(
         private readonly string $downloadsDir,
+        private readonly LogRepository $logRepository,
+        private readonly QueueCounterService $queueCounter,
     ) {
     }
 
     #[Route('/ui/source', name: 'ui_source_index', methods: [Request::METHOD_GET])]
     public function index(SourceRepository $sourceRepository): Response
     {
+        $totalPending = $this->queueCounter->getQueueCount();
+
+        $totalInProgress = $this->logRepository->getTotalInProgressCount();
+
         return $this->render('ui/source/index.html.twig', [
-            'sources' => $sourceRepository->findBy([], ['id' => 'ASC']),
+            'sources'         => $sourceRepository->findBy([], ['id' => 'ASC']),
+            'totalPending'    => $totalPending,
+            'totalInProgress' => $totalInProgress,
         ]);
     }
 
