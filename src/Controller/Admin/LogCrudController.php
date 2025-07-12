@@ -35,7 +35,7 @@ class LogCrudController extends AbstractCrudController
     #[\Override]
     public function configureFields(string $pageName): iterable
     {
-        yield IdField::new('id', 'ID');
+        yield IdField::new('id', 'ID')->hideOnForm();
         yield TextField::new('type', 'Result');
         yield TextField::new('message', 'Message');
         yield NumberField::new('size', 'Size')
