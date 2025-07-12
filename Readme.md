@@ -12,7 +12,13 @@
 - norkunas/youtube-dl-php 📦  
 
 ## 📸 Preview  
-<img src="documentation/readme-img/1.jpg" alt="Login page" height="300"> <img src="documentation/readme-img/2.jpg" alt="Login page" height="300"> <img src="documentation/readme-img/3.jpg" alt="Login page" height="300">  
+<img src="docs/preview/1.jpg" alt="Login page" height="300"> <img src="docs/preview/2.jpg" alt="Index page" height="300"> <img src="docs/preview/3.jpg" alt="Downloads page" height="300"> <img src="docs/preview/4.jpg" alt="Admin dashboard" height="300"> <img src="docs/preview/5.jpg" alt="Admin menu" height="300">  
+
+## 📋 Tested within:
+1. 🐧 Ubuntu 22.04
+2. 🐳 Docker 28.3.2
+3. 📦 Docker-compose 1.29.2
+4. ⚙️ GNU Make 4.3
 
 ## 🚀 Quick Start  
 
