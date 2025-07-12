@@ -101,4 +101,21 @@ class SecurityControllerTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('div.alert', 'Invalid credentials.');
     }
+
+    public function testIndexPageIsNotAvailableForDisabledUser(): void
+    {
+        $crawler = $this->client->request('GET', '/login');
+
+        $form             = $crawler->selectButton('Sign in')->form();
+        $form['email']    = 'user.disabled@test.local';
+        $form['password'] = 'user.disabled123456';
+        $this->client->submit($form);
+
+        $this->assertResponseRedirects('/login');
+
+        $this->client->followRedirect();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('h1', 'Please sign in');
+    }
 }
