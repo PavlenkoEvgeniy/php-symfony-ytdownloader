@@ -8,6 +8,7 @@ use App\Entity\Log;
 use App\Helper\Helper;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
@@ -33,6 +34,14 @@ class LogCrudController extends AbstractCrudController
     }
 
     #[\Override]
+    public function configureCrud(Crud $crud): Crud
+    {
+        return parent::configureCrud($crud)
+            ->setDefaultSort(['id' => 'DESC'])
+        ;
+    }
+
+    #[\Override]
     public function configureFields(string $pageName): iterable
     {
         yield IdField::new('id', 'ID')->hideOnForm();
@@ -45,7 +54,8 @@ class LogCrudController extends AbstractCrudController
                 }
 
                 return Helper::formatBytes($value);
-            });
+            })
+        ;
         yield DateTimeField::new('createdAt', 'Created at');
     }
 }
