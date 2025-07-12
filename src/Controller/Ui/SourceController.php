@@ -19,6 +19,11 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class SourceController extends AbstractController
 {
+    public function __construct(
+        private readonly string $downloadsDir,
+    ) {
+    }
+
     #[Route('/ui/source', name: 'ui_source_index', methods: [Request::METHOD_GET])]
     public function index(SourceRepository $sourceRepository): Response
     {
@@ -58,10 +63,22 @@ final class SourceController extends AbstractController
     #[Route('/ui/source/{id}/edit', name: 'ui_source_edit', methods: [Request::METHOD_GET, Request::METHOD_POST])]
     public function edit(Request $request, Source $source, EntityManagerInterface $entityManager): Response
     {
+        $oldFilename = sprintf('%s/%s', $this->downloadsDir, $source->getFilename());
+
         $form = $this->createForm(SourceType::class, $source);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $newFileName = sprintf('%s/%s', $this->downloadsDir, $form->get('filename')->getData());
+
+            if (!file_exists($oldFilename)) {
+                throw new NotFoundHttpException('File not found');
+            }
+
+            if ($newFileName !== $oldFilename) {
+                rename($oldFilename, $newFileName);
+            }
+
             $entityManager->flush();
 
             return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
