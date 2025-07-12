@@ -20,6 +20,26 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
+                    <h5 class="card-title">Downloads in queue:</h5>
+                    <p class="display-4">{{ totalPending }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Downloads in progress:</h5>
+                    <p class="display-4">{{ totalInProgress }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
                     <h5 class="card-title">Success downloads:</h5>
                     <p class="display-4">{{ totalDownloads }}</p>
                 </div>

@@ -10,6 +10,7 @@ use App\Entity\User;
 use App\Helper\Helper;
 use App\Repository\LogRepository;
 use App\Repository\UserRepository;
+use App\Service\QueueCounterService;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -27,6 +28,7 @@ class DashboardController extends AbstractDashboardController
     public function __construct(
         private readonly UserRepository $userRepository,
         private readonly LogRepository $logRepository,
+        private readonly QueueCounterService $queueCounter,
     ) {
     }
 
@@ -37,6 +39,10 @@ class DashboardController extends AbstractDashboardController
 
         $totalDownloads = $this->logRepository->getTotalSuccessCount();
 
+        $totalPending = $this->queueCounter->getQueueCount();
+
+        $totalInProgress = $this->logRepository->getTotalInProgressCount();
+
         $totalErrors = $this->logRepository->getTotalErrorCount();
 
         $totalSize = $this->logRepository->getTotalSize();
@@ -46,6 +52,8 @@ class DashboardController extends AbstractDashboardController
         return $this->render('admin/index.html.twig', [
             'totalUsers'          => $totalUsers,
             'totalDownloads'      => $totalDownloads,
+            'totalPending'        => $totalPending,
+            'totalInProgress'     => $totalInProgress,
             'totalErrors'         => $totalErrors,
             'totalSize'           => Helper::formatBytes($totalSize),
             'maxSize'             => Helper::formatBytes($maxSize),
