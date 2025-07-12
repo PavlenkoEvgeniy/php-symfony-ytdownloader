@@ -31,9 +31,22 @@ class UserFixtures extends Fixture implements FixtureGroupInterface
     {
         $items = [
             [
-                'email'    => 'admin@admin.local',
-                'password' => 'admin123456',
-                'roles'    => ['ROLE_ADMIN'],
+                'email'     => 'admin@admin.local',
+                'password'  => 'admin123456',
+                'roles'     => ['ROLE_ADMIN'],
+                'isEnabled' => true,
+            ],
+            [
+                'email'     => 'user@test.local',
+                'password'  => 'user123456',
+                'roles'     => ['ROLE_USER'],
+                'isEnabled' => true,
+            ],
+            [
+                'email'     => 'admin.disabled@admin.local',
+                'password'  => 'admin.disabled123456',
+                'roles'     => ['ROLE_ADMIN'],
+                'isEnabled' => false,
             ],
         ];
 
@@ -46,6 +59,7 @@ class UserFixtures extends Fixture implements FixtureGroupInterface
                     $item['password'])
                 )
                 ->setRoles($item['roles'])
+                ->setIsEnabled($item['isEnabled'])
             ;
 
             $manager->persist($user);
