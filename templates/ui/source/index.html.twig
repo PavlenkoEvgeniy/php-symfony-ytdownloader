@@ -4,7 +4,7 @@
 {% endblock %}
 
 {% block body %}
-	{% for message in app.flashes('error') %}
+    {% for message in app.flashes('error') %}
         <div class="alert alert-danger mt-1" role="alert">
             {{ message }}
         </div>
@@ -13,50 +13,48 @@
         <div class="alert alert-success mt-1" role="alert">
             {{ message }}
         </div>
-    {% endfor %}   
-	<h1 class="mt-4">Downloads</h1>
-	<div class="d-flex justify-content-between">
-		<a class="btn btn-outline-success" href="{{ path('ui_youtube_download_index') }}">+ Add new download</a>
-		{% if sources is not empty %}
-			{{ include('ui/source/_delete_all_form.html.twig') }}
-		{% endif %}
-	</div>
+    {% endfor %}
+    <h1 class="mt-4">Downloads</h1>
+    <div class="d-flex justify-content-between mb-2">
+        <a class="btn btn-outline-success" href="{{ path('ui_youtube_download_index') }}">+ Add new download</a>
+        {% if sources is not empty %}
+            {{ include('ui/source/_delete_all_form.html.twig') }}
+        {% endif %}
+    </div>
 
-	<table class="table">
-		<thead>
-			<tr>
-				<th>No</th>
-				<th>Filename</th>
-				<th>Size</th>
-				<th>Created</th>
-				<th>Actions</th>
-			</tr>
-		</thead>
-		<tbody>
-			{% for source in sources %}
-				<tr>
-					<td>{{ loop.index }}</td>
-					<td>{{ source.filename }}</td>
-					<td>{{ source.size|readable_filesize(2) }}</td>
-					<td>{{ source.createdAt ? source.createdAt|date('d-m-Y') : '' }}</td>
-					<td class="d-grid gap-2 text-center">
-						<div>
-							<a class="btn btn-primary" href="{{ path('ui_source_download', {'id': source.id}) }}">📂</a>
-						</div>
-						<div>
-							<a class="btn btn-secondary" href="{{ path('ui_source_show', {'id': source.id}) }}">👁</a>
-						</div>
-						<div>
-							<a class="btn btn-warning" href="{{ path('ui_source_edit', {'id': source.id}) }}">🖊</a>
-						</div>
-						{{ include('ui/source/_delete_form.html.twig') }}
-					</td>
-				</tr>
-			{% else %}
-				<tr>
-					<td class="text-center" colspan="8">No records found...</td>
-				</tr>
-			{% endfor %}
-		</tbody>
-	</table>
+    <table>
+        <thead class="text-center">
+        <tr>
+            <th>No</th>
+            <th>Filename</th>
+            <th>Size</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for source in sources %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ source.filename }}</td>
+                <td class="text-center">{{ source.size|readable_filesize(2) }}</td>
+                <td class="d-grid gap-2 text-center">
+                    <div>
+                        <a class="btn btn-primary" href="{{ path('ui_source_download', {'id': source.id}) }}">📂</a>
+                    </div>
+                    <div>
+                        <a class="btn btn-secondary" href="{{ path('ui_source_show', {'id': source.id}) }}">👁</a>
+                    </div>
+                    <div>
+                        <a class="btn btn-warning" href="{{ path('ui_source_edit', {'id': source.id}) }}">🖊</a>
+                    </div>
+                    {{ include('ui/source/_delete_form.html.twig') }}
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td class="text-center" colspan="8">No records found...</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
