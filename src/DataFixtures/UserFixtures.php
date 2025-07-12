@@ -48,6 +48,12 @@ class UserFixtures extends Fixture implements FixtureGroupInterface
                 'roles'     => ['ROLE_ADMIN'],
                 'isEnabled' => false,
             ],
+            [
+                'email'     => 'user.disabled@test.local',
+                'password'  => 'user.disabled123456',
+                'roles'     => ['ROLE_USER'],
+                'isEnabled' => false,
+            ],
         ];
 
         foreach ($items as $item) {
