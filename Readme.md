@@ -12,9 +12,7 @@
 - norkunas/youtube-dl-php 📦  
 
 ## 📸 Preview  
-<img src="documentation/readme-img/1.jpg" alt="Login page" height="300"> 
-<img src="documentation/readme-img/2.jpg" alt="Login page" height="300"> 
-<img src="documentation/readme-img/3.jpg" alt="Login page" height="300">  
+<img src="documentation/readme-img/1.jpg" alt="Login page" height="300"> <img src="documentation/readme-img/2.jpg" alt="Login page" height="300"> <img src="documentation/readme-img/3.jpg" alt="Login page" height="300">  
 
 ## 🚀 Quick Start  
 
