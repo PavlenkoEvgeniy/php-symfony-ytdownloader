@@ -49,6 +49,8 @@ class DashboardControllerTest extends WebTestCase
         $form['password'] = 'admin.disabled123456';
         $this->client->submit($form);
 
+        $this->assertResponseRedirects('/login');
+
         $this->client->followRedirect();
 
         $this->assertResponseIsSuccessful();
