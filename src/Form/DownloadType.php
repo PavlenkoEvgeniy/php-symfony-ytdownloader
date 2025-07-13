@@ -35,7 +35,6 @@ class DownloadType extends AbstractType
                     'BEST - 1080p (best video + best audio)'         => 'best',
                     'MODERATE - 720p (moderate video + best audio)'  => 'moderate',
                     'POOR - 380p (poor video + best audio)'          => 'poor',
-                    'DRAFT - 240p (draft video + best audio)'        => 'draft',
                     'AUDIO - opus (only audio will be downloaded)'   => 'audio',
                 ],
                 'mapped'      => false,

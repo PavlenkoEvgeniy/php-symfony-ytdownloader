@@ -18,7 +18,6 @@ readonly class VideoDownloadService
     public const BEST_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=1080]+bestaudio/best';
     public const MODERATE_VIDEO_DOWNLOAD_FORMAT = 'bestvideo[height<=720]+bestaudio/best';
     public const POOR_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=320]+bestaudio/best';
-    public const DRAFT_VIDEO_DOWNLOAD_FORMAT    = 'bestvideo[height<=240]+bestaudio/best';
     public const NO_VIDEO_DOWNLOAD_FORMAT       = 'bestaudio/best';
     public const OUTPUT_FILE_FORMAT             = '%(title)s.%(ext)s';
     public const MERGE_OUTPUT_FORMAT_VIDEO      = 'mp4';
@@ -59,9 +58,6 @@ readonly class VideoDownloadService
                 break;
             case 'poor':
                 $downloadFormat = self::POOR_VIDEO_DOWNLOAD_FORMAT;
-                break;
-            case 'draft':
-                $downloadFormat = self::DRAFT_VIDEO_DOWNLOAD_FORMAT;
                 break;
             case 'audio':
                 $downloadFormat = self::NO_VIDEO_DOWNLOAD_FORMAT;
