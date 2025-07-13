@@ -144,7 +144,7 @@ readonly class VideoDownloadService
                 } else {
                     $log
                         ->setType('info')
-                        ->setMessage(sprintf('File with name%s already exists.', $filename))
+                        ->setMessage(sprintf('File already exists with name: %s ', $filename))
                         ->setSize((float) $size)
                     ;
 
