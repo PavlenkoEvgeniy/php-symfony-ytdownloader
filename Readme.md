@@ -14,6 +14,11 @@
 ## 📸 Preview  
 <img src="docs/preview/1.jpg" alt="Login page" height="300"> <img src="docs/preview/2.jpg" alt="Index page" height="300"> <img src="docs/preview/3.jpg" alt="Downloads page" height="300"> <img src="docs/preview/4.jpg" alt="Admin dashboard" height="300"> <img src="docs/preview/5.jpg" alt="Admin menu" height="300">  
 
+## ⚠️ Legal Disclaimer:
+This program is for personal use only. Downloading copyrighted material without permission is against YouTube's terms of services. By using this program, you are solely responsible for any copyright violations. We are not responsible for people who attempt to use this program in any way that breaks YouTube's terms of services.
+
+
+
 ## 📋 Tested within:
 1. 🐧 Ubuntu 22.04
 2. 🐳 Docker 28.3.2
