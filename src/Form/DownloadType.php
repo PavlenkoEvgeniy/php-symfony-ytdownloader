@@ -32,11 +32,11 @@ class DownloadType extends AbstractType
             ])
             ->add('quality', ChoiceType::class, [
                 'choices' => [
-                    'BEST - 1080p (best video + best audio)'        => 'best',
-                    'MODERATE - 720p (moderate video + best audio)' => 'moderate',
-                    'POOR - 380p (poor video + best audio)'         => 'poor',
-                    'DRAFT - 240p (draft video + best audio)'       => 'draft',
-                    'AUDIO - mp3 (only audio will be downloaded)'   => 'audio',
+                    'BEST - 1080p (best video + best audio)'         => 'best',
+                    'MODERATE - 720p (moderate video + best audio)'  => 'moderate',
+                    'POOR - 380p (poor video + best audio)'          => 'poor',
+                    'DRAFT - 240p (draft video + best audio)'        => 'draft',
+                    'AUDIO - opus (only audio will be downloaded)'   => 'audio',
                 ],
                 'mapped'      => false,
                 'required'    => true,

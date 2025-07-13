@@ -15,14 +15,13 @@ use YoutubeDl\YoutubeDl;
 
 readonly class VideoDownloadService
 {
-    public const BEST_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
-    public const MODERATE_VIDEO_DOWNLOAD_FORMAT = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
-    public const POOR_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=320][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
-    public const DRAFT_VIDEO_DOWNLOAD_FORMAT    = 'bestvideo[height<=240][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
+    public const BEST_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=1080]+bestaudio/best';
+    public const MODERATE_VIDEO_DOWNLOAD_FORMAT = 'bestvideo[height<=720]+bestaudio/best';
+    public const POOR_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=320]+bestaudio/best';
+    public const DRAFT_VIDEO_DOWNLOAD_FORMAT    = 'bestvideo[height<=240]+bestaudio/best';
     public const NO_VIDEO_DOWNLOAD_FORMAT       = 'bestaudio/best';
     public const OUTPUT_FILE_FORMAT             = '%(title)s.%(ext)s';
     public const MERGE_OUTPUT_FORMAT_VIDEO      = 'mp4';
-    public const FORMAT_AUDIO                   = 'mp3';
 
     public function __construct(
         private string $downloadsDir,
@@ -34,18 +33,19 @@ readonly class VideoDownloadService
 
     public function process(string $videoUrl, string $format): void
     {
+        $log = new Log();
+        $log
+            ->setType('in progress')
+            ->setMessage('Download is in progress.')
+        ;
+
+        $this->entityManager->persist($log);
+        $this->entityManager->flush();
+
         $stopwatch = new Stopwatch();
         $stopwatch->start('process_timer');
 
         $yt = new YoutubeDl();
-
-        $log = new Log();
-        $log
-            ->setType('processing')
-            ->setMessage('Processing. Video or Audio Download will be downloaded soon.');
-
-        $this->entityManager->persist($log);
-        $this->entityManager->flush();
 
         $downloadFormat = '';
         $mergeAsVideo   = true;
@@ -70,38 +70,21 @@ readonly class VideoDownloadService
         }
 
         if ($mergeAsVideo) {
-            $log
-                ->setType('in progress')
-                ->setMessage('Video Download is in progress.')
-            ;
-
-            $this->entityManager->persist($log);
-            $this->entityManager->flush();
-
             $collection = $yt->download(
                 Options::create()
                     ->downloadPath($this->downloadsDir)
                     ->url($videoUrl)
                     ->format($downloadFormat)
                     ->mergeOutputFormat(self::MERGE_OUTPUT_FORMAT_VIDEO)
-                    ->output(sprintf('%s quality --- %s', ucfirst($format), self::OUTPUT_FILE_FORMAT))
+                    ->output(sprintf('%s --- %s', ucfirst($format), self::OUTPUT_FILE_FORMAT))
             );
         } else {
-            $log
-                ->setType('in progress')
-                ->setMessage('Audio Download is in progress.')
-            ;
-
-            $this->entityManager->persist($log);
-            $this->entityManager->flush();
-
             $collection = $yt->download(
                 Options::create()
                     ->downloadPath($this->downloadsDir)
                     ->url($videoUrl)
                     ->extractAudio(true)
-                    ->audioFormat(self::FORMAT_AUDIO)
-                    ->output(sprintf('Audio format --- %s', self::OUTPUT_FILE_FORMAT))
+                    ->output(sprintf('Audio --- %s', self::OUTPUT_FILE_FORMAT))
             );
         }
 
@@ -136,7 +119,7 @@ readonly class VideoDownloadService
 
                     $log
                         ->setType('success')
-                        ->setMessage(sprintf('File download complete in %.2f seconds - %s', $processDuration, $filename))
+                        ->setMessage(sprintf('File download complete in %.1f seconds - %s', $processDuration, $filename))
                         ->setSize((float) $size)
                     ;
 
@@ -144,17 +127,14 @@ readonly class VideoDownloadService
                 } else {
                     $log
                         ->setType('info')
-                        ->setMessage(sprintf('File already exists with name: %s ', $filename))
+                        ->setMessage(sprintf('This file has been already downloaded: %s ', $filename))
                         ->setSize((float) $size)
                     ;
 
                     $this->entityManager->persist($log);
                 }
             }
+            $this->entityManager->flush();
         }
-
-        $this->entityManager->flush();
-
-        $this->logger->info('Finished downloading videos', ['videos' => $collection]);
     }
 }
