@@ -141,6 +141,14 @@ readonly class VideoDownloadService
                     ;
 
                     $this->entityManager->persist($log);
+                } else {
+                    $log
+                        ->setType('info')
+                        ->setMessage(sprintf('File with name%s already exists.', $filename))
+                        ->setSize((float) $size)
+                    ;
+
+                    $this->entityManager->persist($log);
                 }
             }
         }
