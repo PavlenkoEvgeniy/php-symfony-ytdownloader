@@ -9,18 +9,19 @@ use App\Entity\Source;
 use App\Repository\SourceRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Stopwatch\Stopwatch;
 use YoutubeDl\Options;
 use YoutubeDl\YoutubeDl;
 
 readonly class VideoDownloadService
 {
-    public const BEST_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=1080]+bestaudio/best';
-    public const MODERATE_VIDEO_DOWNLOAD_FORMAT = 'bestvideo[height<=720]+bestaudio/best';
-    public const POOR_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=320]+bestaudio/best';
+    public const BEST_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
+    public const MODERATE_VIDEO_DOWNLOAD_FORMAT = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
+    public const POOR_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=320][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
+    public const DRAFT_VIDEO_DOWNLOAD_FORMAT    = 'bestvideo[height<=240][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
     public const NO_VIDEO_DOWNLOAD_FORMAT       = 'bestaudio/best';
     public const OUTPUT_FILE_FORMAT             = '%(title)s.%(ext)s';
     public const MERGE_OUTPUT_FORMAT_VIDEO      = 'mp4';
+    public const FORMAT_AUDIO                   = 'mp3';
 
     public function __construct(
         private string $downloadsDir,
@@ -32,17 +33,16 @@ readonly class VideoDownloadService
 
     public function process(string $videoUrl, string $format): void
     {
+        $errorCount = 0;
+
         $log = new Log();
         $log
             ->setType('in progress')
-            ->setMessage('Download is in progress.')
+            ->setMessage('Started downloading.')
         ;
 
         $this->entityManager->persist($log);
         $this->entityManager->flush();
-
-        $stopwatch = new Stopwatch();
-        $stopwatch->start('process_timer');
 
         $yt = new YoutubeDl();
 
@@ -80,6 +80,7 @@ readonly class VideoDownloadService
                     ->downloadPath($this->downloadsDir)
                     ->url($videoUrl)
                     ->extractAudio(true)
+                    ->audioFormat(self::FORMAT_AUDIO)
                     ->output(sprintf('Audio --- %s', self::OUTPUT_FILE_FORMAT))
             );
         }
@@ -88,12 +89,13 @@ readonly class VideoDownloadService
             if (null !== $video->getError()) {
                 $this->logger->error('Error during downloading', ['error' => $video->getError()]);
 
-                $log
+                $errorLog = new Log();
+                $errorLog
                     ->setType('error')
                     ->setMessage(sprintf('Error during downloading: %s', $video->getError()))
                 ;
 
-                $this->entityManager->persist($log);
+                $this->entityManager->persist($errorLog);
             } else {
                 $filename = $video->getFile()->getBasename();
                 $path     = $video->getFile()->getPath();
@@ -111,26 +113,26 @@ readonly class VideoDownloadService
 
                     $this->entityManager->persist($source);
 
-                    $processDuration = $stopwatch->stop('process_timer')->getDuration() / 1000;
-
-                    $log
+                    $itemDownloadLog = new Log();
+                    $itemDownloadLog
                         ->setType('success')
-                        ->setMessage(sprintf('File download complete in %.1f seconds - %s', $processDuration, $filename))
+                        ->setMessage(sprintf('File %s downloaded successfully.', $filename))
                         ->setSize((float) $size)
                     ;
 
-                    $this->entityManager->persist($log);
-                } else {
-                    $log
-                        ->setType('info')
-                        ->setMessage(sprintf('This file has been already downloaded: %s ', $filename))
-                        ->setSize((float) $size)
-                    ;
+                    $this->entityManager->persist($itemDownloadLog);
 
-                    $this->entityManager->persist($log);
+                    $this->logger->info(sprintf('File %s downloaded successfully.', $filename));
                 }
             }
-            $this->entityManager->flush();
         }
+
+        $log
+            ->setType('finished')
+            ->setMessage('Finished downloading.');
+
+        $this->entityManager->persist($log);
+
+        $this->entityManager->flush();
     }
 }
