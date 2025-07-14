@@ -116,13 +116,13 @@ readonly class VideoDownloadService
                     $itemDownloadLog = new Log();
                     $itemDownloadLog
                         ->setType('success')
-                        ->setMessage(sprintf('File %s downloaded successfully.', $filename))
+                        ->setMessage(sprintf('File "%s" downloaded successfully.', $filename))
                         ->setSize((float) $size)
                     ;
 
                     $this->entityManager->persist($itemDownloadLog);
 
-                    $this->logger->info(sprintf('File %s downloaded successfully.', $filename));
+                    $this->logger->info(sprintf('File "%s" downloaded successfully.', $filename));
                 }
             }
         }
