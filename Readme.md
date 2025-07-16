@@ -10,6 +10,7 @@
 - PostgreSQL 🐘  
 - yt-dlp ⚡  
 - norkunas/youtube-dl-php 📦  
+- botman/botman 🤖
 
 ## 📸 Preview  
 <img src="docs/preview/1.jpg" alt="Login page" height="300"> <img src="docs/preview/2.jpg" alt="Index page" height="300"> <img src="docs/preview/3.jpg" alt="Downloads page" height="300"> <img src="docs/preview/4.jpg" alt="Admin dashboard" height="300"> <img src="docs/preview/5.jpg" alt="Admin menu" height="300">  
@@ -69,6 +70,24 @@ This program is for personal use only. Downloading copyrighted material without 
    ```
    GET http://host.tld/health
    ```
+8. **Admin dashboard**:  
+   ```
+   GET http://host.tld/admin
+   ```
+9. **Telegram bot**:  
+   - add enable true for telegram bot in .env.local file
+   - add your bot token to .env.local file
+   - add telegram host url to .env.local file
+   - run the command to setup webhook:
+   ```bash
+   php bin/console telegram:hook
+   ```
+   - **Telegram bot commands**:
+   ```
+    /start - start bot
+   
+    https://youtube.com/video-url - download video by url
+   ```
 
 ## 📝 Todo Roadmap  
 
@@ -81,6 +100,6 @@ This program is for personal use only. Downloading copyrighted material without 
 🔳 YouTube cache optimization (avoid bot detection)  
 ✅ ~~Download statistics counter~~  
 🔳 REST API implementation  
-🔳 Telegram bot integration  
+✅ ~~Telegram bot integration~~  
 ✅ ~~Setup automation script~~  
 ✅ ~~Admin dashboard~~
