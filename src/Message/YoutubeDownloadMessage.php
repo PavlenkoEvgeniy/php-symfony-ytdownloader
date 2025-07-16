@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Message;
 
-readonly class YoutubeDownloadMessage
+use Symfony\Component\Messenger\Attribute\AsMessage;
+
+#[AsMessage]
+class YoutubeDownloadMessage
 {
     public function __construct(
         private string $url,
         private string $quality,
+        private string $telegramUserId = '',
     ) {
     }
 
@@ -20,5 +24,10 @@ readonly class YoutubeDownloadMessage
     public function getQuality(): string
     {
         return $this->quality;
+    }
+
+    public function getTelegramUserId(): ?string
+    {
+        return $this->telegramUserId;
     }
 }

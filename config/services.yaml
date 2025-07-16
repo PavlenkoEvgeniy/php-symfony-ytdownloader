@@ -13,6 +13,9 @@ services:
         bind:
             string $appVersion: '%env(APP_VERSION)%'
             string $downloadsDir: '%env(resolve:APP_DOWNLOADS_DIR)%'
+            string $telegramBotToken: '%env(TELEGRAM_BOT_TOKEN)%'
+            string $telegramHostUrl: '%env(TELEGRAM_HOST_URL)%'
+            bool $telegramBotEnabled: '%env(bool:TELEGRAM_BOT_ENABLED)%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

@@ -28,10 +28,11 @@ readonly class VideoDownloadService
         private EntityManagerInterface $entityManager,
         private SourceRepository $sourceRepository,
         private LoggerInterface $logger,
+        private readonly TelegramBotService $telegramBotService,
     ) {
     }
 
-    public function process(string $videoUrl, string $format): void
+    public function process(string $videoUrl, string $format, ?string $telegramUserId = null): void
     {
         $errorCount = 0;
 
@@ -96,6 +97,16 @@ readonly class VideoDownloadService
                 ;
 
                 $this->entityManager->persist($errorLog);
+
+                if ($telegramUserId) {
+                    $this->telegramBotService->getBot()->say(
+                        sprintf('Error during downloading: please try again with another link.'),
+                        $telegramUserId,
+                    );
+                    exit;
+                } else {
+                    $this->logger->error(sprintf('Error during downloading: %s', $video->getError()));
+                }
             } else {
                 $filename = $video->getFile()->getBasename();
                 $path     = $video->getFile()->getPath();
@@ -134,5 +145,12 @@ readonly class VideoDownloadService
         $this->entityManager->persist($log);
 
         $this->entityManager->flush();
+
+        if ($telegramUserId) {
+            $this->telegramBotService->getBot()->say(
+                'Downloading finished. You can find your file in the downloads directory. To download please visit the website.',
+                $telegramUserId,
+            );
+        }
     }
 }
