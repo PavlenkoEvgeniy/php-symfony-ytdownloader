@@ -17,6 +17,6 @@ readonly class YoutubeDownloadMessageHandler
 
     public function __invoke(YoutubeDownloadMessage $message): void
     {
-        $this->processYoutubeVideo->process($message->getUrl(), $message->getQuality());
+        $this->processYoutubeVideo->process($message->getUrl(), $message->getQuality(), $message->getTelegramUserId());
     }
 }
