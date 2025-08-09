@@ -10,7 +10,7 @@ use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-class UserFixtures extends Fixture implements FixtureGroupInterface
+final class UserFixtures extends Fixture implements FixtureGroupInterface
 {
     /**
      * @return array<string>

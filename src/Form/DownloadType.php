@@ -14,7 +14,7 @@ use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Url;
 
-class DownloadType extends AbstractType
+final class DownloadType extends AbstractType
 {
     #[\Override]
     public function buildForm(FormBuilderInterface $builder, array $options): void

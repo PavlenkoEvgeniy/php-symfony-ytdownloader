@@ -9,7 +9,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
-class DashboardControllerTest extends WebTestCase
+final class DashboardControllerTest extends WebTestCase
 {
     private UserRepository $userRepository;
     private KernelBrowser $client;

@@ -9,7 +9,7 @@ use App\Service\VideoDownloadService;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
-readonly class YoutubeDownloadMessageHandler
+final readonly class YoutubeDownloadMessageHandler
 {
     public function __construct(private VideoDownloadService $processYoutubeVideo)
     {

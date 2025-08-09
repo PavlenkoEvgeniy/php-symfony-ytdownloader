@@ -17,7 +17,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 /**
  * @psalm-suppress MissingTemplateParam
  */
-class SourceCrudController extends AbstractCrudController
+final class SourceCrudController extends AbstractCrudController
 {
     #[\Override]
     public static function getEntityFqcn(): string

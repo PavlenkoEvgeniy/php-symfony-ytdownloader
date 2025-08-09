@@ -10,7 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class SecurityControllerTest extends WebTestCase
+final class SecurityControllerTest extends WebTestCase
 {
     private UserRepository $userRepository;
     private KernelBrowser $client;

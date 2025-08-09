@@ -14,7 +14,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
     name: 'telegram:unhook',
     description: 'Remove a webhook for the Telegram bot',
 )]
-class TelegramUnhookCommand extends Command
+final class TelegramUnhookCommand extends Command
 {
     public function __construct(
         private readonly string $telegramBotToken,

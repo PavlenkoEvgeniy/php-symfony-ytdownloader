@@ -6,7 +6,7 @@ namespace App\Service;
 
 use Doctrine\DBAL\Connection;
 
-class QueueCounterService
+final class QueueCounterService
 {
     public function __construct(private readonly Connection $connection)
     {

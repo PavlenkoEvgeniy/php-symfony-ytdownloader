@@ -26,7 +26,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 /**
  * @psalm-suppress MissingTemplateParam
  */
-class UserCrudController extends AbstractCrudController
+final class UserCrudController extends AbstractCrudController
 {
     public function __construct(
         public UserPasswordHasherInterface $userPasswordHasher,

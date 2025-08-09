@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
-class HealthCheckController extends AbstractController
+final class HealthCheckController extends AbstractController
 {
     #[Route('/health', name: 'app_health_check', methods: [Request::METHOD_GET])]
     public function check(string $appVersion): JsonResponse

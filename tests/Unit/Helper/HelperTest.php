@@ -7,7 +7,7 @@ namespace App\Tests\Unit\Helper;
 use App\Helper\Helper;
 use PHPUnit\Framework\TestCase;
 
-class HelperTest extends TestCase
+final class HelperTest extends TestCase
 {
     /**
      * @return float[]

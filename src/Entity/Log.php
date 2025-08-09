@@ -9,7 +9,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: LogRepository::class)]
-class Log
+final class Log
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

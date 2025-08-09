@@ -13,7 +13,7 @@ use Doctrine\Persistence\ManagerRegistry;
  *
  * @method findOneByFilename(string $filename)
  */
-class SourceRepository extends ServiceEntityRepository
+final class SourceRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {

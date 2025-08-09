@@ -14,7 +14,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
     name: 'telegram:hook',
     description: 'Add a webhook for the Telegram bot',
 )]
-class TelegramHookCommand extends Command
+final class TelegramHookCommand extends Command
 {
     public function __construct(
         private readonly string $telegramBotToken,
