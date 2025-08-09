@@ -15,7 +15,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-#[AsCommand(name: 'user:add')]
+#[AsCommand(
+    name: 'user:add',
+    description: 'Add new admin user'
+)]
 class UserAddCommand extends Command
 {
     public function __construct(
