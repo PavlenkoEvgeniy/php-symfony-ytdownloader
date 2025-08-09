@@ -16,6 +16,8 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -29,14 +31,22 @@ final class SourceController extends AbstractController
     }
 
     #[Route('/ui/source', name: 'ui_source_index', methods: [Request::METHOD_GET])]
-    public function index(SourceRepository $sourceRepository): Response
-    {
+    public function index(
+        SourceRepository $sourceRepository,
+        SessionInterface $session,
+        #[MapQueryParameter] string $order = 'desc',
+    ): Response {
+        if ($session->has('lastSelectedOrder')) {
+            $order = $session->get('lastSelectedOrder');
+        }
+
         $totalPending = $this->queueCounter->getQueueCount();
 
         $totalInProgress = $this->logRepository->getTotalInProgressCount();
 
         return $this->render('ui/source/index.html.twig', [
-            'sources'         => $sourceRepository->findBy([], ['id' => 'ASC']),
+            'sources'         => $sourceRepository->findBy([], ['createdAt' => $order]),
+            'order'           => $order,
             'totalPending'    => $totalPending,
             'totalInProgress' => $totalInProgress,
         ]);
