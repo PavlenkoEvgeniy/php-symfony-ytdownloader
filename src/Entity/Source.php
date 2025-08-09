@@ -9,7 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
 
 #[ORM\Entity(repositoryClass: SourceRepository::class)]
-final class Source
+class Source
 {
     use TimestampableEntity;
 
