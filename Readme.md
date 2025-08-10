@@ -66,15 +66,20 @@ This program is for personal use only. Downloading copyrighted material without 
    sudo make test
    ```
 
-7. **Health check url**:  
+7. **List of all available 'make' commands**
+   ```bash
+   sudo make help
+   ```
+
+8. **Health check url**:  
    ```
    GET http://host.tld/health
    ```
-8. **Admin dashboard**:  
+9.  **Admin dashboard**:  
    ```
    GET http://host.tld/admin
    ```
-9. **Telegram bot**:  
+10. **Telegram bot**:  
    - add enable true for telegram bot in .env.local file
    - add your bot token to .env.local file
    - add telegram host url to .env.local file
