@@ -12,15 +12,16 @@ help:
 	@echo "8. composer-install ............................. Install composer dependencies."
 	@echo "9. composer-update ............................... Update composer dependencies."
 	@echo "10. db-setup ... Setup database (drop existing, create new, migrate migrations)."
-	@echo "11. db-remove ........................ Remove all files from database directory."
+	@echo "11. db-purge ........................................ Delete database directory."
 	@echo "12. cs-check ................ Check project by php-cs-fixer without any changes."
 	@echo "13. cs-fix ........................................ Fix project by php-cs-fixer."
 	@echo "14. test ................................................ Execute PhpUnit tests."
 	@echo "15. psalm .......................... Check project by psalm without any changes."
 	@echo "16. docker-php ....................... Enter to bash shell of php-fpm container."
 	@echo "17. docker-pgsql ....................... Enter to bash shell of pgsql container."
-	@echo "18. cache-clear ........................................ Remove cache directory."
-	@echo "18. lint ............ Fix project by php-cs-fixer and after that check by psalm."
+	@echo "18. cache-clear ........................................... Clear symfony cache."
+	@echo "19. cache-purge ........................................ Delete cache directory."
+	@echo "20. lint ............ Fix project by php-cs-fixer and after that check by psalm."
 
 init: db-remove docker-compose-up composer-install composer-update db-setup supervisor-start cache-clear
 
@@ -51,7 +52,7 @@ db-setup:
 	docker exec ytdownloader-php-fpm php bin/console doctrine:database:create --if-not-exists
 	docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate
 
-db-remove:
+db-purge:
 	rm -rf ./database/*
 
 cs-check:
@@ -77,6 +78,9 @@ docker-pgsql:
 	docker exec -it ytdownloader-pgsql bash
 
 cache-clear:
+	docker exec ytdownloader-php-fpm php bin/console cache:clear
+
+cache-purge:
 	rm -rf ./var/cache/
 
 lint: cs-fix psalm
