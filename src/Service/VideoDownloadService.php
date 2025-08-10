@@ -24,18 +24,16 @@ final readonly class VideoDownloadService
     public const FORMAT_AUDIO                   = 'mp3';
 
     public function __construct(
-        private string $downloadsDir,
-        private EntityManagerInterface $entityManager,
-        private SourceRepository $sourceRepository,
-        private LoggerInterface $logger,
+        private readonly string $downloadsDir,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly SourceRepository $sourceRepository,
+        private readonly LoggerInterface $logger,
         private readonly TelegramBotService $telegramBotService,
     ) {
     }
 
     public function process(string $videoUrl, string $format, ?string $telegramUserId = null): void
     {
-        $errorCount = 0;
-
         $log = new Log();
         $log
             ->setType('in progress')
@@ -73,7 +71,7 @@ final readonly class VideoDownloadService
                     ->url($videoUrl)
                     ->format($downloadFormat)
                     ->mergeOutputFormat(self::MERGE_OUTPUT_FORMAT_VIDEO)
-                    ->output(sprintf('%s --- %s', ucfirst($format), self::OUTPUT_FILE_FORMAT))
+                    ->output(\sprintf('%s --- %s', ucfirst($format), \trim(self::OUTPUT_FILE_FORMAT)))
             );
         } else {
             $collection = $yt->download(
@@ -82,7 +80,7 @@ final readonly class VideoDownloadService
                     ->url($videoUrl)
                     ->extractAudio(true)
                     ->audioFormat(self::FORMAT_AUDIO)
-                    ->output(sprintf('Audio --- %s', self::OUTPUT_FILE_FORMAT))
+                    ->output(\sprintf('Audio --- %s', values: \trim(self::OUTPUT_FILE_FORMAT)))
             );
         }
 
@@ -93,19 +91,19 @@ final readonly class VideoDownloadService
                 $errorLog = new Log();
                 $errorLog
                     ->setType('error')
-                    ->setMessage(sprintf('Error during downloading: %s', $video->getError()))
+                    ->setMessage(\sprintf('Error during downloading: %s', $video->getError()))
                 ;
 
                 $this->entityManager->persist($errorLog);
 
                 if ($telegramUserId) {
                     $this->telegramBotService->getBot()->say(
-                        sprintf('Error during downloading: please try again with another link.'),
+                        \sprintf('Error during downloading: please try again with another link.'),
                         $telegramUserId,
                     );
                     exit;
                 } else {
-                    $this->logger->error(sprintf('Error during downloading: %s', $video->getError()));
+                    $this->logger->error(\sprintf('Error during downloading: %s', $video->getError()));
                 }
             } else {
                 $filename = $video->getFile()->getBasename();
@@ -127,13 +125,13 @@ final readonly class VideoDownloadService
                     $itemDownloadLog = new Log();
                     $itemDownloadLog
                         ->setType('success')
-                        ->setMessage(sprintf('File "%s" downloaded successfully.', $filename))
+                        ->setMessage(\sprintf('File "%s" downloaded successfully.', $filename))
                         ->setSize((float) $size)
                     ;
 
                     $this->entityManager->persist($itemDownloadLog);
 
-                    $this->logger->info(sprintf('File "%s" downloaded successfully.', $filename));
+                    $this->logger->info(\sprintf('File "%s" downloaded successfully.', $filename));
                 }
             }
         }
