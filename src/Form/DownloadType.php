@@ -29,14 +29,19 @@ final class DownloadType extends AbstractType
                         'requireTld' => true,
                     ]),
                 ],
+                'label' => 'Link:',
+                'attr'  => [
+                    'placeholder' => 'https://youtube.com/some-example-video',
+                ],
             ])
             ->add('quality', ChoiceType::class, [
                 'choices' => [
-                    'BEST - 1080p (best video + best audio)'        => 'best',
-                    'MODERATE - 720p (moderate video + best audio)' => 'moderate',
-                    'POOR - 380p (poor video + best audio)'         => 'poor',
-                    'AUDIO - mp3 (only audio will be downloaded)'   => 'audio',
+                    'BEST QUALITY'     => 'best',
+                    'MODERATE QUALITY' => 'moderate',
+                    'POOR QUALITY'     => 'poor',
+                    'AUDIO ONLY'       => 'audio',
                 ],
+                'label'       => 'Please choose quality:',
                 'mapped'      => false,
                 'required'    => true,
                 'constraints' => [
