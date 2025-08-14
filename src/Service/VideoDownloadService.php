@@ -19,7 +19,8 @@ final readonly class VideoDownloadService
     public const POOR_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=320][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
     public const DRAFT_VIDEO_DOWNLOAD_FORMAT    = 'bestvideo[height<=240][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
     public const NO_VIDEO_DOWNLOAD_FORMAT       = 'bestaudio/best';
-    public const OUTPUT_FILE_FORMAT             = '%(title)s.%(ext)s';
+    public const OUTPUT_FILE_FORMAT_VIDEO       = '%(title)s-%(height)sp.%(ext)s';
+    public const OUTPUT_FILE_FORMAT_AUDIO       = '%(title)s.%(ext)s';
     public const MERGE_OUTPUT_FORMAT_VIDEO      = 'mp4';
     public const FORMAT_AUDIO                   = 'mp3';
 
@@ -71,7 +72,7 @@ final readonly class VideoDownloadService
                     ->url($videoUrl)
                     ->format($downloadFormat)
                     ->mergeOutputFormat(self::MERGE_OUTPUT_FORMAT_VIDEO)
-                    ->output(\sprintf('%s --- %s', ucfirst($format), \trim(self::OUTPUT_FILE_FORMAT)))
+                    ->output(self::OUTPUT_FILE_FORMAT_VIDEO)
             );
         } else {
             $collection = $yt->download(
@@ -80,7 +81,7 @@ final readonly class VideoDownloadService
                     ->url($videoUrl)
                     ->extractAudio(true)
                     ->audioFormat(self::FORMAT_AUDIO)
-                    ->output(\sprintf('Audio --- %s', values: \trim(self::OUTPUT_FILE_FORMAT)))
+                    ->output(self::OUTPUT_FILE_FORMAT_AUDIO)
             );
         }
 
