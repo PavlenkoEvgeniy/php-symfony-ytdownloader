@@ -14,9 +14,9 @@ use YoutubeDl\YoutubeDl;
 
 final readonly class VideoDownloadService
 {
-    public const BEST_VIDEO_DOWNLOAD_FORMAT     = 'best[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
-    public const MODERATE_VIDEO_DOWNLOAD_FORMAT = 'best[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
-    public const POOR_VIDEO_DOWNLOAD_FORMAT     = 'best[height<=320][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
+    public const BEST_VIDEO_DOWNLOAD_FORMAT     = 'best[height<=1080][ext=mp4]+bestaudio[ext=m4a]';
+    public const MODERATE_VIDEO_DOWNLOAD_FORMAT = 'best[height<=720][ext=mp4]+bestaudio[ext=m4a]';
+    public const POOR_VIDEO_DOWNLOAD_FORMAT     = 'best[height<=320][ext=mp4]+bestaudio[ext=m4a]';
     public const NO_VIDEO_DOWNLOAD_FORMAT       = 'bestaudio/best';
     public const OUTPUT_FILE_FORMAT_VIDEO       = '%(title)s-%(height)sp.%(ext)s';
     public const OUTPUT_FILE_FORMAT_AUDIO       = '%(title)s.%(ext)s';
