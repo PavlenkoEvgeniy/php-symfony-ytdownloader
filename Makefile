@@ -22,6 +22,7 @@ help:
 	@echo "18. cache-clear ........................................... Clear symfony cache."
 	@echo "19. cache-purge ........................................ Delete cache directory."
 	@echo "20. lint ............ Fix project by php-cs-fixer and after that check by psalm."
+	@echo "21. yt-dlp-update ....................................... Update yt-dlp package."
 
 init: db-remove docker-compose-up composer-install composer-update db-setup supervisor-start cache-clear
 
@@ -84,3 +85,6 @@ cache-purge:
 	rm -rf ./var/cache/
 
 lint: cs-fix psalm
+
+yt-dlp-update:
+	docker exec ytdownloader-php-fpm pip install --upgrade yt-dlp --break-system-packages
