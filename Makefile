@@ -24,7 +24,7 @@ help:
 	@echo "20. lint ............ Fix project by php-cs-fixer and after that check by psalm."
 	@echo "21. yt-dlp-update ....................................... Update yt-dlp package."
 
-init: db-remove docker-compose-up composer-install composer-update db-setup supervisor-start cache-clear
+init: db-purge docker-compose-up composer-install composer-update db-setup supervisor-start cache-clear
 
 restart: docker-compose-down docker-compose-up supervisor-start cache-clear 
 

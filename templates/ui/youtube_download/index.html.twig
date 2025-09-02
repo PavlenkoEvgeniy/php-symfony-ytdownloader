@@ -14,6 +14,9 @@
         {% if is_granted('ROLE_ADMIN') %}
             <a class="btn btn-outline-info" href="{{ path('admin') }}">Admin</a>
         {% endif %}
+        {% if is_granted('ROLE_USER') %}
+            <a class="btn btn-outline-secondary" href="{{ path('ui_profile_index') }}">Profile</a>
+        {% endif %}
         <a class="btn btn-outline-warning" href="{{ path('app_logout') }}">Logout</a>
     </div>
     <h1 class="text-center mb-2">Welcome to youtube downloader</h1><br>
