@@ -45,41 +45,46 @@ This program is for personal use only. Downloading copyrighted material without 
    sudo make restart
    ```
 
-3. **Setup database (if needed)**:  
+3. **Stop application**
+   ```bash
+   sudo make stop
+   ```
+
+4. **Setup database (if needed)**:  
    ```bash
    sudo make db-setup
    ```
 
-4. **Start queue worker (if needed)**:  
+5. **Start queue worker (if needed)**:  
    ```bash
    sudo make supervisor-start
    ```
 
-5. **Create admin by console command**:  
+6. **Create admin by console command**:  
    ```bash
    sudo make docker-php
    php bin/console user:add <username> [password]
    ```
 
-6. **Run tests**:  
+7. **Run tests**:  
    ```bash
    sudo make test
    ```
 
-7. **List of all available 'make' commands**
+8. **List of all available 'make' commands**
    ```bash
    sudo make help
    ```
 
-8. **Health check url**:  
+9. **Health check url**:  
    ```
    GET http://host.tld/health
    ```
-9.  **Admin dashboard**:  
+10.  **Admin dashboard**:  
    ```
    GET http://host.tld/admin
    ```
-10. **Telegram bot**:  
+11. **Telegram bot**:  
    - add enable true for telegram bot in .env.local file
    - add your bot token to .env.local file
    - add telegram host url to .env.local file
