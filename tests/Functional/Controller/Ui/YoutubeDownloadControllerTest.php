@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Funtional\Controller\Ui;
+namespace App\Tests\Functional\Controller\Ui;
 
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -18,7 +18,7 @@ final class YoutubeDownloadControllerTest extends WebTestCase
     {
         $this->client = static::createClient();
 
-        $this->userRepository   = $this->getContainer()->get(UserRepository::class);
+        $this->userRepository = $this->getContainer()->get(UserRepository::class);
     }
 
     public function testIndexPageIsOpeningOk(): void

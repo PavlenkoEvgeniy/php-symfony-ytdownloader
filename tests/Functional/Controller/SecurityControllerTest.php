@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Funtional\Controller;
+namespace App\Tests\Functional\Controller;
 
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
