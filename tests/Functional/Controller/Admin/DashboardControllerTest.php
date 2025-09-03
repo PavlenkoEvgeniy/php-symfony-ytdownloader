@@ -18,7 +18,7 @@ final class DashboardControllerTest extends WebTestCase
     {
         $this->client = static::createClient();
 
-        $this->userRepository   = $this->getContainer()->get(UserRepository::class);
+        $this->userRepository = $this->getContainer()->get(UserRepository::class);
     }
 
     public function testIndexPageIsOpeningForAdminOk(): void

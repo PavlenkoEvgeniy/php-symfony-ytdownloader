@@ -18,7 +18,7 @@ final class YoutubeDownloadControllerTest extends WebTestCase
     {
         $this->client = static::createClient();
 
-        $this->userRepository   = $this->getContainer()->get(UserRepository::class);
+        $this->userRepository = $this->getContainer()->get(UserRepository::class);
     }
 
     public function testIndexPageIsOpeningOk(): void
