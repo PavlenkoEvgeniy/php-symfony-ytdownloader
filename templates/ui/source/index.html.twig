@@ -32,8 +32,8 @@
                 <select id="sort_by_select"
                         onchange="location.search.includes('order') ? location.search = location.search.replace(/order=\w+/, this.value) : location.search += '&' + this.value"
                         class="form-select form-select-sm">
-                    <option {{ (order=='asc' ) ? 'selected' : '' }} value="order=asc">Date &#8593;</option>
-                    <option {{ (order=='desc' ) ? 'selected' : '' }} value="order=desc">Date &#8595;</option>
+                    <option {{ (order=='asc' ) ? 'selected' : '' }} value="order=asc">Date &#8595;</option>
+                    <option {{ (order=='desc' ) ? 'selected' : '' }} value="order=desc">Date &#8593;</option>
                 </select>
             </div>
         </div>
