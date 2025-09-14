@@ -27,7 +27,7 @@ help:
 
 init: db-purge docker-compose-up composer-install composer-update db-setup supervisor-start cache-clear
 
-restart: docker-compose-down docker-compose-up supervisor-start cache-clear
+restart: docker-compose-down docker-compose-up supervisor-start cache-clear cache-purge
 
 stop: docker-compose-down
 
