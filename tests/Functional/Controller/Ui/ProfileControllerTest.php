@@ -28,6 +28,6 @@ final class ProfileControllerTest extends WebTestCase
         $this->client->request('GET', '/ui/profile');
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('h1', 'Profile');
-        $this->assertSelectorTextContains('h3', 'Here you can change your password:');
+        $this->assertSelectorTextContains('h3', 'Change password:');
     }
 }
