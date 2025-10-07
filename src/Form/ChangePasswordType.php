@@ -17,7 +17,10 @@ class ChangePasswordType extends AbstractType
     {
         $builder
             ->add('currentPassword', PasswordType::class, [
-                'label'  => 'Current Password',
+                'label'  => '1. Current Password:',
+                'attr'   => [
+                    'placeholder' => 'Enter your current password',
+                ],
                 'mapped' => false,
             ])
             ->add('newPassword', RepeatedType::class, [
@@ -25,8 +28,18 @@ class ChangePasswordType extends AbstractType
                 'invalid_message' => 'The password fields must match.',
                 'options'         => ['attr' => ['class' => 'password-field']],
                 'required'        => true,
-                'first_options'   => ['label' => 'New Password'],
-                'second_options'  => ['label' => 'Repeat New Password'],
+                'first_options'   => [
+                    'label' => '2. New Password:',
+                    'attr'  => [
+                        'placeholder' => 'Enter your new password',
+                    ],
+                ],
+                'second_options'  => [
+                    'label' => '3. Repeat New Password:',
+                    'attr'  => [
+                        'placeholder' => 'Repeat your new password',
+                    ],
+                ],
                 'mapped'          => false,
             ]);
     }

@@ -12,13 +12,13 @@
     {% endfor %}
 
     <div class="d-flex justify-content-between my-4">
-        <a class="btn btn-outline-success" href="{{ path('ui_youtube_download_index') }}">Back</a>
+        <a class="btn btn-outline-success" href="{{ path('ui_youtube_download_index') }}">Downloads</a>
         <a class="btn btn-outline-warning" href="{{ path('app_logout') }}">Logout</a>
     </div>
 
-    <h1 class="mt-4">Profile</h1>
-    <h2 class="mt-4">{{ app.user.email }}</h2>
-    <h3>Here you can change your password:</h3>
+    <h1 class="mt-4">Profile of:</h1>
+    <h4 class="mt-2">{{ app.user.email }}</h4>
+    <h3 class="mt-4">Change password:</h3>
 
     {{ form_start(form) }}
     {{ form_row(form.currentPassword) }}
