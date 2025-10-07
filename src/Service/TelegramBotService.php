@@ -9,10 +9,10 @@ use BotMan\BotMan\BotManFactory;
 use BotMan\BotMan\Drivers\DriverManager;
 use BotMan\Drivers\Telegram\TelegramDriver;
 
-final class TelegramBotService
+final readonly class TelegramBotService
 {
     public function __construct(
-        private readonly string $telegramBotToken,
+        private string $telegramBotToken,
     ) {
     }
 

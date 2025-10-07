@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Entity\Log;
 use App\Entity\Source;
 use App\Repository\SourceRepository;
+use BotMan\BotMan\Exceptions\Base\BotManException;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use YoutubeDl\Options;
@@ -24,21 +25,23 @@ final readonly class VideoDownloadService
     public const FORMAT_AUDIO                   = 'mp3';
 
     public function __construct(
-        private readonly string $downloadsDir,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly SourceRepository $sourceRepository,
-        private readonly LoggerInterface $logger,
-        private readonly TelegramBotService $telegramBotService,
+        private string $downloadsDir,
+        private EntityManagerInterface $entityManager,
+        private SourceRepository $sourceRepository,
+        private LoggerInterface $logger,
+        private TelegramBotService $telegramBotService,
     ) {
     }
 
+    /**
+     * @throws BotManException
+     */
     public function process(string $videoUrl, string $format, ?string $telegramUserId = null): void
     {
         $log = new Log();
         $log
             ->setType('in progress')
-            ->setMessage('Started downloading.')
-        ;
+            ->setMessage('Started downloading.');
 
         $this->entityManager->persist($log);
         $this->entityManager->flush();
@@ -91,14 +94,13 @@ final readonly class VideoDownloadService
                 $errorLog = new Log();
                 $errorLog
                     ->setType('error')
-                    ->setMessage(\sprintf('Error during downloading: %s', $video->getError()))
-                ;
+                    ->setMessage(\sprintf('Error during downloading: %s', $video->getError()));
 
                 $this->entityManager->persist($errorLog);
 
                 if ($telegramUserId) {
                     $this->telegramBotService->getBot()->say(
-                        \sprintf('Error during downloading: please try again with another link.'),
+                        'Error during downloading: please try again with another link.',
                         $telegramUserId,
                     );
                     exit;
@@ -117,8 +119,7 @@ final readonly class VideoDownloadService
                     $source
                         ->setFilename($filename)
                         ->setFilepath($path)
-                        ->setSize((float) $size)
-                    ;
+                        ->setSize((float) $size);
 
                     $this->entityManager->persist($source);
 
@@ -126,8 +127,7 @@ final readonly class VideoDownloadService
                     $itemDownloadLog
                         ->setType('success')
                         ->setMessage(\sprintf('File "%s" downloaded successfully.', $filename))
-                        ->setSize((float) $size)
-                    ;
+                        ->setSize((float) $size);
 
                     $this->entityManager->persist($itemDownloadLog);
 

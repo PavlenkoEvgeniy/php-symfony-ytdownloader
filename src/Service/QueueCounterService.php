@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace App\Service;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception;
 
-final class QueueCounterService
+final readonly class QueueCounterService
 {
-    public function __construct(private readonly Connection $connection)
-    {
+    public function __construct(
+        private Connection $connection,
+    ) {
     }
 
+    /**
+     * @throws Exception
+     */
     public function getQueueCount(string $queueName = 'default'): int
     {
         $query = '
