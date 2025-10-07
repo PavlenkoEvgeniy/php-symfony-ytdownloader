@@ -43,11 +43,6 @@ RUN pip install --upgrade yt-dlp --break-system-packages
 # Install supervisor
 RUN apt-get update && \
     apt-get install -y -o Dpkg::Options::="--force-confold" supervisor
-#RUN apt-get update && \
-#    apt-get install -f && \
-#    apt-get clean
-#RUN rm -f /etc/init.d/supervisor*
-#RUN apt-get install supervisor
 
 # Create download directory
 RUN mkdir -p /application/var/downloads/
