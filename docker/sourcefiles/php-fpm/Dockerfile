@@ -44,6 +44,7 @@ RUN pip install --upgrade yt-dlp --break-system-packages
 RUN apt-get update && \
     apt-get install -f && \
     apt-get clean
+RUN rm -f /etc/init.d/supervisor*
 RUN apt-get install supervisor
 
 # Create download directory
