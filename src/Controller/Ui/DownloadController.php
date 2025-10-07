@@ -17,7 +17,7 @@ use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
-final class YoutubeDownloadController extends AbstractController
+final class DownloadController extends AbstractController
 {
     /**
      * @throws ExceptionInterface
