@@ -9,7 +9,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
-final class YoutubeDownloadControllerTest extends WebTestCase
+final class DownloadControllerTest extends WebTestCase
 {
     private UserRepository $userRepository;
     private KernelBrowser $client;
