@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Controller;
+namespace App\Controller\Telegram;
 
 use App\Message\YoutubeDownloadMessage;
 use App\Service\TelegramBotService;
@@ -33,7 +33,7 @@ final class TelegramController extends AbstractController
 
         $bot = $telegramBotService->getBot();
         $bot->hears('/start', function (BotMan $bot) {
-            $bot->reply('Please send me a link to download');
+            $bot->reply('Please send me a link for download');
         });
 
         $bot->hears('(https://.*)', function (BotMan $bot, string $url) {
@@ -41,7 +41,7 @@ final class TelegramController extends AbstractController
             $userId  = (string) $bot->getUser()->getId();
             $this->bus->dispatch(new YoutubeDownloadMessage($url, $quality, $userId));
 
-            $bot->reply('Downloading started. Please wait...');
+            $bot->reply('Downloading is in progress. Please wait...');
         });
 
         $bot->listen();
