@@ -14,7 +14,7 @@
             {{ message }}
         </div>
     {% endfor %}
-    <div class="d-flex justify-content-between mb-2">
+    <div class="d-flex justify-content-between mt-4 mb-2">
         <a class="btn btn-outline-success" href="{{ path('ui_youtube_download_index') }}">+ Add new download</a>
         {% if sources is not empty %}
             {{ include('ui/source/_delete_all_form.html.twig') }}
