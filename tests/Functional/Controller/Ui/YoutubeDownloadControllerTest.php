@@ -61,7 +61,7 @@ final class YoutubeDownloadControllerTest extends WebTestCase
 
         $this->client->followRedirect();
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorTextContains('h1', 'Downloads');
+        $this->assertSelectorTextContains('a', '+ Add new download');
     }
 
     public function testDownloadFromYoutubeWithNotValidLinkFails(): void
