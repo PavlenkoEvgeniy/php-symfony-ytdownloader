@@ -39,7 +39,11 @@ RUN docker-php-ext-configure pgsql --with-pgsql=/usr/local/pgsql \
 RUN apt-get install -y pip
 RUN apt-get install -y ffmpeg
 RUN pip install --upgrade yt-dlp --break-system-packages
-RUN apt install -y mc
+
+# Install supervisor
+RUN apt-get update && \
+    apt-get install -f && \
+    apt-get clean
 RUN apt-get install supervisor
 
 # Create download directory
