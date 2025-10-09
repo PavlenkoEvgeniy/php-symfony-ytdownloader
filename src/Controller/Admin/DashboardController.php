@@ -50,13 +50,13 @@ final class DashboardController extends AbstractDashboardController
         $maxSize = $this->logRepository->getMaxSize();
 
         return $this->render('admin/index.html.twig', [
-            'totalUsers'          => $totalUsers,
-            'totalDownloads'      => $totalDownloads,
-            'totalPending'        => $totalPending,
-            'totalInProgress'     => $totalInProgress,
-            'totalErrors'         => $totalErrors,
-            'totalSize'           => Helper::formatBytes($totalSize),
-            'maxSize'             => Helper::formatBytes($maxSize),
+            'totalUsers'      => $totalUsers,
+            'totalDownloads'  => $totalDownloads,
+            'totalPending'    => $totalPending,
+            'totalInProgress' => $totalInProgress,
+            'totalErrors'     => $totalErrors,
+            'totalSize'       => Helper::formatBytes($totalSize),
+            'maxSize'         => Helper::formatBytes($maxSize),
         ]);
     }
 

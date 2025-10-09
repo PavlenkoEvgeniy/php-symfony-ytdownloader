@@ -17,8 +17,8 @@ class ChangePasswordType extends AbstractType
     {
         $builder
             ->add('currentPassword', PasswordType::class, [
-                'label'  => '1. Current Password:',
-                'attr'   => [
+                'label' => '1. Current Password:',
+                'attr'  => [
                     'placeholder' => 'Enter your current password',
                 ],
                 'mapped' => false,
@@ -34,13 +34,13 @@ class ChangePasswordType extends AbstractType
                         'placeholder' => 'Enter your new password',
                     ],
                 ],
-                'second_options'  => [
+                'second_options' => [
                     'label' => '3. Repeat New Password:',
                     'attr'  => [
                         'placeholder' => 'Repeat your new password',
                     ],
                 ],
-                'mapped'          => false,
+                'mapped' => false,
             ]);
     }
 
