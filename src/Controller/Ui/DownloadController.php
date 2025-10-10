@@ -6,7 +6,7 @@ namespace App\Controller\Ui;
 
 use App\Form\DownloadType;
 use App\Helper\Helper;
-use App\Message\YoutubeDownloadMessage;
+use App\Message\DownloadMessage;
 use App\Service\QueueCounterService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -38,7 +38,7 @@ final class DownloadController extends AbstractController
 
             $session->set('lastSelectedQuality', $quality);
 
-            $bus->dispatch(new YoutubeDownloadMessage($videoUrl, $quality));
+            $bus->dispatch(new DownloadMessage($videoUrl, $quality));
 
             $this->addFlash('success', 'Video was added to queue.');
 

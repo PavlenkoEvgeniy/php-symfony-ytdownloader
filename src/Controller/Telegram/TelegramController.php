@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Telegram;
 
-use App\Message\YoutubeDownloadMessage;
+use App\Message\DownloadMessage;
 use App\Service\TelegramBotService;
 use BotMan\BotMan\BotMan;
 use Psr\Log\LoggerInterface;
@@ -39,7 +39,7 @@ final class TelegramController extends AbstractController
         $bot->hears('(https://.*)', function (BotMan $bot, string $url) {
             $quality = 'best'; // Default quality
             $userId  = (string) $bot->getUser()->getId();
-            $this->bus->dispatch(new YoutubeDownloadMessage($url, $quality, $userId));
+            $this->bus->dispatch(new DownloadMessage($url, $quality, $userId));
 
             $bot->reply('Downloading is in progress. Please wait...');
         });

@@ -7,7 +7,7 @@ namespace App\Message;
 use Symfony\Component\Messenger\Attribute\AsMessage;
 
 #[AsMessage]
-final class YoutubeDownloadMessage
+final class DownloadMessage
 {
     public function __construct(
         private string $url,
