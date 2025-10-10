@@ -83,20 +83,20 @@ final class SourceController extends AbstractController
     #[Route('/ui/source/{id}/edit', name: 'ui_source_edit', methods: [Request::METHOD_GET, Request::METHOD_POST])]
     public function edit(Request $request, Source $source, EntityManagerInterface $entityManager): Response
     {
-        $oldFilename = sprintf('%s/%s', $this->downloadsDir, $source->getFilename());
+        $oldFilename = \sprintf('%s/%s', $this->downloadsDir, $source->getFilename());
 
         $form = $this->createForm(SourceType::class, $source);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $newFileName = sprintf('%s/%s', $this->downloadsDir, $form->get('filename')->getData());
+            $newFileName = \sprintf('%s/%s', $this->downloadsDir, $form->get('filename')->getData());
 
-            if (!file_exists($oldFilename)) {
+            if (!\file_exists($oldFilename)) {
                 throw new NotFoundHttpException('File not found');
             }
 
             if ($newFileName !== $oldFilename) {
-                rename($oldFilename, $newFileName);
+                \rename($oldFilename, $newFileName);
             }
 
             $entityManager->flush();
@@ -116,11 +116,11 @@ final class SourceController extends AbstractController
         if ($this->isCsrfTokenValid('delete' . $source->getId(), $request->getPayload()->getString('_token'))) {
             $filePath = $source->getFilepath() . '/' . $source->getFilename();
 
-            if (!file_exists($filePath)) {
+            if (!\file_exists($filePath)) {
                 throw new NotFoundHttpException('File not found');
             }
 
-            if (unlink($filePath)) {
+            if (\unlink($filePath)) {
                 $this->addFlash('success', 'File was deleted');
             } else {
                 $this->addFlash('error', 'Cannot delete file');
@@ -147,11 +147,11 @@ final class SourceController extends AbstractController
             foreach ($sources as $source) {
                 $filePath = $source->getFilepath() . '/' . $source->getFilename();
 
-                if (!file_exists($filePath)) {
+                if (!\file_exists($filePath)) {
                     throw new NotFoundHttpException('File not found');
                 }
 
-                if (unlink($filePath)) {
+                if (\unlink($filePath)) {
                     $resultMessage['success'] = 'Files were deleted';
                 } else {
                     $resultMessage['error'] = 'Cannot delete files';
@@ -162,9 +162,9 @@ final class SourceController extends AbstractController
             $entityManager->flush();
         }
 
-        if (array_key_exists('success', $resultMessage)) {
+        if (\array_key_exists('success', $resultMessage)) {
             $this->addFlash('success', $resultMessage['success']);
-        } elseif (array_key_exists('error', $resultMessage)) {
+        } elseif (\array_key_exists('error', $resultMessage)) {
             $this->addFlash('error', $resultMessage['error']);
         }
 
@@ -176,7 +176,7 @@ final class SourceController extends AbstractController
     {
         $filePath = $source->getFilepath() . '/' . $source->getFilename();
 
-        if (!file_exists($filePath)) {
+        if (!\file_exists($filePath)) {
             throw $this->createNotFoundException('File was not found');
         }
 

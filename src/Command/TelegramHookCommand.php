@@ -28,9 +28,9 @@ final class TelegramHookCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        $route = sprintf('%s%s', $this->telegramHostUrl, '/telegram/hook');
+        $route = \sprintf('%s%s', $this->telegramHostUrl, '/telegram/hook');
 
-        $url = sprintf('https://api.telegram.org/bot%s/setWebhook', $this->telegramBotToken);
+        $url = \sprintf('https://api.telegram.org/bot%s/setWebhook', $this->telegramBotToken);
 
         $context = \stream_context_create([
             'http' => [
@@ -44,7 +44,7 @@ final class TelegramHookCommand extends Command
 
         $result = \file_get_contents($url, false, $context);
 
-        $io->info(sprintf('Reply from telegram: %s', $result));
+        $io->info(\sprintf('Reply from telegram: %s', $result));
 
         return Command::SUCCESS;
     }

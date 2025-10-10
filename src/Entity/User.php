@@ -92,7 +92,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // guarantee every user at least has ROLE_USER
         $roles[] = 'ROLE_USER';
 
-        return array_unique($roles);
+        return \array_unique($roles);
     }
 
     /**
@@ -133,7 +133,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public static function generatePassword(int $length = self::DEFAULT_PASSWORD_LENGTH): string
     {
-        return substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, $length);
+        return \substr(\str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, $length);
     }
 
     public function getIsEnabled(): ?bool
@@ -178,10 +178,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             return null;
         }
 
-        if (false !== strpos($this->avatar, '/')) {
+        if (false !== \strpos($this->avatar, '/')) {
             return $this->avatar;
         }
 
-        return sprintf('/uploads/avatars/%s', $this->avatar);
+        return \sprintf('/uploads/avatars/%s', $this->avatar);
     }
 }

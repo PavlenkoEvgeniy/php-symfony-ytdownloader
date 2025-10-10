@@ -82,12 +82,12 @@ final class UserAddCommand extends Command
             $this->entityManager->persist($user);
             $this->entityManager->flush();
         } catch (\Exception $exception) {
-            $io->error(sprintf('Error: %s', $exception->getMessage()));
+            $io->error(\sprintf('Error: %s', $exception->getMessage()));
 
             return Command::FAILURE;
         }
 
-        $io->success(sprintf('User %s:%s created successfully', $username, $plainPassword));
+        $io->success(\sprintf('User %s:%s created successfully', $username, $plainPassword));
 
         return Command::SUCCESS;
     }
