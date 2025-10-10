@@ -19,6 +19,10 @@ return (new Config())
             ],
         ],
         'phpdoc_to_comment' => false,
+        'native_function_invocation' => [
+            'include' => ['@internal'],
+            'scope' => 'all',
+        ],
     ])
     ->setFinder(
         (new Finder())
