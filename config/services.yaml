@@ -71,3 +71,15 @@ services:
         class: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
         arguments:
             - '@redis.session'
+
+    # Messenger transport
+    Symfony\Component\Messenger\Transport\TransportInterface: '@messenger.transport.async'
+
+    # Rabbit queue statistics
+    App\Service\RabbitMQApiQueueService:
+        arguments:
+            $rabbitmqHost: '%env(RABBIT_HOST)%'
+            $rabbitmqPort: '%env(RABBIT_MANAGEMENT_PORT)%'
+            $rabbitmqUser: '%env(RABBIT_USER)%'
+            $rabbitmqPassword: '%env(RABBIT_PASSWORD)%'
+            $rabbitmqVhost: '%env(RABBIT_VHOST)%'

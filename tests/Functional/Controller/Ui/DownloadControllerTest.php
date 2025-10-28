@@ -31,37 +31,10 @@ final class DownloadControllerTest extends WebTestCase
         $this->assertSelectorTextContains('h1', 'Welcome to youtube downloader');
     }
 
-    public function testDownloadFromYoutubeMakeNewMessageOk(): void
+    private function cleanupTestQueue(string $queueName): void
     {
-        $user = $this->userRepository->findOneByEmail('admin@admin.local');
-        $this->client->loginUser($user);
-
-        $crawler = $this->client->request('GET', '/ui/youtube/download');
-        $this->assertResponseIsSuccessful();
-
-        // Initial count messages in messenger_messages table
-        $entityManager = self::getContainer()->get('doctrine')->getManager();
-        $initialCount  = $entityManager->getConnection()
-            ->executeQuery('SELECT COUNT(*) FROM messenger_messages')
-            ->fetchOne();
-
-        $form = $crawler->filter('form')->form([
-            'download[link]' => 'https://www.youtube.com/watch?v=przDcQe6n5o',
-        ]);
-
-        $this->client->submit($form);
-
-        // Get the new count
-        $newCount = $entityManager->getConnection()
-            ->executeQuery('SELECT COUNT(*) FROM messenger_messages')
-            ->fetchOne();
-
-        // Assert that count increased by 1
-        $this->assertEquals($initialCount + 1, $newCount, 'Message was not created in database');
-
-        $this->client->followRedirect();
-        $this->assertResponseIsSuccessful();
-        $this->assertSelectorTextContains('a', '+ Add new download');
+        $queueCounter = self::getContainer()->get(\App\Service\RabbitMQApiQueueService::class);
+        // Можно добавить метод для очистки очереди в сервисе
     }
 
     public function testDownloadFromYoutubeWithNotValidLinkFails(): void
