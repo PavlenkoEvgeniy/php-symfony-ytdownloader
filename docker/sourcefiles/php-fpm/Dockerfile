@@ -1,4 +1,4 @@
-FROM php:8.3-fpm
+FROM php:8.4-fpm
 
 WORKDIR "/application"
 
@@ -34,6 +34,7 @@ RUN apt-get update && apt-get install -y \
 # Add extensions
 RUN docker-php-ext-configure pgsql --with-pgsql=/usr/local/pgsql \
     && docker-php-ext-install pdo_pgsql pgsql zip mbstring exif pcntl bcmath gd intl
+RUN pecl install redis && docker-php-ext-enable redis
 
 # Install youtube-dl
 RUN apt-get install -y pip
