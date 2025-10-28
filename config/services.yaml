@@ -57,7 +57,7 @@ services:
     OskarStark\Twig\ReadableFilesizeExtension:
         tags: [ 'twig.extension' ]
 
-    # Redis для сессий (база 1)
+    # Redis for sessions (database 1)
     redis.session:
         class: Redis
         factory: ['Symfony\Component\Cache\Adapter\RedisAdapter', 'createConnection']
@@ -66,7 +66,7 @@ services:
         calls:
             - select: [1]
 
-    # Обработчик сессий Redis
+    # Session handler for Redis
     session.handler.redis:
         class: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
         arguments:
