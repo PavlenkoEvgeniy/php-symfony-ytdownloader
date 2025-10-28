@@ -57,7 +57,7 @@ services:
     OskarStark\Twig\ReadableFilesizeExtension:
         tags: [ 'twig.extension' ]
 
-    # Redis для сессий (база 1)
+    # Redis for sessions (database 1)
     redis.session:
         class: Redis
         factory: ['Symfony\Component\Cache\Adapter\RedisAdapter', 'createConnection']
@@ -66,8 +66,20 @@ services:
         calls:
             - select: [1]
 
-    # Обработчик сессий Redis
+    # Session handler for Redis
     session.handler.redis:
         class: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
         arguments:
             - '@redis.session'
+
+    # Messenger transport
+    Symfony\Component\Messenger\Transport\TransportInterface: '@messenger.transport.async'
+
+    # Rabbit queue statistics
+    App\Service\RabbitMQApiQueueService:
+        arguments:
+            $rabbitmqHost: '%env(RABBIT_HOST)%'
+            $rabbitmqPort: '%env(RABBIT_MANAGEMENT_PORT)%'
+            $rabbitmqUser: '%env(RABBIT_USER)%'
+            $rabbitmqPassword: '%env(RABBIT_PASSWORD)%'
+            $rabbitmqVhost: '%env(RABBIT_VHOST)%'

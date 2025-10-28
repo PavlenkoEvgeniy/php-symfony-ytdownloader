@@ -6,9 +6,9 @@ namespace App\Controller\Ui;
 
 use App\Entity\Source;
 use App\Form\SourceType;
-use App\Repository\LogRepository;
 use App\Repository\SourceRepository;
-use App\Service\QueueCounterService;
+use App\Service\MessengerQueueCounterService;
+use App\Service\RabbitMQApiQueueService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -25,8 +25,8 @@ final class SourceController extends AbstractController
 {
     public function __construct(
         private readonly string $downloadsDir,
-        private readonly LogRepository $logRepository,
-        private readonly QueueCounterService $queueCounter,
+        private readonly MessengerQueueCounterService $messengerQueueCounter,
+        private readonly RabbitMQApiQueueService $rabbitMQApiQueueService,
     ) {
     }
 
@@ -40,9 +40,9 @@ final class SourceController extends AbstractController
             $order = $session->get('lastSelectedOrder');
         }
 
-        $totalPending = $this->queueCounter->getQueueCount();
+        $totalPending = $this->messengerQueueCounter->getQueueCount();
 
-        $totalInProgress = $this->logRepository->getTotalInProgressCount();
+        $totalInProgress = $this->rabbitMQApiQueueService->getProcessingMessagesCount();
 
         return $this->render('ui/source/index.html.twig', [
             'sources'         => $sourceRepository->findBy([], ['createdAt' => $order]),

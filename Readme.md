@@ -9,6 +9,7 @@
 - Docker 🐳
 - PostgreSQL 🐘
 - Redis 🚀
+- RabbitMQ 🐇
 - yt-dlp ⚡
 - norkunas/youtube-dl-php 📦
 - botman/botman 🤖
@@ -34,7 +35,8 @@ This program is for personal use only. Downloading copyrighted material without 
    > 📝 **Note**: Create `.env.local` with DB config (host name must be `ytdownloader-pgsql`)
    ```yaml
    DATABASE_URL="postgresql://example_user_name:example_passwd12345@'ytdownloader-pgsql':5432/ytdownloader?serverVersion=16&charset=utf8"
-   REDIS="redis://:123456@ytdownloader-redis:6379"
+   REDIS="redis://:example_passwd12345@ytdownloader-redis:6379"
+   RABBITMQ_DSN="amqp://user:password@rabbitmq:5672/%2f"
    ```
 
 1. **Initialize new application**:

@@ -34,7 +34,18 @@ RUN apt-get update && apt-get install -y \
 # Add extensions
 RUN docker-php-ext-configure pgsql --with-pgsql=/usr/local/pgsql \
     && docker-php-ext-install pdo_pgsql pgsql zip mbstring exif pcntl bcmath gd intl
+
+# Install redis
 RUN pecl install redis && docker-php-ext-enable redis
+
+# Install rebbit
+RUN apt-get install -y \
+    librabbitmq-dev \
+    libssh-dev \
+    pkg-config \
+    && docker-php-ext-install sockets \
+    && pecl install amqp \
+    && docker-php-ext-enable amqp
 
 # Install youtube-dl
 RUN apt-get install -y pip

@@ -7,6 +7,7 @@ namespace App\Controller\Ui;
 use App\Form\DownloadType;
 use App\Helper\Helper;
 use App\Message\DownloadMessage;
+use App\Service\MessengerQueueCounterService;
 use App\Service\QueueCounterService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -27,6 +28,7 @@ final class DownloadController extends AbstractController
         Request $request,
         MessageBusInterface $bus,
         QueueCounterService $queueCounter,
+        MessengerQueueCounterService $messengerQueueCounter,
         SessionInterface $session,
     ): Response|RedirectResponse {
         $form = $this->createForm(DownloadType::class);
@@ -51,7 +53,7 @@ final class DownloadController extends AbstractController
             }
         }
 
-        $queueTaskCount = $queueCounter->getQueueCount();
+        $queueTaskCount = $messengerQueueCounter->getQueueCount();
 
         return $this->render('ui/youtube_download/index.html.twig', [
             'form'           => $form,

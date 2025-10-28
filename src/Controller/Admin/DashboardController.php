@@ -11,6 +11,8 @@ use App\Helper\Helper;
 use App\Repository\LogRepository;
 use App\Repository\UserRepository;
 use App\Service\QueueCounterService;
+use App\Service\RabbitMQApiQueueService;
+use Doctrine\DBAL\Exception;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -29,9 +31,13 @@ final class DashboardController extends AbstractDashboardController
         private readonly UserRepository $userRepository,
         private readonly LogRepository $logRepository,
         private readonly QueueCounterService $queueCounter,
+        private readonly RabbitMQApiQueueService $rabbitMQApiQueueService,
     ) {
     }
 
+    /**
+     * @throws Exception
+     */
     #[\Override]
     public function index(): Response
     {
@@ -41,7 +47,7 @@ final class DashboardController extends AbstractDashboardController
 
         $totalPending = $this->queueCounter->getQueueCount();
 
-        $totalInProgress = $this->logRepository->getTotalInProgressCount();
+        $totalInProgress = $this->rabbitMQApiQueueService->getProcessingMessagesCount();
 
         $totalErrors = $this->logRepository->getTotalErrorCount();
 
