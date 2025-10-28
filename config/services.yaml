@@ -56,3 +56,18 @@ services:
     # File size human view extension
     OskarStark\Twig\ReadableFilesizeExtension:
         tags: [ 'twig.extension' ]
+
+    # Redis для сессий (база 1)
+    redis.session:
+        class: Redis
+        factory: ['Symfony\Component\Cache\Adapter\RedisAdapter', 'createConnection']
+        arguments:
+            - '%env(REDIS)%'
+        calls:
+            - select: [1]
+
+    # Обработчик сессий Redis
+    session.handler.redis:
+        class: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
+        arguments:
+            - '@redis.session'
