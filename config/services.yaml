@@ -55,4 +55,4 @@ services:
 
     # File size human view extension
     OskarStark\Twig\ReadableFilesizeExtension:
-        tags: ['twig.extension']
+        tags: [ 'twig.extension' ]
