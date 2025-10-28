@@ -21,6 +21,7 @@ services:
             - .env
         depends_on:
             - pgsql
+            - redis
         working_dir: /application
         environment:
             - PHP_WORKER_INSTALL_BCMATH=true
@@ -49,9 +50,24 @@ services:
         networks:
             - internal
 
+    redis:
+        image: redis:7-alpine
+        container_name: ${PROJECT_NAME}-redis
+        restart: always
+        command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+        volumes:
+            - redis-data:/data
+        ports:
+            - ${REDIS_PORT}:6379
+        networks:
+            - internal
+
 volumes:
     pg-data:
         driver: local
+    redis-data:
+        driver: local
+
 networks:
     internal:
         driver: bridge
