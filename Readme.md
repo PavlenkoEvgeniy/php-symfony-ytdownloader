@@ -105,15 +105,15 @@ This program is for personal use only. Downloading copyrighted material without 
 
 ## 📝 Todo Roadmap
 
-✅ ~~Background video downloads (queues)~~
-✅ ~~Download status notifications~~
-✅ ~~Playlist special characters fix~~
-✅ ~~Tests coverage~~
-✅ ~~Refactor to services~~
-✅ ~~Health check endpoint~~
-🔳 YouTube cache optimization (avoid bot detection)
-✅ ~~Download statistics counter~~
-🔳 REST API implementation
-✅ ~~Telegram bot integration~~
-✅ ~~Setup automation script~~
-✅ ~~Admin dashboard~~
+✅ ~~Background video downloads (queues)~~  
+✅ ~~Download status notifications~~  
+✅ ~~Playlist special characters fix~~  
+✅ ~~Tests coverage~~  
+✅ ~~Refactor to services~~  
+✅ ~~Health check endpoint~~  
+🔳 YouTube cache optimization (avoid bot detection)  
+✅ ~~Download statistics counter~~  
+🔳 REST API implementation  
+✅ ~~Telegram bot integration~~  
+✅ ~~Setup automation script~~  
+✅ ~~Admin dashboard~~  
