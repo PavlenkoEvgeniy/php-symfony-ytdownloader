@@ -1,0 +1,113 @@
+name: Deploy Symfony App
+
+on:
+    push:
+        branches: [ master ]
+    pull_request:
+        branches: [ master ]
+
+env:
+    PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    REDIS: ${{ secrets.REDIS }}
+    RABBIT_HOST: ${{ secrets.RABBIT_HOST }}
+    RABBIT_USER: ${{ secrets.RABBIT_USER }}
+    RABBIT_PASSWORD: ${{ secrets.RABBIT_PASSWORD }}
+    RABBIT_VHOST: ${{ secrets.RABBIT_VHOST }}
+    RABBIT_PORT: ${{ secrets.RABBIT_PORT }}
+    RABBIT_MANAGEMENT_PORT: ${{ secrets.RABBIT_MANAGEMENT_PORT }}
+    RABBITMQ_DSN: ${{ secrets.RABBITMQ_DSN }}
+
+jobs:
+    tests:
+        runs-on: ubuntu-latest
+
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v4
+
+            -   name: Create .env file for tests
+                run: |
+                    cp .env.test .env.test.local
+                    echo "PROJECT_NAME=${{ env.PROJECT_NAME }}" >> .env.test.local
+                    echo "DATABASE_URL=${{ env.DATABASE_URL }}" >> .env.test.local
+                    echo "REDIS=${{ env.REDIS }}" >> .env.test.local
+                    echo "RABBIT_HOST=${{ env.RABBIT_HOST }}" >> .env.test.local
+                    echo "RABBIT_USER=${{ env.RABBIT_USER }}" >> .env.test.local
+                    echo "RABBIT_PASSWORD=${{ env.RABBIT_PASSWORD }}" >> .env.test.local
+                    echo "RABBIT_VHOST=${{ env.RABBIT_VHOST }}" >> .env.test.local
+                    echo "RABBIT_PORT=${{ env.RABBIT_PORT }}" >> .env.test.local
+                    echo "RABBIT_MANAGEMENT_PORT=${{ env.RABBIT_MANAGEMENT_PORT }}" >> .env.test.local
+                    echo "RABBITMQ_DSN=${{ env.RABBITMQ_DSN }}" >> .env.test.local
+                    echo "APP_ENV=test" >> .env.test.local
+
+            -   name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v3
+
+            -   name: Build and start containers
+                run: make init
+
+            -   name: Php-cs-fixer check
+                run: make cs-check
+
+            -   name: Psalm check
+                run: make psalm
+
+            -   name: Stop containers
+                if: always()
+                run: make stop
+
+#    deploy:
+#        runs-on: ubuntu-latest
+#        needs: tests
+#        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+#
+#        steps:
+#            -   name: Checkout code
+#                uses: actions/checkout@v4
+#
+#            -   name: Deploy to VPS
+#                uses: appleboy/ssh-action@v1.0.3
+#                with:
+#                    host: ${{ secrets.VPS_HOST }}
+#                    username: ${{ secrets.VPS_USERNAME }}
+#                    key: ${{ secrets.VPS_SSH_KEY }}
+#                    script: |
+#                        cd /path/to/your/project
+#
+#                        # Pull latest changes
+#                        git pull origin main
+#
+#                        # Ensure proper permissions
+#                        sudo chown -R $USER:$USER .
+#                        sudo chmod -R 755 .
+#
+#                        # Copy production .env if needed
+#                        if [ ! -f .env ]; then
+#                          cp .env.production .env
+#                        fi
+#
+#                        # Stop existing containers
+#                        cd docker
+#                        docker-compose down
+#
+#                        # Build and start new containers
+#                        docker-compose up -d --build
+#
+#                        # Wait for services
+#                        sleep 30
+#
+#                        # Install dependencies
+#                        docker exec ${PROJECT_NAME}-php-fpm composer install --no-dev --optimize-autoloader
+#
+#                        # Run database migrations
+#                        docker exec ${PROJECT_NAME}-php-fpm php bin/console doctrine:migrations:migrate --no-interaction
+#
+#                        # Clear cache
+#                        docker exec ${PROJECT_NAME}-php-fpm php bin/console cache:clear
+#                        docker exec ${PROJECT_NAME}-php-fpm php bin/console cache:warmup
+#
+#                        # Start supervisor
+#                        docker exec ${PROJECT_NAME}-php-fpm /etc/init.d/supervisor start
+#
+#                        echo "Deployment completed successfully!"
