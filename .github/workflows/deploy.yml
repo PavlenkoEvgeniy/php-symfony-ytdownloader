@@ -39,7 +39,7 @@ jobs:
                 run: |
                     touch .env.local
                     echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env.local
-                    echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.local
+                    echo 'DATABASE_URL="postgresql://user:123456@'ytdownloader-pgsql':5432/ytdownloader?serverVersion=16&charset=utf8"' >> .env.local
                     echo "REDIS=${{ secrets.REDIS }}" >> .env.local
                     echo "RABBIT_HOST=${{ secrets.RABBIT_HOST }}" >> .env.local
                     echo "RABBIT_USER=${{ secrets.RABBIT_USER }}" >> .env.local
