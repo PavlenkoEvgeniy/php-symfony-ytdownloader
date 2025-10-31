@@ -1,7 +1,6 @@
 name: Deploy Symfony App
 
-on:
-    push:
+on: push
 #        branches: [ master ]
     pull_request:
         branches: [ master ]
@@ -41,8 +40,8 @@ jobs:
                     echo "RABBITMQ_DSN=${{ env.RABBITMQ_DSN }}" >> .env.test.local
                     echo "APP_ENV=test" >> .env.test.local
 
-            -   name: Set up Docker Buildx
-                uses: docker/setup-buildx-action@v3
+#            -   name: Set up Docker Buildx
+#                uses: docker/setup-buildx-action@v3
 
             -   name: Build and start containers
                 run: make init
