@@ -27,9 +27,9 @@ jobs:
             -   name: Checkout code
                 uses: actions/checkout@v4
 
-            -   name: Create .env.local for dev
+            -   name: Create .env.local file for dev
                 run: |
-                    cp .env .env.local
+                    touch .env.local
                     echo "PROJECT_NAME=${{ env.PROJECT_NAME }}" >> .env.local
                     echo "DATABASE_URL=${{ env.DATABASE_URL }}" >> .env.local
                     echo "REDIS=${{ env.REDIS }}" >> .env.local
@@ -43,7 +43,7 @@ jobs:
                     echo "APP_ENV=dev" >> .env.local
                     cat .env.local
 
-            -   name: Create .env file for tests
+            -   name: Create .env.test file for tests
                 run: |
                     cp .env.test .env.test.local
                     echo "PROJECT_NAME=${{ env.PROJECT_NAME }}" >> .env.test.local
