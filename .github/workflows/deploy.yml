@@ -6,19 +6,6 @@ on:
     pull_request:
         branches: [ master ]
 
-env:
-    PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
-    APP_SECRET: ${{ secrets.APP_SECRET }}
-    DATABASE_URL: ${{ secrets.DATABASE_URL }}
-    REDIS: ${{ secrets.REDIS }}
-    RABBIT_HOST: ${{ secrets.RABBIT_HOST }}
-    RABBIT_USER: ${{ secrets.RABBIT_USER }}
-    RABBIT_PASSWORD: ${{ secrets.RABBIT_PASSWORD }}
-    RABBIT_VHOST: ${{ secrets.RABBIT_VHOST }}
-    RABBIT_PORT: ${{ secrets.RABBIT_PORT }}
-    RABBIT_MANAGEMENT_PORT: ${{ secrets.RABBIT_MANAGEMENT_PORT }}
-    RABBITMQ_DSN: ${{ secrets.RABBITMQ_DSN }}
-
 jobs:
     tests:
         runs-on: ubuntu-latest
@@ -27,36 +14,58 @@ jobs:
             -   name: Checkout code
                 uses: actions/checkout@v4
 
+            -   name: Create .env.local file for docker
+                run: |
+                    touch docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.NGINX_PORT }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.DB_CONNECTION }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.DB_HOST }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.DB_PORT }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.DB_DATABASE }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.DB_USERNAME }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.DB_PASSWORD }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.REDIS_PASSWORD }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.REDIS_PORT }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.RABBITMQ_USER }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.RABBITMQ_PASSWORD }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.RABBITMQ_PASSWORD }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.RABBITMQ_VHOST }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.RABBITMQ_PORT }}" >> docker/.env.local
+                    echo "PROJECT_NAME=${{ secrets.RABBITMQ_MANAGEMENT_PORT }}" >> docker/.env.local
+                    cat docker/.env.local
+
             -   name: Create .env.local file for dev
                 run: |
                     touch .env.local
-                    echo "PROJECT_NAME=${{ env.PROJECT_NAME }}" >> .env.local
-                    echo "DATABASE_URL=${{ env.DATABASE_URL }}" >> .env.local
-                    echo "REDIS=${{ env.REDIS }}" >> .env.local
-                    echo "RABBIT_HOST=${{ env.RABBIT_HOST }}" >> .env.local
-                    echo "RABBIT_USER=${{ env.RABBIT_USER }}" >> .env.local
-                    echo "RABBIT_PASSWORD=${{ env.RABBIT_PASSWORD }}" >> .env.local
-                    echo "RABBIT_VHOST=${{ env.RABBIT_VHOST }}" >> .env.local
-                    echo "RABBIT_PORT=${{ env.RABBIT_PORT }}" >> .env.local
-                    echo "RABBIT_MANAGEMENT_PORT=${{ env.RABBIT_MANAGEMENT_PORT }}" >> .env.local
-                    echo "RABBITMQ_DSN=${{ env.RABBITMQ_DSN }}" >> .env.local
+                    echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env.local
+                    echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.local
+                    echo "REDIS=${{ secrets.REDIS }}" >> .env.local
+                    echo "RABBIT_HOST=${{ secrets.RABBIT_HOST }}" >> .env.local
+                    echo "RABBIT_USER=${{ secrets.RABBIT_USER }}" >> .env.local
+                    echo "RABBIT_PASSWORD=${{ secrets.RABBIT_PASSWORD }}" >> .env.local
+                    echo "RABBIT_VHOST=${{ secrets.RABBIT_VHOST }}" >> .env.local
+                    echo "RABBIT_PORT=${{ secrets.RABBIT_PORT }}" >> .env.local
+                    echo "RABBIT_MANAGEMENT_PORT=${{ secrets.RABBIT_MANAGEMENT_PORT }}" >> .env.local
+                    echo "RABBITMQ_DSN=${{ secrets.RABBITMQ_DSN }}" >> .env.local
                     echo "APP_ENV=dev" >> .env.local
                     cat .env.local
 
             -   name: Create .env.test file for tests
                 run: |
-                    cp .env.test .env.test.local
-                    echo "PROJECT_NAME=${{ env.PROJECT_NAME }}" >> .env.test.local
-                    echo "DATABASE_URL=${{ env.DATABASE_URL }}" >> .env.test.local
-                    echo "REDIS=${{ env.REDIS }}" >> .env.test.local
-                    echo "RABBIT_HOST=${{ env.RABBIT_HOST }}" >> .env.test.local
-                    echo "RABBIT_USER=${{ env.RABBIT_USER }}" >> .env.test.local
-                    echo "RABBIT_PASSWORD=${{ env.RABBIT_PASSWORD }}" >> .env.test.local
-                    echo "RABBIT_VHOST=${{ env.RABBIT_VHOST }}" >> .env.test.local
-                    echo "RABBIT_PORT=${{ env.RABBIT_PORT }}" >> .env.test.local
-                    echo "RABBIT_MANAGEMENT_PORT=${{ env.RABBIT_MANAGEMENT_PORT }}" >> .env.test.local
-                    echo "RABBITMQ_DSN=${{ env.RABBITMQ_DSN }}" >> .env.test.local
+                    touch .env.test.local
+                    echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env.test.local
+                    echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.test.local
+                    echo "REDIS=${{ secrets.REDIS }}" >> .env.test.local
+                    echo "RABBIT_HOST=${{ secrets.RABBIT_HOST }}" >> .env.test.local
+                    echo "RABBIT_USER=${{ secrets.RABBIT_USER }}" >> .env.test.local
+                    echo "RABBIT_PASSWORD=${{ secrets.RABBIT_PASSWORD }}" >> .env.test.local
+                    echo "RABBIT_VHOST=${{ secrets.RABBIT_VHOST }}" >> .env.test.local
+                    echo "RABBIT_PORT=${{ secrets.RABBIT_PORT }}" >> .env.test.local
+                    echo "RABBIT_MANAGEMENT_PORT=${{ secrets.RABBIT_MANAGEMENT_PORT }}" >> .env.test.local
+                    echo "RABBITMQ_DSN=${{ secrets.RABBITMQ_DSN }}" >> .env.test.local
                     echo "APP_ENV=test" >> .env.test.local
+                    cat .env.test.local
 
             -   name: Set up Docker Buildx
                 uses: docker/setup-buildx-action@v3
@@ -65,37 +74,37 @@ jobs:
                 run: docker compose -f docker/docker-compose.yml up -d
 
             -   name: Composer install
-                run: docker exec ${{ env.PROJECT_NAME }}-php-fpm composer install
+                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm composer install
 
             -   name: Composer update
-                run: docker exec ${{ env.PROJECT_NAME }}-php-fpm composer update
+                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm composer update
 
             -   name: DB setup
                 run: |
-                    docker exec ${{ env.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:create --if-not-exists
-                    docker exec ${{ env.PROJECT_NAME }}-php-fpm php bin/console doctrine:migrations:migrate
+                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:create --if-not-exists
+                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:migrations:migrate
 
             -   name: Supervisor start
-                run: docker exec ${{ env.PROJECT_NAME }}-php-fpm /etc/init.d/supervisor start
+                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm /etc/init.d/supervisor start
 
             -   name: Cache clear
                 run: |
-                    docker exec ${{ env.PROJECT_NAME }}-php-fpm php bin/console cache:clear
+                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console cache:clear
                     rm -rf ./var/cache/
 
             -   name: Test
                 run: |
-                    docker exec ${{ env.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:drop --if-exists --force --env=test
-                    docker exec ${{ env.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:create --env=test
-                    docker exec ${{ env.PROJECT_NAME }}-php-fpm php bin/console doctrine:migrations:migrate --no-interaction --env=test
-                    docker exec ${{ env.PROJECT_NAME }}-php-fpm php bin/console doctrine:fixtures:load --no-interaction --group=all --env=test
-                    docker exec ${{ env.PROJECT_NAME }}-php-fpm php bin/phpunit
+                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:drop --if-exists --force --env=test
+                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:create --env=test
+                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:migrations:migrate --no-interaction --env=test
+                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:fixtures:load --no-interaction --group=all --env=test
+                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/phpunit
 
             -   name: Php-cs-fixer check
-                run: docker exec ${{ env.PROJECT_NAME }}-php-fpm vendor/bin/php-cs-fixer fix --dry-run --diff --allow-risky=yes
+                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm vendor/bin/php-cs-fixer fix --dry-run --diff --allow-risky=yes
 
             -   name: Psalm check
-                run: docker exec ${{ env.PROJECT_NAME }}-php-fpm vendor/bin/psalm
+                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm vendor/bin/psalm
 
             -   name: Stop containers
                 if: always()
