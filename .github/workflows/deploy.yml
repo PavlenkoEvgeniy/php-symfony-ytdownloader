@@ -125,4 +125,10 @@ jobs:
                     host: ${{ secrets.SSH_VPS_HOST }}
                     username: ${{ secrets.SSH_VPS_USERNAME }}
                     key: ${{ secrets.SSH_VPS_KEY }}
-                    script: whoami
+                    script: |
+                        cd ${{ secrets.SSH_PROJECT_PATH }}
+                        sudo make stop
+#                        git pull origin master
+#                        sudo make restart
+#                        sudo make docker ps
+#                        echo "Deployment completed successfully!"
