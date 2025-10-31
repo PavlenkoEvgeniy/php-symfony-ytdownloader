@@ -41,21 +41,48 @@ jobs:
                     echo "RABBITMQ_DSN=${{ env.RABBITMQ_DSN }}" >> .env.test.local
                     echo "APP_ENV=test" >> .env.test.local
 
-#            -   name: Set up Docker Buildx
-#                uses: docker/setup-buildx-action@v3
+            -   name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v3
 
             -   name: Build and start containers
-                run: make init
+                run: docker compose -f docker/docker-compose.yml up -d
+
+            -   name: Composer install
+                run: docker exec ytdownloader-php-fpm composer install
+
+            -   name: Composer update
+                run: docker exec ytdownloader-php-fpm composer update
+
+            -   name: DB setup
+                run: |
+                    docker exec ytdownloader-php-fpm php bin/console doctrine:database:create --if-not-exists
+                    docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate
+
+            -   name: Supervisor start
+                run: docker exec ytdownloader-php-fpm /etc/init.d/supervisor start
+
+            -   name: Cache clear
+                run: |
+                    docker exec ytdownloader-php-fpm php bin/console cache:clear
+                    rm -rf ./var/cache/
+
+            -   name: Test
+                run: |
+                    docker exec ytdownloader-php-fpm php bin/console doctrine:database:drop --if-exists --force --env=test
+                    docker exec ytdownloader-php-fpm php bin/console doctrine:database:create --env=test
+                    docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate --no-interaction --env=test
+                    docker exec ytdownloader-php-fpm php bin/console doctrine:fixtures:load --no-interaction --group=all --env=test
+                    docker exec ytdownloader-php-fpm php bin/phpunit
 
             -   name: Php-cs-fixer check
-                run: make cs-check
+                run: docker exec ytdownloader-php-fpm vendor/bin/php-cs-fixer fix --dry-run --diff --allow-risky=yes
 
             -   name: Psalm check
-                run: make psalm
+                run: docker exec ytdownloader-php-fpm vendor/bin/psalm
 
             -   name: Stop containers
                 if: always()
-                run: make stop
+                run: docker compose -f docker/docker-compose.yml down
 
 #    deploy:
 #        runs-on: ubuntu-latest
