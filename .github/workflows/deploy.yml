@@ -125,11 +125,11 @@ jobs:
                     host: ${{ secrets.SSH_VPS_HOST }}
                     username: ${{ secrets.SSH_VPS_USERNAME }}
                     key: ${{ secrets.SSH_VPS_KEY }}
-                    script: |
-                        cd ${{ secrets.SSH_PROJECT_PATH }}
+                script: |
+                    cd ${{ secrets.SSH_PROJECT_PATH }}
 
-                        # Stop containers
-                        sudo make stop
+                    # Stop containers
+                    sudo make stop
 
 #                        # Pull latest changes
 #                        git pull origin master
@@ -137,4 +137,4 @@ jobs:
 #                        # Restart containers
 #                        sudo make restart
 
-                        echo "Deployment completed successfully!"
+                    echo "Deployment completed successfully!"
