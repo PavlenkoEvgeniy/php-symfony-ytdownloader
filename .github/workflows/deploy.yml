@@ -8,6 +8,7 @@ on:
 
 env:
     PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
+    APP_SECRET: ${{ secrets.APP_SECRET }}
     DATABASE_URL: ${{ secrets.DATABASE_URL }}
     REDIS: ${{ secrets.REDIS }}
     RABBIT_HOST: ${{ secrets.RABBIT_HOST }}
@@ -25,6 +26,21 @@ jobs:
         steps:
             -   name: Checkout code
                 uses: actions/checkout@v4
+
+            -   name: Create .env.local for dev
+                run: |
+                    cp .env .env.local
+                    echo "PROJECT_NAME=${{ env.PROJECT_NAME }}" >> .env.local
+                    echo "DATABASE_URL=${{ env.DATABASE_URL }}" >> .env.local
+                    echo "REDIS=${{ env.REDIS }}" >> .env.local
+                    echo "RABBIT_HOST=${{ env.RABBIT_HOST }}" >> .env.local
+                    echo "RABBIT_USER=${{ env.RABBIT_USER }}" >> .env.local
+                    echo "RABBIT_PASSWORD=${{ env.RABBIT_PASSWORD }}" >> .env.local
+                    echo "RABBIT_VHOST=${{ env.RABBIT_VHOST }}" >> .env.local
+                    echo "RABBIT_PORT=${{ env.RABBIT_PORT }}" >> .env.local
+                    echo "RABBIT_MANAGEMENT_PORT=${{ env.RABBIT_MANAGEMENT_PORT }}" >> .env.local
+                    echo "RABBITMQ_DSN=${{ env.RABBITMQ_DSN }}" >> .env.local
+                    echo "APP_ENV=dev" >> .env.local
 
             -   name: Create .env file for tests
                 run: |
