@@ -18,21 +18,21 @@ jobs:
                 run: |
                     touch docker/.env.local
                     echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.NGINX_PORT }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.DB_CONNECTION }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.DB_HOST }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.DB_PORT }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.DB_DATABASE }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.DB_USERNAME }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.DB_PASSWORD }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.REDIS_PASSWORD }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.REDIS_PORT }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.RABBITMQ_USER }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.RABBITMQ_PASSWORD }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.RABBITMQ_PASSWORD }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.RABBITMQ_VHOST }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.RABBITMQ_PORT }}" >> docker/.env.local
-                    echo "PROJECT_NAME=${{ secrets.RABBITMQ_MANAGEMENT_PORT }}" >> docker/.env.local
+                    echo "NGINX_PORT=${{ secrets.NGINX_PORT }}" >> docker/.env.local
+                    echo "DB_CONNECTION=${{ secrets.DB_CONNECTION }}" >> docker/.env.local
+                    echo "DB_HOST=${{ secrets.DB_HOST }}" >> docker/.env.local
+                    echo "DB_PORT=${{ secrets.DB_PORT }}" >> docker/.env.local
+                    echo "DB_DATABASE=${{ secrets.DB_DATABASE }}" >> docker/.env.local
+                    echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> docker/.env.local
+                    echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> docker/.env.local
+                    echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> docker/.env.local
+                    echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> docker/.env.local
+                    echo "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}" >> docker/.env.local
+                    echo "RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}" >> docker/.env.local
+                    echo "RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}" >> docker/.env.local
+                    echo "RABBITMQ_VHOST=${{ secrets.RABBITMQ_VHOST }}" >> docker/.env.local
+                    echo "RABBITMQ_PORT=${{ secrets.RABBITMQ_PORT }}" >> docker/.env.local
+                    echo "RABBITMQ_MANAGEMENT_PORT=${{ secrets.RABBITMQ_MANAGEMENT_PORT }}" >> docker/.env.local
                     cat docker/.env.local
 
             -   name: Create .env.local file for dev
