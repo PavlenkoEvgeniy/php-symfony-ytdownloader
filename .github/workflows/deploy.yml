@@ -2,7 +2,7 @@ name: Deploy Symfony App
 
 on:
     push:
-#        branches: [ master ]
+        branches: [ master ]
     pull_request:
         branches: [ master ]
 
@@ -110,12 +110,14 @@ jobs:
                 if: always()
                 run: |
                     docker compose -f docker/docker-compose.yml down
-                    echo "Code style checks and tests completed successfully!"
+                    echo "====================================================="
+                    echo "✅ Code style checks and tests completed successfully!"
+                    echo "====================================================="
 
     deploy:
         runs-on: ubuntu-latest
         needs: tests
-#        if: github.ref_name == 'master'
+        if: github.ref_name == 'master'
 
         steps:
             -   name: Checkout code
@@ -130,7 +132,9 @@ jobs:
                     script: |
                         cd ${{ secrets.SSH_PROJECT_PATH }}
                         sudo make stop
-#                        git pull origin master
-#                        sudo make restart
-#                        sudo make docker ps
-#                        echo "Deployment completed successfully!"
+                        git pull origin master
+                        sudo make restart
+                        sudo make docker ps
+                        echo "===================================="
+                        echo "✅ Deployment completed successfully!"
+                        echo "===================================="
