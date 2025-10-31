@@ -135,6 +135,3 @@ jobs:
                         git pull origin master
                         sudo make restart
                         sudo make docker ps
-                        echo "===================================="
-                        echo "✅ Deployment completed successfully!"
-                        echo "===================================="
