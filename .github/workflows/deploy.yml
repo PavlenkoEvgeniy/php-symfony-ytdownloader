@@ -79,7 +79,7 @@ jobs:
             -   name: Composer update
                 run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm composer update
 
-            -   name: DB setup
+            -   name: Database setup
                 run: |
                     docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:create --if-not-exists
                     docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:migrations:migrate
@@ -92,7 +92,13 @@ jobs:
                     docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console cache:clear
                     rm -rf ./var/cache/
 
-            -   name: Test
+            -   name: Run php-cs-fixer check
+                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm vendor/bin/php-cs-fixer fix --dry-run --diff --allow-risky=yes
+
+            -   name: Run psalm check
+                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm vendor/bin/psalm
+
+            -   name: Run tests
                 run: |
                     docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:drop --if-exists --force --env=test
                     docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:create --env=test
@@ -100,20 +106,16 @@ jobs:
                     docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:fixtures:load --no-interaction --group=all --env=test
                     docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/phpunit
 
-            -   name: Php-cs-fixer check
-                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm vendor/bin/php-cs-fixer fix --dry-run --diff --allow-risky=yes
-
-            -   name: Psalm check
-                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm vendor/bin/psalm
-
             -   name: Stop containers
                 if: always()
-                run: docker compose -f docker/docker-compose.yml down
+                run: |
+                    docker compose -f docker/docker-compose.yml down
+                    echo "Code style checks and tests completed successfully!"
 
     deploy:
         runs-on: ubuntu-latest
         needs: tests
-#        if: github.ref_name == 'master'  # Исправил условие
+#        if: github.ref_name == 'master'
 
         steps:
             -   name: Checkout code
@@ -124,7 +126,7 @@ jobs:
                 with:
                     host: ${{ secrets.SSH_VPS_HOST }}
                     username: ${{ secrets.SSH_VPS_USERNAME }}
-                    key: ${{ secrets.SSH_VPS_KEY }}
+                    password: ${{ secrets.SSH_VPS_PASSWORD }}
                     script: |
                         cd ${{ secrets.SSH_PROJECT_PATH }}
                         sudo make stop
