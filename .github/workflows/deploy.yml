@@ -134,4 +134,4 @@ jobs:
                         sudo make stop
                         git pull origin master
                         sudo make restart
-                        sudo make docker ps
+
