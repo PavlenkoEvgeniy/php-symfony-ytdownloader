@@ -110,9 +110,15 @@ jobs:
                 if: always()
                 run: |
                     docker compose -f docker/docker-compose.yml down
-                    echo "====================================================="
-                    echo "✅ Code style checks and tests completed successfully!"
-                    echo "====================================================="
+                    if [ "${{ job.status }}" == "success" ]; then
+                        echo "====================================================="
+                        echo "✅ Code style checks and tests completed successfully!"
+                        echo "====================================================="
+                    else
+                        echo "====================================================="
+                        echo "❌ Some checks failed! Please review the errors above."
+                        echo "====================================================="
+                    fi
 
     deploy:
         runs-on: ubuntu-latest
@@ -134,4 +140,3 @@ jobs:
                         sudo make stop
                         git pull origin master
                         sudo make restart
-
