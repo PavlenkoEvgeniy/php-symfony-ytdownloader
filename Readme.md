@@ -39,7 +39,7 @@ This program is for personal use only. Downloading copyrighted material without 
    RABBITMQ_DSN="amqp://user:password@rabbitmq:5672/%2f"
    ```
 
-2. **Docker environment**
+2. **Docker environment**  
     Copy docker .env from .env.example and update credentials
     ```bash
     cp docker/.env.example docker/.env
