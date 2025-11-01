@@ -39,81 +39,85 @@ This program is for personal use only. Downloading copyrighted material without 
    RABBITMQ_DSN="amqp://user:password@rabbitmq:5672/%2f"
    ```
 
-1. **Initialize new application**:
+2. **Docker environment**
+    Copy docker .env from .env.example and update credentials
+    ```bash
+    cp docker/.env.example docker/.env
+    ```
+
+3. **Initialize new application**:
    ```bash
    sudo make init
    ```
 
-2. **Restart application**:
+4. **Restart application**:
    ```bash
    sudo make restart
    ```
 
-3. **Stop application**
+5. **Stop application**
    ```bash
    sudo make stop
    ```
 
-4. **Setup database (if needed)**:
+6. **Setup database (if needed)**:
    ```bash
    sudo make db-setup
    ```
 
-5. **Start queue worker (if needed)**:
+7. **Start queue worker (if needed)**:
    ```bash
    sudo make supervisor-start
    ```
 
-6. **Create admin by console command**:
+8. **Create admin by console command**:
    ```bash
    sudo make docker-php
    php bin/console user:add <username> [password]
    ```
 
-7. **Run tests**:
+9. **Run tests**:
    ```bash
    sudo make test
    ```
 
-8. **List of all available 'make' commands**
+10. **List of all available 'make' commands**
    ```bash
    sudo make help
    ```
 
-9. **Health check url**:
+11. **Health check url**:
    ```
    GET http://host.tld/health
    ```
-10.  **Admin dashboard**:
+12.  **Admin dashboard**:
    ```
    GET http://host.tld/admin
    ```
-11. **Telegram bot**:
-   - add enable true for telegram bot in .env.local file
-   - add your bot token to .env.local file
-   - add telegram host url to .env.local file
-   - run the command to setup webhook:
-   ```bash
-   php bin/console telegram:hook
-   ```
-   - **Telegram bot commands**:
-   ```
+13. **Telegram bot**:
+    - add enable true for telegram bot in .env.local file
+    - add your bot token to .env.local file
+    - add telegram host url to .env.local file
+    - run the command to setup webhook:
+    ```bash
+    php bin/console telegram:hook
+    ```
+14. **Telegram bot commands**:
+    ```
     /start - start bot
-
-    https://youtube.com/video-url - download video by url
-   ```
+    ```
 
 ## 📝 Todo Roadmap
 
-✅ ~~Background video downloads (queues)~~  
-✅ ~~Download status notifications~~  
-✅ ~~Playlist special characters fix~~  
-✅ ~~Tests coverage~~  
-✅ ~~Refactor to services~~  
-✅ ~~Health check endpoint~~  
-🔳 YouTube cache optimization (avoid bot detection)  
-✅ ~~Download statistics counter~~  
-🔳 REST API implementation  
-✅ ~~Telegram bot integration~~  
-✅ ~~Setup automation script~~  
-✅ ~~Admin dashboard~~  
+✅ ~~Background video downloads (queues)~~
+✅ ~~Download status notifications~~
+✅ ~~Playlist special characters fix~~
+✅ ~~Tests coverage~~
+✅ ~~Refactor to services~~
+✅ ~~Health check endpoint~~
+🔳 YouTube cache optimization (avoid bot detection)
+✅ ~~Download statistics counter~~
+🔳 REST API implementation
+✅ ~~Telegram bot integration~~
+✅ ~~Setup automation script~~
+✅ ~~Admin dashboard~~
