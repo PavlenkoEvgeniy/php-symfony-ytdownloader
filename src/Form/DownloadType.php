@@ -41,7 +41,7 @@ final class DownloadType extends AbstractType
                     'POOR QUALITY'     => 'poor',
                     'AUDIO ONLY'       => 'audio',
                 ],
-                'data' => 'moderate',
+                'data'        => 'moderate',
                 'label'       => 'Please choose quality:',
                 'mapped'      => false,
                 'required'    => true,
@@ -53,7 +53,7 @@ final class DownloadType extends AbstractType
                 'label' => 'Start!',
                 'attr'  => [
                     'class' => 'btn btn-warning',
-                ]
+                ],
             ])
         ;
     }
