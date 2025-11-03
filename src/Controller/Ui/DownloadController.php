@@ -55,7 +55,7 @@ final class DownloadController extends AbstractController
 
         $queueTaskCount = $messengerQueueCounter->getQueueCount();
 
-        return $this->render('ui/youtube_download/index.html.twig', [
+        return $this->render('ui/download/index.html.twig', [
             'form'           => $form,
             'diskSpace'      => Helper::getFreeSpace(),
             'queueTaskCount' => $queueTaskCount,

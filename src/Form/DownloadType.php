@@ -41,6 +41,7 @@ final class DownloadType extends AbstractType
                     'POOR QUALITY'     => 'poor',
                     'AUDIO ONLY'       => 'audio',
                 ],
+                'data' => 'moderate',
                 'label'       => 'Please choose quality:',
                 'mapped'      => false,
                 'required'    => true,
@@ -48,7 +49,12 @@ final class DownloadType extends AbstractType
                     new NotBlank(),
                 ],
             ])
-            ->add('submit', SubmitType::class)
+            ->add('submit', SubmitType::class, [
+                'label' => 'Start!',
+                'attr'  => [
+                    'class' => 'btn btn-warning',
+                ]
+            ])
         ;
     }
 

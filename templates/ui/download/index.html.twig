@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}YoutubeDownload :: Index
+{% block title %}Download :: Index
 {% endblock %}
 
 {% block body %}
@@ -19,7 +19,6 @@
         {% endif %}
         <a class="btn btn-outline-warning" href="{{ path('app_logout') }}">Logout</a>
     </div>
-    <h1 class="text-center mb-2">Welcome to youtube downloader</h1><br>
     <h3>Please paste youtube link into the form bellow:</h3><br>
     {{ form(form) }}
 
@@ -28,6 +27,6 @@
     <p>Used: {{ diskSpace.used }} ({{ diskSpace.percentage }}%)</p>
     <p>Free: {{ diskSpace.free }}</p>
 
-    <h3 class="mt-5">Tasks in queue</h3>
+    <h3 class="mt-5">Downloads in queue</h3>
     <p>Total: {{ queueTaskCount }}</p>
 {% endblock %}
