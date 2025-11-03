@@ -48,7 +48,7 @@ final class DownloadType extends AbstractType
                 ],
             ])
             ->add('submit', SubmitType::class, [
-                'label' => 'Start download! 🚀',
+                'label' => 'Start to download! 🚀',
                 'attr'  => [
                     'class' => 'btn btn-outline-primary mt-2',
                 ],
