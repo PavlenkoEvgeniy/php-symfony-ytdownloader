@@ -42,7 +42,7 @@ final class DownloadType extends AbstractType
                     'AUDIO ONLY'       => 'audio',
                 ],
                 'data'        => 'moderate',
-                'label'       => 'Please choose quality:',
+                'label'       => 'Quality:',
                 'mapped'      => false,
                 'required'    => true,
                 'constraints' => [
@@ -50,9 +50,9 @@ final class DownloadType extends AbstractType
                 ],
             ])
             ->add('submit', SubmitType::class, [
-                'label' => 'Start!',
+                'label' => 'Start download! 🚀',
                 'attr'  => [
-                    'class' => 'btn btn-warning',
+                    'class' => 'btn btn-outline-primary mt-2',
                 ],
             ])
         ;
