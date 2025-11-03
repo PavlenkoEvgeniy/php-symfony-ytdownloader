@@ -7,11 +7,23 @@
 	<div class="container min-vh-100 d-flex flex-column align-items-center mt-2">
 		<div class="row">
             <div class="mt-3">
-                <svg width="200" height="100" viewBox="0 0 200 100">
-                    <rect x="0" y="0" width="200" height="100" fill="#FF0000" rx="10"/>
-                    <path d="M70 30 L70 70 L100 50 Z" fill="white"/>
-                    <path d="M120 50 L140 70 L160 50 L150 50 L150 30 L130 30 L130 50 Z" fill="white"/>
-                    <text x="100" y="85" font-family="Arial" font-size="18" fill="white" text-anchor="middle">YT-DOWNLOAD</text>
+                <svg width="200" height="100" viewBox="0 0 200 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Background with subtle gradient -->
+                    <rect width="200" height="100" rx="15" fill="url(#gradient)"/>
+
+                    <!-- Video icon -->
+                    <path d="M45 35L70 50L45 65V35Z" fill="white"/>
+                    <rect x="25" y="35" width="12" height="30" rx="3" fill="white"/>
+
+                    <!-- Text -->
+                    <text x="80" y="58" font-family="Arial, sans-serif" font-size="22" fill="white" font-weight="bold">Download</text>
+
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#667eea"/>
+                            <stop offset="100%" stop-color="#764ba2"/>
+                        </linearGradient>
+                    </defs>
                 </svg>
             </div>
 		</div><br>
