@@ -28,7 +28,7 @@ final class DownloadControllerTest extends WebTestCase
 
         $this->client->request('GET', '/ui/youtube/download');
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorTextContains('h1', 'Welcome to youtube downloader');
+        $this->assertSelectorTextContains('h3', 'Please paste youtube link into the form bellow:');
     }
 
     private function cleanupTestQueue(string $queueName): void

@@ -63,7 +63,7 @@ final class SecurityControllerTest extends WebTestCase
 
         $this->client->request(Request::METHOD_GET, '/ui/youtube/download');
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorTextContains('h1', 'Welcome to youtube downloader');
+        $this->assertSelectorTextContains('h3', 'Please paste youtube link into the form bellow:');
     }
 
     public function testLogoutIsOk(): void
@@ -73,7 +73,7 @@ final class SecurityControllerTest extends WebTestCase
 
         $this->client->request(Request::METHOD_GET, '/ui/youtube/download');
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorTextContains('h1', 'Welcome to youtube downloader');
+        $this->assertSelectorTextContains('h3', 'Please paste youtube link into the form bellow:');
 
         $this->client->request(Request::METHOD_GET, '/logout');
         $this->assertResponseStatusCodeSame(Response::HTTP_FOUND);
