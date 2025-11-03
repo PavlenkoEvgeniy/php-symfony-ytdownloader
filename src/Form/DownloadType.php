@@ -24,10 +24,8 @@ final class DownloadType extends AbstractType
                 'required'    => true,
                 'constraints' => [
                     new NotBlank(),
-                    new Length(['min'=> 10]),
-                    new Url([
-                        'requireTld' => true,
-                    ]),
+                    new Length(min: 10, max: 255),
+                    new Url(requireTld: true),
                 ],
                 'label' => 'Link:',
                 'attr'  => [

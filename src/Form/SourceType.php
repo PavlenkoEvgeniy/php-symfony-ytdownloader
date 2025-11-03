@@ -25,10 +25,7 @@ final class SourceType extends AbstractType
                 'required'    => true,
                 'trim'        => true,
                 'constraints' => [
-                    new Length([
-                        'min' => 5,
-                        'max' => 255,
-                    ]),
+                    new Length(min: 5, max: 255),
                     new NotBlank([
                         'normalizer' => 'trim',
                     ]),
