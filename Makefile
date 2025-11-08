@@ -8,10 +8,10 @@ help:
 	@echo "4. supervisor-start ..................... Start supervisor for queue processing."
 	@echo "5. supervisor-stop ....................... Stop supervisor for queue processing."
 	@echo "6. supervisor-restart ................. Restart supervisor for queue processing."
-	@echo "7. docker-compose-up ............................. Up docker-compose containers."
-	@echo "8. docker-compose-down ......................... Down docker-compose containers."
+	@echo "7. docker-compose-up ............................. Up docker compose containers."
+	@echo "8. docker-compose-down ......................... Down docker compose containers."
 	@echo "9. composer-install ............................. Install composer dependencies."
-	@echo "10. composer-update ............................... Update composer dependencies."
+	@echo "10. composer-update .............................. Update composer dependencies."
 	@echo "11. db-setup ... Setup database (drop existing, create new, migrate migrations)."
 	@echo "12. db-purge ........................................ Delete database directory."
 	@echo "13. cs-check ................ Check project by php-cs-fixer without any changes."
@@ -41,10 +41,10 @@ supervisor-restart:
 	docker exec ytdownloader-php-fpm /etc/init.d/supervisor restart
 
 docker-compose-up:
-	docker-compose -f docker/docker-compose.yml up -d
+	docker compose -f docker/docker-compose.yml up -d
 
 docker-compose-down:
-	docker-compose -f docker/docker-compose.yml down
+	docker compose -f docker/docker-compose.yml down
 
 composer-install:
 	docker exec ytdownloader-php-fpm composer install

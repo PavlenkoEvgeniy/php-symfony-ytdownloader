@@ -31,8 +31,8 @@ services.
 ## 📋 Tested within:
 
 1. 🐧 Ubuntu 22.04
-2. 🐳 Docker 28.3.2
-3. 📦 Docker-compose 1.29.2
+2. 🐳 Docker 28.5.2
+3. 📦 Docker compose v2.38.1
 4. ⚙️ GNU Make 4.3
 
 ## 🚀 Quick Start
