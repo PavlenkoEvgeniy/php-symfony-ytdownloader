@@ -38,7 +38,7 @@ RUN docker-php-ext-configure pgsql --with-pgsql=/usr/local/pgsql \
 # Install redis
 RUN pecl install redis && docker-php-ext-enable redis
 
-# Install rebbit
+# Install rabbit
 RUN apt-get install -y \
     librabbitmq-dev \
     libssh-dev \
