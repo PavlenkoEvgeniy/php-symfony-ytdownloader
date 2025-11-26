@@ -41,28 +41,22 @@ final class DashboardController extends AbstractDashboardController
     #[\Override]
     public function index(): Response
     {
-        $totalUsers = $this->userRepository->getTotalCount();
-
-        $totalDownloads = $this->logRepository->getTotalSuccessCount();
-
-        $totalPending = $this->queueCounter->getQueueCount();
-
-        $totalInProgress = $this->rabbitMQApiQueueService->getProcessingMessagesCount();
-
-        $totalErrors = $this->logRepository->getTotalErrorCount();
-
-        $totalSize = $this->logRepository->getTotalSize();
-
-        $maxSize = $this->logRepository->getMaxSize();
+        $totalUsers               = $this->userRepository->getTotalCount();
+        $totalSuccessDownloads    = $this->logRepository->getTotalSuccessCount();
+        $totalPendingDownloads    = $this->queueCounter->getQueueCount();
+        $totalInProgressDownloads = $this->rabbitMQApiQueueService->getProcessingMessagesCount();
+        $totalErrorDownloads      = $this->logRepository->getTotalErrorCount();
+        $totalSizeDownloaded      = $this->logRepository->getTotalSize();
+        $maxSizeDownloaded        = $this->logRepository->getMaxSize();
 
         return $this->render('admin/index.html.twig', [
             'totalUsers'      => $totalUsers,
-            'totalDownloads'  => $totalDownloads,
-            'totalPending'    => $totalPending,
-            'totalInProgress' => $totalInProgress,
-            'totalErrors'     => $totalErrors,
-            'totalSize'       => Helper::formatBytes($totalSize),
-            'maxSize'         => Helper::formatBytes($maxSize),
+            'totalDownloads'  => $totalSuccessDownloads,
+            'totalPending'    => $totalPendingDownloads,
+            'totalInProgress' => $totalInProgressDownloads,
+            'totalErrors'     => $totalErrorDownloads,
+            'totalSize'       => Helper::formatBytes($totalSizeDownloaded),
+            'maxSize'         => Helper::formatBytes($maxSizeDownloaded),
         ]);
     }
 
