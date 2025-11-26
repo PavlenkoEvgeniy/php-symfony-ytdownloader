@@ -20,9 +20,9 @@ final readonly class QueueCounterService
     public function getQueueCount(string $queueName = 'default'): int
     {
         $query = '
-            SELECT COUNT(*) 
-            FROM messenger_messages 
-            WHERE delivered_at IS NULL 
+            SELECT COUNT(*)
+            FROM messenger_messages
+            WHERE delivered_at IS NULL
             AND queue_name = :queueName
         ';
 
