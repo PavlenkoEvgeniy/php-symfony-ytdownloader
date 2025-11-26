@@ -19,7 +19,7 @@
         {% endif %}
         <a class="btn btn-outline-warning" href="{{ path('app_logout') }}">Logout</a>
     </div>
-    <h3>Please paste youtube link into the form bellow:</h3><br>
+    <h3>Please paste YouTube link into the form bellow:</h3><br>
     {{ form(form) }}
 
     <h3 class="mt-5">Disk Space Available</h3>
@@ -27,6 +27,8 @@
     <p>Used: {{ diskSpace.used }} ({{ diskSpace.percentage }}%)</p>
     <p>Free: {{ diskSpace.free }}</p>
 
-    <h3 class="mt-5">Downloads in queue</h3>
-    <p>Total: {{ queueTaskCount }}</p>
+    <h3 class="mt-5">Downloads:</h3>
+    <p>In Queue: {{ totalTotalPendingDownloads }}</p>
+    <p>In Progress: {{ totalInProgressDownloads }}</p>
+    <p>Completed: {{ totalTotalSuccessDownloads }}</p>
 {% endblock %}

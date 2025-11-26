@@ -7,8 +7,9 @@ namespace App\Controller\Ui;
 use App\Form\DownloadType;
 use App\Helper\Helper;
 use App\Message\DownloadMessage;
+use App\Repository\LogRepository;
 use App\Service\MessengerQueueCounterService;
-use App\Service\QueueCounterService;
+use App\Service\RabbitMQApiQueueService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,9 +28,10 @@ final class DownloadController extends AbstractController
     public function index(
         Request $request,
         MessageBusInterface $bus,
-        QueueCounterService $queueCounter,
         MessengerQueueCounterService $messengerQueueCounter,
         SessionInterface $session,
+        LogRepository $logRepository,
+        RabbitMQApiQueueService $rabbitMQApiQueueService,
     ): Response|RedirectResponse {
         $form = $this->createForm(DownloadType::class);
         $form->handleRequest($request);
@@ -53,12 +55,16 @@ final class DownloadController extends AbstractController
             }
         }
 
-        $queueTaskCount = $messengerQueueCounter->getQueueCount();
+        $totalPendingDownloads    = $messengerQueueCounter->getQueueCount();
+        $totalInProgressDownloads = $rabbitMQApiQueueService->getProcessingMessagesCount();
+        $totalSuccessDownloads    = $logRepository->getTotalSuccessCount();
 
         return $this->render('ui/download/index.html.twig', [
-            'form'           => $form,
-            'diskSpace'      => Helper::getFreeSpace(),
-            'queueTaskCount' => $queueTaskCount,
+            'form'                       => $form,
+            'diskSpace'                  => Helper::getFreeSpace(),
+            'totalTotalPendingDownloads' => $totalPendingDownloads,
+            'totalInProgressDownloads'   => $totalInProgressDownloads,
+            'totalTotalSuccessDownloads' => $totalSuccessDownloads,
         ]);
     }
 }
