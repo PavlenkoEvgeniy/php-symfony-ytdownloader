@@ -19,7 +19,7 @@
 /assets/vendor/
 ###< symfony/asset-mapper ###
 
-#Database dump
+# Database dump
 database/
 
 ###> friendsofphp/php-cs-fixer ###
@@ -27,5 +27,8 @@ database/
 /.php-cs-fixer.cache
 ###< friendsofphp/php-cs-fixer ###
 
-#IDE
+# IDE
 .idea/
+
+#  Auto-generated config reference file
+/config/reference.php
