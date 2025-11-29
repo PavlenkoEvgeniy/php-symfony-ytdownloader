@@ -42,6 +42,8 @@ final class UserCrudController extends AbstractCrudController
     #[\Override]
     public function configureFields(string $pageName): iterable
     {
+        $isNewOrEditPage = \in_array($pageName, [Crud::PAGE_NEW, Crud::PAGE_EDIT], true);
+
         yield IdField::new('id', 'ID')
             ->onlyOnIndex();
 
@@ -75,7 +77,7 @@ final class UserCrudController extends AbstractCrudController
                 ->setFormTypeOptions([
                     'mapped' => false,
                 ])
-                ->setRequired(Crud::PAGE_NEW === $pageName)
+                ->setRequired($isNewOrEditPage)
                 ->onlyOnForms();
         } else {
             yield TextField::new('password')
