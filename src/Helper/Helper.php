@@ -32,7 +32,7 @@ final class Helper
             'free'       => Helper::formatBytes($free),
             'used'       => Helper::formatBytes($used),
             'total'      => Helper::formatBytes($total),
-            'percentage' => \round(($used / $total) * 100, 2),
+            'percentage' => \round(($used / (float) $total) * 100.0, 2),
         ];
     }
 }
