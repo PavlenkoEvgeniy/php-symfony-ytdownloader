@@ -57,17 +57,17 @@ services.
 
 3. **Initialize new application**:
    ```bash
-   sudo make init
+   make init
    ```
 
 4. **Restart application**:
    ```bash
-   sudo make restart
+   make restart
    ```
 
 5. **Stop application**:
    ```bash
-   sudo make stop
+   make stop
    ```
 
 6. **Setup database (if needed)**:
@@ -77,23 +77,23 @@ services.
 
 7. **Start queue worker (if needed)**:
    ```bash
-   sudo make supervisor-start
+   make supervisor-start
    ```
 
 8. **Create admin by console command**:
    ```bash
-   sudo make docker-php
-   php bin/console user:add <username> [password]
+   make docker-php
+   php bin/console app:user:add <username> [password]
    ```
 
 9. **Run tests**:
    ```bash
-   sudo make test
+   make test
    ```
 
 10. **List of all available 'make' commands**:
     ```bash
-    sudo make help
+    make help
     ```
 
 11. **Health check url**:
@@ -110,7 +110,13 @@ services.
     - add telegram host url to .env.local file
     - run the command to setup webhook:
     ```bash
-    php bin/console telegram:hook
+    make docker-php
+    php bin/console app:telegram:hook
+    ```
+    - for unhook run command:
+    ```bash
+    make docker-php
+    php bin/console app:telegram:unhook
     ```
 14. **Telegram bot commands**:
     ```
