@@ -16,7 +16,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 #[AsCommand(
-    name: 'user:add',
+    name: 'app:user:add',
     description: 'Add new admin user'
 )]
 final class UserAddCommand extends Command
@@ -41,7 +41,7 @@ final class UserAddCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        $username = \mb_strtolower($input->getArgument('username'));
+        $username = $input->getArgument('username');
 
         // Check if username is empty
         if (null === $username) {
@@ -49,6 +49,8 @@ final class UserAddCommand extends Command
 
             return Command::FAILURE;
         }
+
+        $username = \mb_strtolower($username);
 
         // Check if user already exists
         if ($this->userRepository->findOneByEmail($username)) {
