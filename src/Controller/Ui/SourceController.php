@@ -113,7 +113,7 @@ final class SourceController extends AbstractController
     #[Route('/ui/source/delete/{id}', name: 'ui_source_delete', methods: [Request::METHOD_POST])]
     public function delete(Request $request, Source $source, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete' . $source->getId(), $request->getPayload()->getString('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . (string) $source->getId(), $request->getPayload()->getString('_token'))) {
             $filePath = $source->getFilepath() . '/' . $source->getFilename();
 
             if (!\file_exists($filePath)) {
