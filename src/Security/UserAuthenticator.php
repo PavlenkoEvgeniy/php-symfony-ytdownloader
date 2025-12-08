@@ -21,7 +21,7 @@ final class UserAuthenticator extends AbstractLoginFormAuthenticator
 {
     use TargetPathTrait;
 
-    public const LOGIN_ROUTE = 'app_login';
+    public const LOGIN_ROUTE = 'security_login';
 
     public function __construct(private UrlGeneratorInterface $urlGenerator)
     {
@@ -52,7 +52,7 @@ final class UserAuthenticator extends AbstractLoginFormAuthenticator
         }
 
         // For example:
-        return new RedirectResponse($this->urlGenerator->generate('ui_youtube_download_index'));
+        return new RedirectResponse($this->urlGenerator->generate('ui_download_index'));
     }
 
     #[\Override]
