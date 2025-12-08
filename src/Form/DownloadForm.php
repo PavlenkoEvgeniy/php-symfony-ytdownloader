@@ -56,7 +56,7 @@ final class DownloadForm extends AbstractType
                 ],
             ])
             ->add('submit', SubmitType::class, [
-                'label' => 'Start! 🚀',
+                'label' => 'Ready? Let\'s rock! 🚀',
                 'attr'  => [
                     'class' => 'btn btn-outline-primary mt-2',
                 ],
@@ -67,8 +67,6 @@ final class DownloadForm extends AbstractType
     #[\Override]
     public function configureOptions(OptionsResolver $resolver): void
     {
-        $resolver->setDefaults([
-            // Configure your form options here
-        ]);
+        $resolver->setDefaults([]);
     }
 }
