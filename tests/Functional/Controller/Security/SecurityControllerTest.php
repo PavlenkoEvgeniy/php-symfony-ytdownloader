@@ -61,7 +61,7 @@ final class SecurityControllerTest extends WebTestCase
 
         $this->client->submit($form);
 
-        $this->client->request(Request::METHOD_GET, '/ui/youtube/download');
+        $this->client->request(Request::METHOD_GET, '/ui/download');
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('h3', 'Please paste YouTube link into the form bellow:');
     }
@@ -71,14 +71,14 @@ final class SecurityControllerTest extends WebTestCase
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
         $this->client->loginUser($user);
 
-        $this->client->request(Request::METHOD_GET, '/ui/youtube/download');
+        $this->client->request(Request::METHOD_GET, '/ui/download');
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('h3', 'Please paste YouTube link into the form bellow:');
 
         $this->client->request(Request::METHOD_GET, '/logout');
         $this->assertResponseStatusCodeSame(Response::HTTP_FOUND);
 
-        $this->client->request(Request::METHOD_GET, '/ui/youtube/download');
+        $this->client->request(Request::METHOD_GET, '/ui/download');
         $this->client->followRedirect(true);
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('h1', 'Please sign in');

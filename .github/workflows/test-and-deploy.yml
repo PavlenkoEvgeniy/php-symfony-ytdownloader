@@ -1,4 +1,4 @@
-name: Deploy Symfony App
+name: Run tests and deploy Application
 
 on:
     push:
@@ -35,7 +35,7 @@ jobs:
                     echo "RABBITMQ_MANAGEMENT_PORT=${{ secrets.RABBITMQ_MANAGEMENT_PORT }}" >> docker/.env
                     cat docker/.env
 
-            -   name: Create .env.local file for dev
+            -   name: Create application .env.local file for dev
                 run: |
                     touch .env.local
                     echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env.local
@@ -51,7 +51,7 @@ jobs:
                     echo "APP_ENV=dev" >> .env.local
                     cat .env.local
 
-            -   name: Create .env.test file for tests
+            -   name: Create application .env.test file for test
                 run: |
                     touch .env.test.local
                     echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env.test.local

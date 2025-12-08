@@ -14,6 +14,6 @@ final class MainController extends AbstractController
     #[Route('/', name: 'ui_main')]
     public function index(): RedirectResponse
     {
-        return $this->redirectToRoute('ui_youtube_download_index', [], Response::HTTP_MOVED_PERMANENTLY);
+        return $this->redirectToRoute('ui_download_index', [], Response::HTTP_MOVED_PERMANENTLY);
     }
 }

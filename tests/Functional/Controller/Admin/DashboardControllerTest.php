@@ -7,7 +7,6 @@ namespace App\Tests\Functional\Controller\Admin;
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\HttpFoundation\Response;
 
 final class DashboardControllerTest extends WebTestCase
 {
@@ -37,7 +36,10 @@ final class DashboardControllerTest extends WebTestCase
         $this->client->loginUser($user);
 
         $this->client->request('GET', '/admin');
-        $this->assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+        $this->assertResponseRedirects('/ui/download');
+
+        $this->client->followRedirect();
+        $this->assertResponseIsSuccessful();
     }
 
     public function testIndexPageIsNotAvailableForDisabledAdmin(): void

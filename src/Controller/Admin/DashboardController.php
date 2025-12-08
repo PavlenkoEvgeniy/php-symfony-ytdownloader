@@ -86,7 +86,7 @@ final class DashboardController extends AbstractDashboardController
     #[\Override]
     public function configureMenuItems(): iterable
     {
-        yield MenuItem::linkToUrl('Home page', 'fa fa-home', $this->generateUrl('ui_youtube_download_index'));
+        yield MenuItem::linkToUrl('Home page', 'fa fa-home', $this->generateUrl('ui_download_index'));
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-dashboard');
         yield MenuItem::linkToCrud('Users', 'fa fa-users', User::class);
         yield MenuItem::linkToCrud('Sources', 'fa-regular fa-file-video', Source::class);

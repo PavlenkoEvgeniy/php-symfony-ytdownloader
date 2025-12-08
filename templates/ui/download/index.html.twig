@@ -4,8 +4,18 @@
 {% endblock %}
 
 {% block body %}
+    {% for message in app.flashes('success') %}
+        <div class="alert alert-success mt-1" role="alert">
+            {{ message }}
+        </div>
+    {% endfor %}
     {% for message in app.flashes('error') %}
-        <div class="alert alert-danger" role="alert">
+        <div class="alert alert-danger mt-1" role="alert">
+            {{ message }}
+        </div>
+    {% endfor %}
+    {% for message in app.flashes('warning') %}
+        <div class="alert alert-warning mt-1" role="alert">
             {{ message }}
         </div>
     {% endfor %}
@@ -17,18 +27,19 @@
         {% if is_granted('ROLE_USER') %}
             <a class="btn btn-outline-secondary" href="{{ path('ui_profile_index') }}">Profile</a>
         {% endif %}
-        <a class="btn btn-outline-warning" href="{{ path('app_logout') }}">Logout</a>
+        <a class="btn btn-outline-warning" href="{{ path('security_logout') }}" onclick="return confirm('Do you want to logout?');">Logout</a>
     </div>
     <h3>Please paste YouTube link into the form bellow:</h3><br>
     {{ form(form) }}
 
-    <h3 class="mt-5">Disk Space Available</h3>
+    <h3 class="mt-5">Disk Space Available:</h3>
     <p>Total: {{ diskSpace.total }}</p>
     <p>Used: {{ diskSpace.used }} ({{ diskSpace.percentage }}%)</p>
     <p>Free: {{ diskSpace.free }}</p>
 
     <h3 class="mt-5">Downloads:</h3>
-    <p>In Queue: {{ totalTotalPendingDownloads }}</p>
+    <p>In Queue: {{ totalPendingDownloads }}</p>
     <p>In Progress: {{ totalInProgressDownloads }}</p>
-    <p>Completed: {{ totalTotalSuccessDownloads }}</p>
+    <p>Completed: {{ totalSuccessDownloads }}</p>
+    <p>Total downloaded: {{ totalDownloaded }}</p>
 {% endblock %}

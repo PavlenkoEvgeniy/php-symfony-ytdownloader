@@ -26,15 +26,9 @@ final class MainControllerTest extends WebTestCase
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
         $this->client->loginUser($user);
 
-        $this->client->request('GET', '/ui/youtube/download');
+        $this->client->request('GET', '/ui/download');
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('h3', 'Please paste YouTube link into the form bellow:');
-    }
-
-    private function cleanupTestQueue(string $queueName): void
-    {
-        $queueCounter = self::getContainer()->get(\App\Service\RabbitMQApiQueueService::class);
-        // Можно добавить метод для очистки очереди в сервисе
     }
 
     public function testDownloadFromYoutubeWithNotValidLinkFails(): void
@@ -42,11 +36,11 @@ final class MainControllerTest extends WebTestCase
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
         $this->client->loginUser($user);
 
-        $crawler = $this->client->request('GET', '/ui/youtube/download');
+        $crawler = $this->client->request('GET', '/ui/download');
         $this->assertResponseIsSuccessful();
 
-        $form = $crawler->filter('form')->form([
-            'download[link]' => '1234567890',
+        $form = $crawler->filter(selector: 'form')->form([
+            'download_form[link]' => '1234567890',
         ]);
 
         $this->client->submit($form);
