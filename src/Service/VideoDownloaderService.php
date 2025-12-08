@@ -13,7 +13,7 @@ use Psr\Log\LoggerInterface;
 use YoutubeDl\Options;
 use YoutubeDl\YoutubeDl;
 
-final readonly class VideoDownloadService
+final readonly class VideoDownloaderService
 {
     public const BEST_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
     public const MODERATE_VIDEO_DOWNLOAD_FORMAT = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
@@ -26,7 +26,7 @@ final readonly class VideoDownloadService
 
     public function __construct(
         private string $downloadsDir,
-        private EntityManagerInterface $entityManager,
+        private EntityManagerInterface $em,
         private SourceRepository $sourceRepository,
         private LoggerInterface $logger,
         private TelegramBotService $telegramBotService,
@@ -43,8 +43,8 @@ final readonly class VideoDownloadService
             ->setType('in progress')
             ->setMessage('Started downloading.');
 
-        $this->entityManager->persist($log);
-        $this->entityManager->flush();
+        $this->em->persist($log);
+        $this->em->flush();
 
         $yt = new YoutubeDl();
 
@@ -96,7 +96,7 @@ final readonly class VideoDownloadService
                     ->setType('error')
                     ->setMessage(\sprintf('Error during downloading: %s', $video->getError()));
 
-                $this->entityManager->persist($errorLog);
+                $this->em->persist($errorLog);
 
                 if ($telegramUserId) {
                     $this->telegramBotService->getBot()->say(
@@ -121,7 +121,7 @@ final readonly class VideoDownloadService
                         ->setFilepath($path)
                         ->setSize((float) $size);
 
-                    $this->entityManager->persist($source);
+                    $this->em->persist($source);
 
                     $itemDownloadLog = new Log();
                     $itemDownloadLog
@@ -129,7 +129,7 @@ final readonly class VideoDownloadService
                         ->setMessage(\sprintf('File "%s" downloaded successfully.', $filename))
                         ->setSize((float) $size);
 
-                    $this->entityManager->persist($itemDownloadLog);
+                    $this->em->persist($itemDownloadLog);
 
                     $this->logger->info(\sprintf('File "%s" downloaded successfully.', $filename));
                 }
@@ -140,9 +140,9 @@ final readonly class VideoDownloadService
             ->setType('finished')
             ->setMessage('Finished downloading.');
 
-        $this->entityManager->persist($log);
+        $this->em->persist($log);
 
-        $this->entityManager->flush();
+        $this->em->flush();
 
         if ($telegramUserId) {
             $this->telegramBotService->getBot()->say(
