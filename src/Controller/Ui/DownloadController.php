@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Ui;
 
-use App\Form\DownloadType;
+use App\Form\DownloadForm;
 use App\Helper\Helper;
 use App\Message\DownloadMessage;
 use App\Repository\LogRepository;
@@ -24,7 +24,7 @@ final class DownloadController extends AbstractController
     /**
      * @throws ExceptionInterface
      */
-    #[Route('/ui/youtube/download', name: 'ui_youtube_download_index', methods: [Request::METHOD_GET, Request::METHOD_POST])]
+    #[Route('/ui/download', name: 'ui_download_index', methods: [Request::METHOD_GET, Request::METHOD_POST])]
     public function index(
         Request $request,
         MessageBusInterface $bus,
@@ -33,7 +33,7 @@ final class DownloadController extends AbstractController
         LogRepository $logRepository,
         RabbitMQApiQueueService $rabbitMQApiQueueService,
     ): Response|RedirectResponse {
-        $form = $this->createForm(DownloadType::class);
+        $form = $this->createForm(DownloadForm::class);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -58,13 +58,15 @@ final class DownloadController extends AbstractController
         $totalPendingDownloads    = $messengerQueueCounter->getQueueCount();
         $totalInProgressDownloads = $rabbitMQApiQueueService->getProcessingMessagesCount();
         $totalSuccessDownloads    = $logRepository->getTotalSuccessCount();
+        $totalSizeDownloaded      = $logRepository->getTotalSize();
 
         return $this->render('ui/download/index.html.twig', [
             'form'                       => $form,
             'diskSpace'                  => Helper::getFreeSpace(),
-            'totalTotalPendingDownloads' => $totalPendingDownloads,
+            'totalPendingDownloads'      => $totalPendingDownloads,
             'totalInProgressDownloads'   => $totalInProgressDownloads,
-            'totalTotalSuccessDownloads' => $totalSuccessDownloads,
+            'totalSuccessDownloads'      => $totalSuccessDownloads,
+            'totalDownloaded'            => Helper::formatBytes($totalSizeDownloaded),
         ]);
     }
 }
