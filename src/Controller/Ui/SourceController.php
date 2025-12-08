@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Ui;
 
 use App\Entity\Source;
-use App\Form\SourceType;
+use App\Form\SourceForm;
 use App\Repository\SourceRepository;
 use App\Service\MessengerQueueCounterService;
 use App\Service\RabbitMQApiQueueService;
@@ -20,6 +20,7 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class SourceController extends AbstractController
 {
@@ -56,7 +57,7 @@ final class SourceController extends AbstractController
     public function new(Request $request, EntityManagerInterface $entityManager): Response
     {
         $source = new Source();
-        $form   = $this->createForm(SourceType::class, $source);
+        $form   = $this->createForm(SourceForm::class, $source);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -81,11 +82,12 @@ final class SourceController extends AbstractController
     }
 
     #[Route('/ui/source/{id}/edit', name: 'ui_source_edit', methods: [Request::METHOD_GET, Request::METHOD_POST])]
+    #[IsGranted('ROLE_ADMIN')]
     public function edit(Request $request, Source $source, EntityManagerInterface $entityManager): Response
     {
         $oldFilename = \sprintf('%s/%s', $this->downloadsDir, $source->getFilename());
 
-        $form = $this->createForm(SourceType::class, $source);
+        $form = $this->createForm(SourceForm::class, $source);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
