@@ -15,7 +15,7 @@ use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Url;
 
-final class DownloadType extends AbstractType
+final class DownloadForm extends AbstractType
 {
     public function __construct(
         private readonly RequestStack $requestStack,
@@ -56,7 +56,7 @@ final class DownloadType extends AbstractType
                 ],
             ])
             ->add('submit', SubmitType::class, [
-                'label' => 'Start to download! 🚀',
+                'label' => 'Start! 🚀',
                 'attr'  => [
                     'class' => 'btn btn-outline-primary mt-2',
                 ],
