@@ -10,7 +10,7 @@ use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
-class ChangePasswordType extends AbstractType
+class ChangePasswordForm extends AbstractType
 {
     #[\Override]
     public function buildForm(FormBuilderInterface $builder, array $options): void
