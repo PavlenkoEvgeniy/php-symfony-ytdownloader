@@ -1,7 +1,6 @@
-# 🎬 YouTube, Rutube, VK Video Downloader
+# 🎬 Download video and audio from services: YouTube, Instagram, Telegram and others 
 
-*A lightweight service for downloading videos from YouTube, Rutube, Instagram,
-Ok and Vk*
+*A lightweight service for downloading video and audio from YouTube, Instagram, Telegram and others*
 
 **🛠 Tech Stack**:
 
@@ -18,7 +17,7 @@ Ok and Vk*
 
 ## 📸 Preview
 
-<img src="docs/preview/1.jpg" alt="Login page" height="300"> <img src="docs/preview/2.jpg" alt="Index page" height="300"> <img src="docs/preview/3.jpg" alt="Downloads page" height="300"> <img src="docs/preview/4.jpg" alt="Admin dashboard" height="300"> <img src="docs/preview/5.jpg" alt="Admin menu" height="300">
+<img src="docs/preview/1.jpg" alt="Login page" height="300"> <img src="docs/preview/2.jpg" alt="Index page" height="300"> <img src="docs/preview/3.jpg" alt="Downloads page" height="300"> <img src="docs/preview/4.jpg" alt="Admin dashboard" height="300"> <img src="docs/preview/5.jpg" alt="Admin menu" height="300"> <img src="docs/preview/6.jpg" alt="Admin menu" height="300">
 
 ## ⚠️ Legal Disclaimer:
 
