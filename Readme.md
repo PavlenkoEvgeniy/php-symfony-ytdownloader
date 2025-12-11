@@ -1,6 +1,6 @@
-# 🎬 Download video and audio from YouTube, Instagram, Telegram and others 
+# 🎬 Download video and audio from YouTube, Instagram, Telegram, TikTok and others 
 
-*A lightweight service for downloading video and audio from YouTube, Instagram, Telegram and others*
+*A lightweight service for downloading video and audio from YouTube, Instagram, Telegram, TikTok and others*
 
 **🛠 Tech Stack**:
 
