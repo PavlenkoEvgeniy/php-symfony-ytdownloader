@@ -18,7 +18,7 @@ class ProfileController extends AbstractController
 {
     #[Route('/ui/profile', name: 'ui_profile_index')]
     #[IsGranted('ROLE_USER')]
-    public function index(Request $request, EntityManagerInterface $entityManager, UserPasswordHasherInterface $passwordHasher): Response
+    public function index(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher): Response
     {
         /** @var User $user */
         $user = $this->getUser();
@@ -39,8 +39,8 @@ class ProfileController extends AbstractController
             $hashedPassword = $passwordHasher->hashPassword($user, $newPassword);
             $user->setPassword($hashedPassword);
 
-            $entityManager->persist($user);
-            $entityManager->flush();
+            $em->persist($user);
+            $em->flush();
 
             $this->addFlash('success', 'Your password was successfully updated.');
 

@@ -56,15 +56,15 @@ final class SourceController extends AbstractController
     }
 
     #[Route('/ui/source/new', name: 'ui_source_new', methods: [Request::METHOD_GET, Request::METHOD_POST])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(Request $request, EntityManagerInterface $em): Response
     {
         $source = new Source();
         $form   = $this->createForm(SourceForm::class, $source);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($source);
-            $entityManager->flush();
+            $em->persist($source);
+            $em->flush();
 
             return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
         }
@@ -88,7 +88,7 @@ final class SourceController extends AbstractController
     public function edit(
         Request $request,
         Source $source,
-        EntityManagerInterface $entityManager,
+        EntityManagerInterface $em,
         LoggerInterface $logger,
     ): Response {
         $oldFilename = \sprintf('%s/%s', $this->downloadsDir, $source->getFilename());
@@ -120,7 +120,7 @@ final class SourceController extends AbstractController
                 }
             }
 
-            $entityManager->flush();
+            $em->flush();
 
             return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
         }
@@ -135,7 +135,7 @@ final class SourceController extends AbstractController
     public function delete(
         Request $request,
         Source $source,
-        EntityManagerInterface $entityManager,
+        EntityManagerInterface $em,
         LoggerInterface $logger,
     ): Response {
         if ($this->isCsrfTokenValid('delete' . (string) $source->getId(), $request->getPayload()->getString('_token'))) {
@@ -152,7 +152,7 @@ final class SourceController extends AbstractController
                 \unlink($filePath);
                 $this->addFlash('success', 'File was deleted');
             } catch (\Exception $e) {
-                $this->addFlash('error', 'An error occurred');
+                $this->addFlash('error', 'An error occurred while deleting the file');
                 $logger->alert('An error occurred while deleting the file', [
                     'message'  => $e->getMessage(),
                     'source'   => $source,
@@ -160,8 +160,8 @@ final class SourceController extends AbstractController
                 ]);
             }
 
-            $entityManager->remove($source);
-            $entityManager->flush();
+            $em->remove($source);
+            $em->flush();
         }
 
         return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
@@ -170,7 +170,7 @@ final class SourceController extends AbstractController
     #[Route('/ui/source/delete-all', name: 'ui_source_delete_all', methods: [Request::METHOD_POST])]
     public function deleteAll(
         Request $request,
-        EntityManagerInterface $entityManager,
+        EntityManagerInterface $em,
         SourceRepository $sourceRepository,
         LoggerInterface $logger,
     ): RedirectResponse {
@@ -183,27 +183,28 @@ final class SourceController extends AbstractController
                 $filePath = $source->getFilepath() . '/' . $source->getFilename();
 
                 if (!\file_exists($filePath)) {
+                    $this->addFlash('error', 'An error occurred while deleting the file');
                     $logger->alert('An error occurred while deleting the file', [
                         'message' => \sprintf('File not found, not possible to delete file: %s', $filePath),
                     ]);
                     throw new NotFoundHttpException('File not found');
                 }
 
-                if (\unlink($filePath)) {
-                    $resultMessage['success'] = 'Files were deleted';
-                } else {
-                    $resultMessage['error'] = 'Cannot delete files';
+                try {
+                    \unlink($filePath);
+                    $this->addFlash('success', 'File was deleted');
+                } catch (\Exception $e) {
+                    $this->addFlash('error', 'An error occurred while deleting the file');
+                    $logger->alert('An error occurred while deleting the file', [
+                        'message'  => $e->getMessage(),
+                        'source'   => $source,
+                        'filepath' => $filePath,
+                    ]);
                 }
 
-                $entityManager->remove($source);
+                $em->remove($source);
             }
-            $entityManager->flush();
-        }
-
-        if (\array_key_exists('success', $resultMessage)) {
-            $this->addFlash('success', $resultMessage['success']);
-        } elseif (\array_key_exists('error', $resultMessage)) {
-            $this->addFlash('error', $resultMessage['error']);
+            $em->flush();
         }
 
         return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
