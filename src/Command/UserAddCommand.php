@@ -22,7 +22,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 final class UserAddCommand extends Command
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
+        private readonly EntityManagerInterface $em,
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly UserRepository $userRepository,
     ) {
@@ -81,8 +81,8 @@ final class UserAddCommand extends Command
         ;
 
         try {
-            $this->entityManager->persist($user);
-            $this->entityManager->flush();
+            $this->em->persist($user);
+            $this->em->flush();
         } catch (\Exception $exception) {
             $io->error(\sprintf('Error: %s', $exception->getMessage()));
 
