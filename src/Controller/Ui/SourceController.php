@@ -10,7 +10,9 @@ use App\Repository\SourceRepository;
 use App\Service\MessengerQueueCounterService;
 use App\Service\RabbitMQApiQueueService;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -83,8 +85,12 @@ final class SourceController extends AbstractController
 
     #[Route('/ui/source/{id}/edit', name: 'ui_source_edit', methods: [Request::METHOD_GET, Request::METHOD_POST])]
     #[IsGranted('ROLE_ADMIN')]
-    public function edit(Request $request, Source $source, EntityManagerInterface $entityManager): Response
-    {
+    public function edit(
+        Request $request,
+        Source $source,
+        EntityManagerInterface $entityManager,
+        LoggerInterface $logger,
+    ): Response {
         $oldFilename = \sprintf('%s/%s', $this->downloadsDir, $source->getFilename());
 
         $form = $this->createForm(SourceForm::class, $source);
@@ -94,11 +100,24 @@ final class SourceController extends AbstractController
             $newFileName = \sprintf('%s/%s', $this->downloadsDir, $form->get('filename')->getData());
 
             if (!\file_exists($oldFilename)) {
-                throw new NotFoundHttpException('File not found');
+                $logger->alert('An error occurred while editing the file', [
+                    'message' => \sprintf('File not found, not possible to edit file: %s', $oldFilename),
+                ]);
+                throw new NotFoundHttpException(\sprintf('File not found: %s', $oldFilename));
             }
 
             if ($newFileName !== $oldFilename) {
-                \rename($oldFilename, $newFileName);
+                try {
+                    \rename($oldFilename, $newFileName);
+                } catch (\Exception $e) {
+                    $logger->alert('An error occurred while deleting the file', [
+                        'message'     => $e->getMessage(),
+                        'source'      => $source,
+                        'oldFilename' => $oldFilename,
+                        'newFileName' => $newFileName,
+                    ]);
+                    throw new IOException($e->getMessage());
+                }
             }
 
             $entityManager->flush();
@@ -113,19 +132,32 @@ final class SourceController extends AbstractController
     }
 
     #[Route('/ui/source/delete/{id}', name: 'ui_source_delete', methods: [Request::METHOD_POST])]
-    public function delete(Request $request, Source $source, EntityManagerInterface $entityManager): Response
-    {
+    public function delete(
+        Request $request,
+        Source $source,
+        EntityManagerInterface $entityManager,
+        LoggerInterface $logger,
+    ): Response {
         if ($this->isCsrfTokenValid('delete' . (string) $source->getId(), $request->getPayload()->getString('_token'))) {
             $filePath = $source->getFilepath() . '/' . $source->getFilename();
 
             if (!\file_exists($filePath)) {
-                throw new NotFoundHttpException('File not found');
+                $logger->alert('An error occurred while deleting the file', [
+                    'message' => \sprintf('File not found, not possible to delete file: %s', $filePath),
+                ]);
+                throw new NotFoundHttpException(\sprintf('File not found: %s', $filePath));
             }
 
-            if (\unlink($filePath)) {
+            try {
+                \unlink($filePath);
                 $this->addFlash('success', 'File was deleted');
-            } else {
-                $this->addFlash('error', 'Cannot delete file');
+            } catch (\Exception $e) {
+                $this->addFlash('error', 'An error occurred');
+                $logger->alert('An error occurred while deleting the file', [
+                    'message'  => $e->getMessage(),
+                    'source'   => $source,
+                    'filepath' => $filePath,
+                ]);
             }
 
             $entityManager->remove($source);
@@ -140,6 +172,7 @@ final class SourceController extends AbstractController
         Request $request,
         EntityManagerInterface $entityManager,
         SourceRepository $sourceRepository,
+        LoggerInterface $logger,
     ): RedirectResponse {
         if ($this->isCsrfTokenValid('delete_all', $request->getPayload()->getString('_token'))) {
             $sources = $sourceRepository->findAll();
@@ -150,6 +183,9 @@ final class SourceController extends AbstractController
                 $filePath = $source->getFilepath() . '/' . $source->getFilename();
 
                 if (!\file_exists($filePath)) {
+                    $logger->alert('An error occurred while deleting the file', [
+                        'message' => \sprintf('File not found, not possible to delete file: %s', $filePath),
+                    ]);
                     throw new NotFoundHttpException('File not found');
                 }
 
@@ -174,12 +210,17 @@ final class SourceController extends AbstractController
     }
 
     #[Route('/ui/source/download/{id}', name: 'ui_source_download', methods: [Request::METHOD_GET])]
-    public function download(Source $source): BinaryFileResponse
-    {
+    public function download(
+        Source $source,
+        LoggerInterface $logger,
+    ): BinaryFileResponse {
         $filePath = $source->getFilepath() . '/' . $source->getFilename();
 
         if (!\file_exists($filePath)) {
-            throw $this->createNotFoundException('File was not found');
+            $logger->alert('An error occurred while deleting the file', [
+                'message' => \sprintf('File not found, not possible to delete file: %s', $filePath),
+            ]);
+            throw new NotFoundHttpException('File not found');
         }
 
         $response = new BinaryFileResponse($filePath);

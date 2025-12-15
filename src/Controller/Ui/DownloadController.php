@@ -61,12 +61,12 @@ final class DownloadController extends AbstractController
         $totalSizeDownloaded      = $logRepository->getTotalSize();
 
         return $this->render('ui/download/index.html.twig', [
-            'form'                       => $form,
-            'diskSpace'                  => Helper::getFreeSpace(),
-            'totalPendingDownloads'      => $totalPendingDownloads,
-            'totalInProgressDownloads'   => $totalInProgressDownloads,
-            'totalSuccessDownloads'      => $totalSuccessDownloads,
-            'totalDownloaded'            => Helper::formatBytes($totalSizeDownloaded),
+            'form'                     => $form,
+            'diskSpace'                => Helper::getFreeSpace(),
+            'totalPendingDownloads'    => $totalPendingDownloads,
+            'totalInProgressDownloads' => $totalInProgressDownloads,
+            'totalSuccessDownloads'    => $totalSuccessDownloads,
+            'totalDownloaded'          => Helper::formatBytes($totalSizeDownloaded),
         ]);
     }
 }
