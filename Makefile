@@ -24,6 +24,7 @@ help:
 	@echo "20. cache-purge ........................................ Delete cache directory."
 	@echo "21. lint ............ Fix project by php-cs-fixer and after that check by psalm."
 	@echo "22. yt-dlp-update ....................................... Update yt-dlp package."
+	@echo "23. bash .......................................... Alias for docker-php command"
 
 init: db-purge docker-compose-up composer-install composer-update db-setup supervisor-start cache-clear
 
@@ -91,3 +92,5 @@ lint: cs-fix psalm
 
 yt-dlp-update:
 	docker exec ytdownloader-php-fpm pip install --upgrade yt-dlp --break-system-packages
+
+bash: docker-php
