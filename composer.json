@@ -9,12 +9,12 @@
         "ext-iconv": "*",
         "botman/botman": "^2.8.10",
         "botman/driver-telegram": "^2.0.6",
-        "doctrine/dbal": "^3.10.3",
+        "doctrine/dbal": "^3.10.4",
         "doctrine/doctrine-bundle": "^2.18.1",
         "doctrine/doctrine-migrations-bundle": "^3.7.0",
-        "doctrine/orm": "^3.5.7",
-        "easycorp/easyadmin-bundle": "^4.27.4",
-        "gedmo/doctrine-extensions": "^3.21",
+        "doctrine/orm": "^3.5.8",
+        "easycorp/easyadmin-bundle": "^4.27.5",
+        "gedmo/doctrine-extensions": "^3.22",
         "norkunas/youtube-dl-php": "^2.12",
         "oskarstark/readable-filesize-extension": "^1.2.1",
         "php-amqplib/php-amqplib": "^3.7.4",
@@ -36,7 +36,7 @@
         "symfony/mailer": "7.4.*",
         "symfony/messenger": "7.4.*",
         "symfony/mime": "7.4.*",
-        "symfony/monolog-bundle": "^3.11",
+        "symfony/monolog-bundle": "^3.11.1",
         "symfony/notifier": "7.4.*",
         "symfony/process": "7.4.*",
         "symfony/property-access": "7.4.*",
@@ -54,8 +54,8 @@
         "symfony/validator": "7.4.*",
         "symfony/web-link": "7.4.*",
         "symfony/yaml": "7.4.*",
-        "twig/extra-bundle": "^2.12|^3.22.1",
-        "twig/twig": "^2.12|^3.22.0"
+        "twig/extra-bundle": "^2.12|^3.22.2",
+        "twig/twig": "^2.12|^3.22.1"
     },
     "config": {
         "allow-plugins": {
@@ -109,16 +109,16 @@
         }
     },
     "require-dev": {
-        "doctrine/doctrine-fixtures-bundle": "^4.3",
-        "friendsofphp/php-cs-fixer": "^3.90.0",
-        "phpunit/phpunit": "^9.6.29",
+        "doctrine/doctrine-fixtures-bundle": "^4.3.1",
+        "friendsofphp/php-cs-fixer": "^3.92.0",
+        "phpunit/phpunit": "^9.6.31",
         "symfony/browser-kit": "7.4.*",
         "symfony/css-selector": "7.4.*",
         "symfony/debug-bundle": "7.4.*",
-        "symfony/maker-bundle": "^1.65.0",
+        "symfony/maker-bundle": "^1.65.1",
         "symfony/phpunit-bridge": "^7.4.0",
         "symfony/stopwatch": "7.4.*",
         "symfony/web-profiler-bundle": "7.4.*",
-        "vimeo/psalm": "^6.13.1"
+        "vimeo/psalm": "^6.14.2"
     }
 }
