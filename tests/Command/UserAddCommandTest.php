@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Integrational\Command;
+namespace App\Tests\Command;
 
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Console\Application;

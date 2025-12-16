@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Helper;
+namespace App\Tests\Helper;
 
 use App\Helper\Helper;
 use PHPUnit\Framework\TestCase;
