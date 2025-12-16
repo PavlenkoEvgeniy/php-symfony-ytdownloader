@@ -29,6 +29,7 @@ database/
 
 # IDE
 .idea/
+.vscode/
 
 #  Auto-generated config reference file
 /config/reference.php
