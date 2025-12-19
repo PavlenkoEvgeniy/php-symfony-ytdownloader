@@ -10,9 +10,9 @@ use App\Repository\SourceRepository;
 use App\Service\MessengerQueueCounterService;
 use App\Service\RabbitMQApiQueueService;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Component\Pager\PaginatorInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,7 +20,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -37,6 +36,8 @@ final class SourceController extends AbstractController
     public function index(
         SourceRepository $sourceRepository,
         SessionInterface $session,
+        PaginatorInterface $paginator,
+        Request $request,
         #[MapQueryParameter] string $order = 'desc',
     ): Response {
         if ($session->has('lastSelectedOrder')) {
@@ -47,11 +48,19 @@ final class SourceController extends AbstractController
 
         $totalInProgress = $this->rabbitMQApiQueueService->getProcessingMessagesCount();
 
+        $files = $sourceRepository->findBy([], ['createdAt' => $order]);
+
+        $pagination = $paginator->paginate(
+            $files,
+            \max($request->query->getInt('page', 1), 1),
+            10
+        );
+
         return $this->render('ui/source/index.html.twig', [
-            'sources'         => $sourceRepository->findBy([], ['createdAt' => $order]),
-            'order'           => $order,
-            'totalPending'    => $totalPending,
-            'totalInProgress' => $totalInProgress,
+            'pagination'       => $pagination,
+            'order'            => $order,
+            'totalPending'     => $totalPending,
+            'totalInProgress'  => $totalInProgress,
         ]);
     }
 
@@ -100,23 +109,28 @@ final class SourceController extends AbstractController
             $newFileName = \sprintf('%s/%s', $this->downloadsDir, $form->get('filename')->getData());
 
             if (!\file_exists($oldFilename)) {
-                $logger->alert('An error occurred while editing the file', [
+                $logger->alert('An error occurred while editing the file, file is not exists.', [
                     'message' => \sprintf('File not found, not possible to edit file: %s', $oldFilename),
                 ]);
-                throw new NotFoundHttpException(\sprintf('File not found: %s', $oldFilename));
+                $this->addFlash('error', 'An error occurred while editing the file');
+
+                return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
             }
 
             if ($newFileName !== $oldFilename) {
                 try {
                     \rename($oldFilename, $newFileName);
                 } catch (\Exception $e) {
-                    $logger->alert('An error occurred while deleting the file', [
+                    $logger->alert('An error occurred while renaming the file', [
                         'message'     => $e->getMessage(),
                         'source'      => $source,
                         'oldFilename' => $oldFilename,
                         'newFileName' => $newFileName,
                     ]);
-                    throw new IOException($e->getMessage());
+
+                    $this->addFlash('error', 'An error occurred while renaming the file');
+
+                    return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
                 }
             }
 
@@ -145,7 +159,9 @@ final class SourceController extends AbstractController
                 $logger->alert('An error occurred while deleting the file', [
                     'message' => \sprintf('File not found, not possible to delete file: %s', $filePath),
                 ]);
-                throw new NotFoundHttpException(\sprintf('File not found: %s', $filePath));
+                $this->addFlash('error', 'An error occurred while deleting the file');
+
+                return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
             }
 
             try {
@@ -158,6 +174,8 @@ final class SourceController extends AbstractController
                     'source'   => $source,
                     'filepath' => $filePath,
                 ]);
+
+                return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
             }
 
             $em->remove($source);
@@ -177,17 +195,16 @@ final class SourceController extends AbstractController
         if ($this->isCsrfTokenValid('delete_all', $request->getPayload()->getString('_token'))) {
             $sources = $sourceRepository->findAll();
 
-            $resultMessage = [];
-
             foreach ($sources as $source) {
                 $filePath = $source->getFilepath() . '/' . $source->getFilename();
 
                 if (!\file_exists($filePath)) {
-                    $this->addFlash('error', 'An error occurred while deleting the file');
+                    $this->addFlash('error', 'An error occurred while deleting the file, file is not exists.');
                     $logger->alert('An error occurred while deleting the file', [
                         'message' => \sprintf('File not found, not possible to delete file: %s', $filePath),
                     ]);
-                    throw new NotFoundHttpException('File not found');
+
+                    return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
                 }
 
                 try {
@@ -214,14 +231,16 @@ final class SourceController extends AbstractController
     public function download(
         Source $source,
         LoggerInterface $logger,
-    ): BinaryFileResponse {
+    ): BinaryFileResponse|RedirectResponse {
         $filePath = $source->getFilepath() . '/' . $source->getFilename();
 
         if (!\file_exists($filePath)) {
-            $logger->alert('An error occurred while deleting the file', [
-                'message' => \sprintf('File not found, not possible to delete file: %s', $filePath),
+            $this->addFlash('error', 'An error occurred while downloading the file');
+            $logger->alert('An error occurred while downloading the file', [
+                'message' => \sprintf('File not found, not possible to download file: %s', $filePath),
             ]);
-            throw new NotFoundHttpException('File not found');
+
+            return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
         }
 
         $response = new BinaryFileResponse($filePath);
