@@ -71,6 +71,9 @@
             ".php-cs-fixer.dist.php"
         ]
     },
+    "knplabs/knp-paginator-bundle": {
+        "version": "v6.10.0"
+    },
     "oskarstark/readable-filesize-extension": {
         "version": "1.2",
         "recipe": {

@@ -21,7 +21,7 @@
     {% endfor %}
     <div class="d-flex justify-content-between mt-4 mb-2">
         <a class="btn btn-outline-success" href="{{ path('ui_download_index') }}">+ Add new download</a>
-        {% if sources is not empty %}
+        {% if pagination is not empty %}
             {{ include('ui/source/_delete_all_form.html.twig') }}
         {% endif %}
     </div>
@@ -29,7 +29,7 @@
         <span class="fw-bold">In queue: {{ totalPending }}</span> |
         <span class="fw-bold">In progress: {{ totalInProgress }}</span>
     </div>
-    {% if sources is not empty %}
+    {% if pagination is not empty %}
         <div class="col-sm-3 col-md-2 col-lg-1">
             <div>
                 <label for="sort_by_select"></label>
@@ -53,7 +53,7 @@
             </tr>
             </thead>
             <tbody>
-            {% for source in sources %}
+            {% for source in pagination %}
                 <tr>
                     <td>{{ loop.index }}</td>
                     <td>{{ source.filename }}</td>
@@ -94,5 +94,8 @@
             {% endfor %}
             </tbody>
         </table>
+    </div>
+    <div>
+        {{ knp_pagination_render(pagination) }}
     </div>
 {% endblock %}
