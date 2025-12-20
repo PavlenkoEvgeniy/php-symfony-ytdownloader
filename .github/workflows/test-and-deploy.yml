@@ -138,5 +138,9 @@ jobs:
                     script: |
                         cd ${{ secrets.SSH_PROJECT_PATH }}
                         sudo make stop
+                        git stash
                         git pull origin master
-                        sudo make restart
+                        make restart
+                        make install
+                        make cache-purge
+                        make cache-clear
