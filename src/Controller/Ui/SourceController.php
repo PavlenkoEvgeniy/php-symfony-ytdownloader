@@ -114,7 +114,7 @@ final class SourceController extends AbstractController
             $newFileName = \sprintf('%s/%s', $this->downloadsDir, $form->get('filename')->getData());
 
             if (!\file_exists($oldFilename)) {
-                $logger->alert('An error occurred while editing the file, file is not exists.', [
+                $logger->alert('An error occurred while editing the file, file is not exists', [
                     'message' => \sprintf('File not found, not possible to edit file: %s', $oldFilename),
                 ]);
                 $this->addFlash('error', 'An error occurred while editing the file');
@@ -198,13 +198,23 @@ final class SourceController extends AbstractController
         LoggerInterface $logger,
     ): RedirectResponse {
         if ($this->isCsrfTokenValid('delete_all', $request->getPayload()->getString('_token'))) {
-            $sources = $sourceRepository->findAll();
+            $sources  = $sourceRepository->findAll();
+            $quantity = \count($sources);
+
+            if (0 === $quantity) {
+                $logger->alert('An error occurred while deleting the files', [
+                    'message' => 'Nothing to delete, quantity of files is zero',
+                ]);
+                $this->addFlash('error', 'An error occurred while deleting the files. Nothing to delete');
+
+                return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
+            }
 
             foreach ($sources as $source) {
                 $filePath = $source->getFilepath() . '/' . $source->getFilename();
 
                 if (!\file_exists($filePath)) {
-                    $this->addFlash('error', 'An error occurred while deleting the file, file is not exists.');
+                    $this->addFlash('error', 'An error occurred while deleting the file, file is not exists');
                     $logger->alert('An error occurred while deleting the file', [
                         'message' => \sprintf('File not found, not possible to delete file: %s', $filePath),
                     ]);
@@ -214,7 +224,6 @@ final class SourceController extends AbstractController
 
                 try {
                     \unlink($filePath);
-                    $this->addFlash('success', 'File was deleted');
                 } catch (\Exception $e) {
                     $this->addFlash('error', 'An error occurred while deleting the file');
                     $logger->alert('An error occurred while deleting the file', [
@@ -227,6 +236,12 @@ final class SourceController extends AbstractController
                 $em->remove($source);
             }
             $em->flush();
+        }
+
+        if (1 === $quantity) {
+            $this->addFlash('success', '[1] file was deleted');
+        } else {
+            $this->addFlash('success', \sprintf('[%s] files was deleted', $quantity));
         }
 
         return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
