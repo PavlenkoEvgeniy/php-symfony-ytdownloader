@@ -44,21 +44,26 @@ final class SourceController extends AbstractController
             $order = $session->get('lastSelectedOrder');
         }
 
-        $totalPending = $this->messengerQueueCounter->getQueueCount();
-
+        $totalPending    = $this->messengerQueueCounter->getQueueCount();
         $totalInProgress = $this->rabbitMQApiQueueService->getProcessingMessagesCount();
 
         $files = $sourceRepository->findBy([], ['createdAt' => $order]);
 
+        $perPage = 10;
+
         $pagination = $paginator->paginate(
             $files,
             \max($request->query->getInt('page', 1), 1),
-            10
+            $perPage
         );
+
+        $currentPage    = $pagination->getCurrentPageNumber();
+        $startingNumber = ($currentPage - 1) * $perPage + 1;
 
         return $this->render('ui/source/index.html.twig', [
             'pagination'       => $pagination,
             'order'            => $order,
+            'startingNumber'   => $startingNumber,
             'totalPending'     => $totalPending,
             'totalInProgress'  => $totalInProgress,
         ]);

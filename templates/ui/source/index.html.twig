@@ -55,7 +55,7 @@
             <tbody>
             {% for source in pagination %}
                 <tr>
-                    <td>{{ loop.index }}</td>
+                    <td>{{ startingNumber + loop.index0 }}</td>
                     <td>{{ source.filename }}</td>
                     <td class="text-center">{{ source.size|readable_filesize(2) }}</td>
                     <td class="d-grid gap-2 text-center">
