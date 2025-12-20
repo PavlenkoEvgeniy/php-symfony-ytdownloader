@@ -239,9 +239,9 @@ final class SourceController extends AbstractController
         }
 
         if (1 === $quantity) {
-            $this->addFlash('success', '[1] file was deleted');
+            $this->addFlash('success', '1 file was deleted');
         } else {
-            $this->addFlash('success', \sprintf('[%s] files was deleted', $quantity));
+            $this->addFlash('success', \sprintf('%s files were deleted', $quantity));
         }
 
         return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
