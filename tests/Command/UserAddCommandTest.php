@@ -19,7 +19,7 @@ class UserAddCommandTest extends KernelTestCase
         $kernel = static::bootKernel();
         $app    = new Application($kernel);
 
-        $command             = $app->find('app:user:add');
+        $command             = $app->find('app:user-add');
         $this->commandTester = new CommandTester($command);
 
         $this->userRepository = $this->getContainer()->get(UserRepository::class);

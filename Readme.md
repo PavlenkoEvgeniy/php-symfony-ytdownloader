@@ -79,10 +79,10 @@ services.
    make supervisor-start
    ```
 
-8. **Create admin by console command**:
+8. **Create admin user by console command**:
    ```bash
    make docker-php
-   php bin/console app:user:add <username> [password]
+   php bin/console app:user-add <username> [password]
    ```
 
 9. **Run tests**:
