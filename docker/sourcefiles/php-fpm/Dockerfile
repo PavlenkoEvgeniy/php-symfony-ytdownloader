@@ -56,6 +56,9 @@ RUN pip install --upgrade yt-dlp --break-system-packages
 RUN apt-get update && \
     apt-get install -y -o Dpkg::Options::="--force-confold" supervisor
 
+# Install browser for generating cookies
+RUN apt-get install chromium -y
+
 # Create download directory
 RUN mkdir -p /application/var/downloads/
 RUN chmod -R 775 /application/var/downloads/
