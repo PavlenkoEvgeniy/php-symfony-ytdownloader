@@ -130,7 +130,7 @@ services.
 ✅ ~~Tests coverage~~  
 ✅ ~~Refactor to services~~  
 ✅ ~~Health check endpoint~~  
-🔳 YouTube cache optimization (avoid bot detection)  
+✅ ~~YouTube cache/cookies optimization (avoid anti-bot detection)~~  
 ✅ ~~Download statistics counter~~  
 🔳 REST API implementation  
 ✅ ~~Telegram bot integration~~  
