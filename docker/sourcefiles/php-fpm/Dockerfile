@@ -57,9 +57,9 @@ RUN apt-get update && \
     apt-get install -y -o Dpkg::Options::="--force-confold" supervisor
 
 # Install browser for generating cookies
-RUN apt-get install chromium -y \
-    mkdir -p /tmp/chromium_data \
-    chromium --headless --disable-gpu --no-sandbox --user-data-dir=/tmp/chromium_data --no-first-run https://example.com --timeout=3000 2>/dev/null
+RUN apt-get install chromium -y
+RUN mkdir -p /tmp/chromium_data
+RUN chromium --headless --disable-gpu --no-sandbox --user-data-dir=/tmp/chromium_data --no-first-run https://example.com --timeout=3000 2>/dev/null
 
 # Create download directory
 RUN mkdir -p /application/var/downloads/
