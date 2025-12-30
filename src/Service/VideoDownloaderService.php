@@ -75,7 +75,7 @@ final readonly class VideoDownloaderService
                     ->format($downloadFormat)
                     ->mergeOutputFormat(self::MERGE_OUTPUT_FORMAT_VIDEO)
                     ->output(self::OUTPUT_FILE_FORMAT_VIDEO)
-                    ->cookies('--cookies-from-browser chromium+gnomekeyring')
+                    ->cookies('--cookies-from-browser chromium+gnomekeyring:/tmp/chromium_data')
             );
         } else {
             $collection = $yt->download(
