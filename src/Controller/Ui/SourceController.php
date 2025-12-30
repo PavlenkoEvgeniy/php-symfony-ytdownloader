@@ -69,26 +69,6 @@ final class SourceController extends AbstractController
         ]);
     }
 
-    #[Route('/ui/source/new', name: 'ui_source_new', methods: [Request::METHOD_GET, Request::METHOD_POST])]
-    public function new(Request $request, EntityManagerInterface $em): Response
-    {
-        $source = new Source();
-        $form   = $this->createForm(SourceForm::class, $source);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $em->persist($source);
-            $em->flush();
-
-            return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
-        }
-
-        return $this->render('ui/source/new.html.twig', [
-            'source' => $source,
-            'form'   => $form,
-        ]);
-    }
-
     #[Route('/ui/source/{id}', name: 'ui_source_show', methods: [Request::METHOD_GET])]
     public function show(Source $source): Response
     {
@@ -125,7 +105,7 @@ final class SourceController extends AbstractController
             if ($newFileName !== $oldFilename) {
                 try {
                     \rename($oldFilename, $newFileName);
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     $logger->alert('An error occurred while renaming the file', [
                         'message'     => $e->getMessage(),
                         'source'      => $source,
@@ -172,7 +152,7 @@ final class SourceController extends AbstractController
             try {
                 \unlink($filePath);
                 $this->addFlash('success', 'File was deleted');
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $this->addFlash('error', 'An error occurred while deleting the file');
                 $logger->alert('An error occurred while deleting the file', [
                     'message'  => $e->getMessage(),
@@ -224,7 +204,7 @@ final class SourceController extends AbstractController
 
                 try {
                     \unlink($filePath);
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     $this->addFlash('error', 'An error occurred while deleting the file');
                     $logger->alert('An error occurred while deleting the file', [
                         'message'  => $e->getMessage(),

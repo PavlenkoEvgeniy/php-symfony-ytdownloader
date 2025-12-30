@@ -15,14 +15,14 @@ use YoutubeDl\YoutubeDl;
 
 final readonly class VideoDownloaderService
 {
-    public const BEST_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
-    public const MODERATE_VIDEO_DOWNLOAD_FORMAT = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
-    public const POOR_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=320][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
-    public const NO_VIDEO_DOWNLOAD_FORMAT       = 'bestaudio/best';
-    public const OUTPUT_FILE_FORMAT_VIDEO       = '%(title)s-%(height)sp.%(ext)s';
-    public const OUTPUT_FILE_FORMAT_AUDIO       = '%(title)s.%(ext)s';
-    public const MERGE_OUTPUT_FORMAT_VIDEO      = 'mp4';
-    public const FORMAT_AUDIO                   = 'mp3';
+    public const string BEST_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
+    public const string MODERATE_VIDEO_DOWNLOAD_FORMAT = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
+    public const string POOR_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=320][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
+    public const string NO_VIDEO_DOWNLOAD_FORMAT       = 'bestaudio/best';
+    public const string OUTPUT_FILE_FORMAT_VIDEO       = '%(title)s-%(height)sp.%(ext)s';
+    public const string OUTPUT_FILE_FORMAT_AUDIO       = '%(title)s.%(ext)s';
+    public const string MERGE_OUTPUT_FORMAT_VIDEO      = 'mp4';
+    public const string FORMAT_AUDIO                   = 'mp3';
 
     public function __construct(
         private string $downloadsDir,
