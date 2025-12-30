@@ -83,7 +83,7 @@ final class UserAddCommand extends Command
         try {
             $this->em->persist($user);
             $this->em->flush();
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             $io->error(\sprintf('Error: %s', $exception->getMessage()));
 
             return Command::FAILURE;

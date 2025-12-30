@@ -43,7 +43,7 @@ final readonly class RabbitMQApiQueueService
                 'state'                   => $data['state'] ?? 'unknown',
                 'memory'                  => $data['memory'] ?? 0,
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new \RuntimeException('RabbitMQ API error: ' . $e->getMessage());
         }
     }
@@ -57,7 +57,7 @@ final readonly class RabbitMQApiQueueService
             $stats = $this->getQueueStatsViaApi($queueName);
 
             return $stats['messages_unacknowledged'] ?? 0; // ВОТ ОНИ!
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return 0;
         }
     }
@@ -68,7 +68,7 @@ final readonly class RabbitMQApiQueueService
             $stats = $this->getQueueStatsViaApi($queueName);
 
             return $stats['messages_ready'] ?? 0;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return 0;
         }
     }
@@ -81,7 +81,7 @@ final readonly class RabbitMQApiQueueService
         foreach ($queues as $queue) {
             try {
                 $stats[$queue] = $this->getQueueStatsViaApi($queue);
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $stats[$queue] = [
                     'messages_ready'          => 0,
                     'messages_unacknowledged' => 0,
@@ -115,7 +115,7 @@ final readonly class RabbitMQApiQueueService
             ]);
 
             return 200 === $response->getStatusCode();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return false;
         }
     }
