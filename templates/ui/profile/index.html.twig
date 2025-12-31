@@ -16,13 +16,16 @@
     </div>
 
     <h1 class="mt-4">Profile of:</h1>
-    <h4 class="mt-2">{{ app.user.email }}</h4>
-    <h3 class="mt-4">Change password:</h3>
+    <h3 class="mt-2 text-success fst-italic">{{ app.user.email }}</h3>
+    <h4 class="mt-4">Change password:</h4>
 
     {{ form_start(form) }}
     {{ form_row(form.currentPassword) }}
     {{ form_row(form.newPassword.first) }}
     {{ form_row(form.newPassword.second) }}
-    <button type="submit" class="btn btn-primary">Change Password</button>
+    <div class="d-flex">
+        <button type="submit" class="btn btn-warning">Change</button>
+        <a class="btn btn-outline-danger ms-auto" href="{{ path('ui_download_index') }}">Cancel</a>
+    </div>
     {{ form_end(form) }}
 {% endblock %}
