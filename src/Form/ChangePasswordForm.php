@@ -17,10 +17,7 @@ class ChangePasswordForm extends AbstractType
     {
         $builder
             ->add('currentPassword', PasswordType::class, [
-                'label' => 'Current Password:',
-                'attr'  => [
-                    'placeholder' => 'Please enter your current password',
-                ],
+                'label'  => 'Current Password:',
                 'mapped' => false,
             ])
             ->add('newPassword', RepeatedType::class, [
@@ -34,15 +31,9 @@ class ChangePasswordForm extends AbstractType
                 'required'      => true,
                 'first_options' => [
                     'label' => 'New Password:',
-                    'attr'  => [
-                        'placeholder' => 'Please enter your new password',
-                    ],
                 ],
                 'second_options' => [
                     'label' => 'Repeat New Password:',
-                    'attr'  => [
-                        'placeholder' => 'Please repeat your new password',
-                    ],
                 ],
                 'mapped' => false,
             ]);
