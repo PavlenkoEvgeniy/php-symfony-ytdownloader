@@ -141,6 +141,6 @@ jobs:
                         git stash
                         git pull origin master
                         make restart
-                        make install
+                        make composer-install
                         make cache-clear
                         make cache-purge
