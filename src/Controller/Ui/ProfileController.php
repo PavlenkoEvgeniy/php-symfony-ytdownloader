@@ -44,7 +44,7 @@ class ProfileController extends AbstractController
 
             $this->addFlash('success', 'Your password was successfully updated.');
 
-            return $this->redirectToRoute('ui_profile_index');
+            return $this->redirectToRoute('ui_download_index');
         }
 
         return $this->render('ui/profile/index.html.twig', [
