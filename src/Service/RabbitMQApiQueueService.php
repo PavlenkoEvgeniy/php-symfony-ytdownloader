@@ -48,9 +48,6 @@ final readonly class RabbitMQApiQueueService
         }
     }
 
-    /**
-     * Получить количество сообщений в процессе обработки.
-     */
     public function getProcessingMessagesCount(string $queueName = 'download_queue'): int
     {
         try {
