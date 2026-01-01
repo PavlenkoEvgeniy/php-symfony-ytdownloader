@@ -92,7 +92,7 @@ final readonly class RabbitMQApiQueueService
 
         $stats['total'] = [
             'waiting'          => \array_sum(\array_column($stats, 'messages_ready')),
-            'processing'       => \array_sum(\array_column($stats, 'messages_unacknowledged')), // ТЕПЕРЬ ПРАВИЛЬНО!
+            'processing'       => \array_sum(\array_column($stats, 'messages_unacknowledged')),
             'total_messages'   => \array_sum(\array_column($stats, 'messages_total')),
             'active_consumers' => \array_sum(\array_column($stats, 'consumers')),
         ];
