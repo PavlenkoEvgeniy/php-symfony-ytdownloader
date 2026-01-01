@@ -36,10 +36,10 @@ final readonly class RabbitMQApiQueueService
             $data = $response->toArray();
 
             return [
-                'messages_ready'          => $data['messages_ready'] ?? 0,           // Ожидают обработки
-                'messages_unacknowledged' => $data['messages_unacknowledged'] ?? 0, // В ПРОЦЕССЕ обработки!
-                'messages_total'          => $data['messages'] ?? 0,                 // Всего сообщений
-                'consumers'               => $data['consumers'] ?? 0,                     // Активные потребители
+                'messages_ready'          => $data['messages_ready'] ?? 0,
+                'messages_unacknowledged' => $data['messages_unacknowledged'] ?? 0,
+                'messages_total'          => $data['messages'] ?? 0,
+                'consumers'               => $data['consumers'] ?? 0,
                 'state'                   => $data['state'] ?? 'unknown',
                 'memory'                  => $data['memory'] ?? 0,
             ];
@@ -56,7 +56,7 @@ final readonly class RabbitMQApiQueueService
         try {
             $stats = $this->getQueueStatsViaApi($queueName);
 
-            return $stats['messages_unacknowledged'] ?? 0; // ВОТ ОНИ!
+            return $stats['messages_unacknowledged'] ?? 0;
         } catch (\Throwable $e) {
             return 0;
         }
@@ -93,7 +93,6 @@ final readonly class RabbitMQApiQueueService
             }
         }
 
-        // Общая статистика
         $stats['total'] = [
             'waiting'          => \array_sum(\array_column($stats, 'messages_ready')),
             'processing'       => \array_sum(\array_column($stats, 'messages_unacknowledged')), // ТЕПЕРЬ ПРАВИЛЬНО!
