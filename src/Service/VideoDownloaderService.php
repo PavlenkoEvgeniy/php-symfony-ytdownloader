@@ -71,7 +71,7 @@ final readonly class VideoDownloaderService
             $collection = $yt->download(
                 Options::create()
                     ->downloadPath($this->downloadsDir)
-                    ->url(sprintf("%s --cookies-from-browser chromium+gnomekeyring:/tmp/chromium_data", $videoUrl))
+                    ->url(\sprintf('%s --cookies-from-browser chromium+gnomekeyring:/tmp/chromium_data', $videoUrl))
                     ->format($downloadFormat)
                     ->mergeOutputFormat(self::MERGE_OUTPUT_FORMAT_VIDEO)
                     ->output(self::OUTPUT_FILE_FORMAT_VIDEO)
