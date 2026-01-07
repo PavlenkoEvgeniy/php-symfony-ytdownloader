@@ -25,6 +25,7 @@ help:
 	@echo "21. lint ............ Fix project by php-cs-fixer and after that check by psalm."
 	@echo "22. yt-dlp-update ....................................... Update yt-dlp package."
 	@echo "23. bash .......................................... Alias for docker-php command"
+	@echo "24. rm-tmp ................ Clear system directory /tmp inside docker container"
 
 init: db-purge docker-compose-up composer-install composer-update db-setup supervisor-start cache-clear
 
@@ -94,3 +95,6 @@ yt-dlp-update:
 	docker exec ytdownloader-php-fpm pip install --upgrade yt-dlp --break-system-packages
 
 bash: docker-php
+
+rm-tmp:
+	docker exec ytdownloader-php-fpm rm -rf /tmp/*
