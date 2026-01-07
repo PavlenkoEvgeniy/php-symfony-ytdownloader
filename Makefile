@@ -25,7 +25,8 @@ help:
 	@echo "21. lint ............ Fix project by php-cs-fixer and after that check by psalm."
 	@echo "22. yt-dlp-update ....................................... Update yt-dlp package."
 	@echo "23. bash .......................................... Alias for docker-php command"
-	@echo "24. rm-tmp ................ Clear system directory /tmp inside docker container"
+	@echo "24. rm-tmp ................. Clear system directory /tmp inside docker container"
+	@echo "25. rm-tmp-cromium .. Clear directory /tmp/chromium_data inside docker container"
 
 init: db-purge docker-compose-up composer-install composer-update db-setup supervisor-start cache-clear
 
@@ -98,3 +99,6 @@ bash: docker-php
 
 rm-tmp:
 	docker exec ytdownloader-php-fpm rm -rf /tmp/*
+
+rm-tmp-chromium:
+	docker exec ytdownloader-php-fpm rm -rf /tmp/chromium_data/*
