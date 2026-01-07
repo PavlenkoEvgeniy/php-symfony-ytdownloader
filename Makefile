@@ -98,3 +98,6 @@ bash: docker-php
 
 rm-tmp:
 	docker exec ytdownloader-php-fpm rm -rf /tmp/*
+
+rm-tmp-chromium:
+	docker exec ytdownloader-php-fpm rm -rf /tmp/chromium_data/*
