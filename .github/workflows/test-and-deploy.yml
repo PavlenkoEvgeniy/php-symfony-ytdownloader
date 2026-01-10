@@ -95,6 +95,10 @@ jobs:
             -   name: Run php-cs-fixer check
                 run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm vendor/bin/php-cs-fixer fix --dry-run --diff --allow-risky=yes
 
+            -   name: Cache warmup
+                run: |
+                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console cache:warmup
+
             -   name: Run phpstan check
                 run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm vendor/bin/phpstan analyse --memory-limit=256M
 
