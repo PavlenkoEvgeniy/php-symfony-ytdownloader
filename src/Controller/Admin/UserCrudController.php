@@ -126,11 +126,11 @@ final class UserCrudController extends AbstractCrudController
                 return;
             }
 
-            /**
-             * @psalm-suppress InvalidArgument
-             */
-            $hash = $this->userPasswordHasher->hashPassword($this->getUser(), $password);
-            $form->getData()->setPassword($hash);
+            /** @var User $user */
+            $user = $form->getData();
+
+            $hash = $this->userPasswordHasher->hashPassword($user, $password);
+            $user->setPassword($hash);
         };
     }
 }
