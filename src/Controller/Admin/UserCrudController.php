@@ -23,9 +23,6 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-/**
- * @psalm-suppress MissingTemplateParam
- */
 final class UserCrudController extends AbstractCrudController
 {
     public function __construct(
