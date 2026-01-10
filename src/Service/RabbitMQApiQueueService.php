@@ -18,6 +18,16 @@ final readonly class RabbitMQApiQueueService
     ) {
     }
 
+    /**
+     * @return array{
+     *     messages_ready: int,
+     *     messages_unacknowledged: int,
+     *     messages_total: int,
+     *     consumers: int,
+     *     state: string,
+     *     memory: int,
+     * }
+     */
     public function getQueueStatsViaApi(string $queueName = 'download_queue'): array
     {
         try {
@@ -53,7 +63,7 @@ final readonly class RabbitMQApiQueueService
         try {
             $stats = $this->getQueueStatsViaApi($queueName);
 
-            return $stats['messages_unacknowledged'] ?? 0;
+            return $stats['messages_unacknowledged'];
         } catch (\Throwable $e) {
             return 0;
         }
@@ -64,12 +74,15 @@ final readonly class RabbitMQApiQueueService
         try {
             $stats = $this->getQueueStatsViaApi($queueName);
 
-            return $stats['messages_ready'] ?? 0;
+            return $stats['messages_ready'];
         } catch (\Throwable $e) {
             return 0;
         }
     }
 
+    /**
+     * @return array<string, array<string, int|string>|array{waiting: int, processing: int, total_messages: int, active_consumers: int}>
+     */
     public function getAllQueuesDetailedStats(): array
     {
         $queues = ['download_queue', 'failed_queue'];
