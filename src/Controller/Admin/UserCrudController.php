@@ -23,9 +23,6 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-/**
- * @psalm-suppress MissingTemplateParam
- */
 final class UserCrudController extends AbstractCrudController
 {
     public function __construct(
@@ -126,11 +123,11 @@ final class UserCrudController extends AbstractCrudController
                 return;
             }
 
-            /**
-             * @psalm-suppress InvalidArgument
-             */
-            $hash = $this->userPasswordHasher->hashPassword($this->getUser(), $password);
-            $form->getData()->setPassword($hash);
+            /** @var User $user */
+            $user = $form->getData();
+
+            $hash = $this->userPasswordHasher->hashPassword($user, $password);
+            $user->setPassword($hash);
         };
     }
 }

@@ -26,7 +26,7 @@ final class DownloadMessage
         return $this->quality;
     }
 
-    public function getTelegramUserId(): ?string
+    public function getTelegramUserId(): string
     {
         return $this->telegramUserId;
     }

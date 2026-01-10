@@ -17,12 +17,12 @@ help:
 	@echo "13. cs-check ................ Check project by php-cs-fixer without any changes."
 	@echo "14. cs-fix ........................................ Fix project by php-cs-fixer."
 	@echo "15. test ................................................ Execute PhpUnit tests."
-	@echo "16. psalm .......................... Check project by psalm without any changes."
+	@echo "16. phpstan ...................... Check project by phpstan without any changes."
 	@echo "17. docker-php ....................... Enter to bash shell of php-fpm container."
 	@echo "18. docker-pgsql ....................... Enter to bash shell of pgsql container."
 	@echo "19. cache-clear ........................................... Clear symfony cache."
 	@echo "20. cache-purge ........................................ Delete cache directory."
-	@echo "21. lint ............ Fix project by php-cs-fixer and after that check by psalm."
+	@echo "21. lint .......... Fix project by php-cs-fixer and after that check by phpstan."
 	@echo "22. yt-dlp-update ....................................... Update yt-dlp package."
 	@echo "23. bash .......................................... Alias for docker-php command"
 	@echo "24. rm-tmp ................. Clear system directory /tmp inside docker container"
@@ -75,8 +75,8 @@ test:
 	docker exec ytdownloader-php-fpm php bin/console doctrine:fixtures:load --no-interaction --group=all --env=test
 	docker exec ytdownloader-php-fpm php bin/phpunit
 
-psalm:
-	docker exec ytdownloader-php-fpm vendor/bin/psalm
+phpstan:
+	docker exec ytdownloader-php-fpm vendor/bin/phpstan analyse --memory-limit=256M
 
 docker-php:
 	docker exec -it ytdownloader-php-fpm bash
@@ -90,7 +90,7 @@ cache-clear:
 cache-purge:
 	rm -rf ./var/cache/
 
-lint: cs-fix psalm
+lint: cs-fix phpstan
 
 yt-dlp-update:
 	docker exec ytdownloader-php-fpm pip install --upgrade yt-dlp --break-system-packages

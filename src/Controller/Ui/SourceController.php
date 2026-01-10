@@ -177,6 +177,8 @@ final class SourceController extends AbstractController
         SourceRepository $sourceRepository,
         LoggerInterface $logger,
     ): RedirectResponse {
+        $quantity = 0;
+
         if ($this->isCsrfTokenValid('delete_all', $request->getPayload()->getString('_token'))) {
             $sources  = $sourceRepository->findAll();
             $quantity = \count($sources);
