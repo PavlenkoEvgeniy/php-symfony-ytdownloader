@@ -21,6 +21,9 @@ final class SecurityControllerTest extends WebTestCase
         $this->userRepository = $this->getContainer()->get(UserRepository::class);
     }
 
+    /**
+     * @return array<int, array{username: string, password: string}>
+     */
     public function userProvider(): array
     {
         return [
@@ -79,7 +82,7 @@ final class SecurityControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(Response::HTTP_FOUND);
 
         $this->client->request(Request::METHOD_GET, '/ui/download');
-        $this->client->followRedirect(true);
+        $this->client->followRedirect();
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('h1', 'Please sign in');
     }
