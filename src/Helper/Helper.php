@@ -6,9 +6,6 @@ namespace App\Helper;
 
 final class Helper
 {
-    /**
-     * @psalm-suppress InvalidOperand
-     */
     public static function formatBytes(int|float|null $bytes, int $precision = 2): string
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -22,6 +19,9 @@ final class Helper
         return \sprintf('%.1f %s', \round($bytes, $precision), $units[$pow]);
     }
 
+    /**
+     * @return array<string, string|float>
+     */
     public static function getFreeSpace(): array
     {
         $free  = \disk_free_space('/');
