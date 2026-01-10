@@ -33,3 +33,7 @@ database/
 
 #  Auto-generated config reference file
 /config/reference.php
+
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###
