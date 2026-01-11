@@ -9,6 +9,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 #[AsCommand(
     name: 'app:telegram:hook',
@@ -19,6 +20,7 @@ final class TelegramHookCommand extends Command
     public function __construct(
         private readonly string $telegramBotToken,
         private readonly string $telegramHostUrl,
+        private readonly HttpClientInterface $httpClient,
     ) {
         parent::__construct();
     }
@@ -32,17 +34,13 @@ final class TelegramHookCommand extends Command
 
         $url = \sprintf('https://api.telegram.org/bot%s/setWebhook', $this->telegramBotToken);
 
-        $context = \stream_context_create([
-            'http' => [
-                'method'  => 'POST',
-                'header'  => 'Content-Type: application/x-www-form-urlencoded',
-                'content' => \http_build_query([
-                    'url' => $route,
-                ]),
+        $response = $this->httpClient->request('POST', $url, [
+            'body' => [
+                'url' => $route,
             ],
         ]);
 
-        $result = \file_get_contents($url, false, $context);
+        $result = $response->getContent(false);
 
         $io->info(\sprintf('Reply from telegram: %s', $result));
 

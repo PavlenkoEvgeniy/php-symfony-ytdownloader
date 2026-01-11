@@ -13,7 +13,7 @@ use Psr\Log\LoggerInterface;
 use YoutubeDl\Options;
 use YoutubeDl\YoutubeDl;
 
-final readonly class VideoDownloaderService
+final readonly class VideoDownloaderService implements VideoProcessorInterface
 {
     public const string BEST_VIDEO_DOWNLOAD_FORMAT     = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';
     public const string MODERATE_VIDEO_DOWNLOAD_FORMAT = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best';

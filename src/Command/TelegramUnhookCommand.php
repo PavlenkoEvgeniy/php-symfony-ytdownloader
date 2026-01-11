@@ -16,9 +16,16 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 final class TelegramUnhookCommand extends Command
 {
+    private readonly mixed $requester;
+
     public function __construct(
         private readonly string $telegramBotToken,
+        ?callable $requester = null,
     ) {
+        $this->requester = $requester ?? static function (string $url, $context): string|false {
+            return \file_get_contents($url, false, $context);
+        };
+
         parent::__construct();
     }
 
@@ -39,7 +46,7 @@ final class TelegramUnhookCommand extends Command
             ],
         ]);
 
-        $result = \file_get_contents($url, false, $context);
+        $result = ($this->requester)($url, $context);
 
         $io->info(\sprintf('Reply from telegram: %s', $result));
 
