@@ -61,6 +61,9 @@ RUN apt-get install chromium -y
 RUN mkdir -p /tmp/chromium_data
 RUN chromium --headless --disable-gpu --no-sandbox --user-data-dir=/tmp/chromium_data --no-first-run https://example.com --timeout=3000 2>/dev/null
 
+# Install aspell for checking grammar in project
+RUN sudo apt-get install aspell aspell-en -y
+
 # Create download directory
 RUN mkdir -p /application/var/downloads/
 RUN chmod -R 775 /application/var/downloads/
