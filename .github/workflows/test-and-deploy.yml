@@ -102,6 +102,9 @@ jobs:
             -   name: Run phpstan check
                 run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm vendor/bin/phpstan analyse --memory-limit=256M
 
+            -   name: Run peck check
+                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm vendor/bin/peck
+
             -   name: Run tests
                 run: |
                     docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:drop --if-exists --force --env=test
