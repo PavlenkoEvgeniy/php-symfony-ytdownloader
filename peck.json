@@ -1,0 +1,52 @@
+{
+    "preset": "symfony",
+    "ignore": {
+        "words": [
+            "php",
+            "makefile",
+            "knp",
+            "paginator",
+            "monolog",
+            "oskarstark",
+            "filesize",
+            "profiler",
+            "easyadmin",
+            "sourcefiles",
+            "nginx",
+            "fpm",
+            "ini",
+            "importmap",
+            "js",
+            "authenticator",
+            "downloader",
+            "hasher",
+            "fqcn",
+            "utils",
+            "filepath",
+            "rabbitmq",
+            "readme",
+            "csrf",
+            "phpunit",
+            "config",
+            "validator",
+            "preload",
+            "dockerfile",
+            "conf",
+            "phpstan",
+            "favicon",
+            "src",
+            "ui",
+            "mq",
+            "symfony",
+            "dto",
+            "pre",
+            "auth",
+            "async",
+            "vhost",
+            "webhook"
+        ],
+        "paths": [
+            "vendor"
+        ]
+    }
+}
