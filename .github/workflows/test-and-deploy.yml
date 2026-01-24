@@ -144,7 +144,7 @@ jobs:
                     password: ${{ secrets.SSH_VPS_PASSWORD }}
                     script: |
                         cd ${{ secrets.SSH_PROJECT_PATH }}
-                        sudo make stop
+                        make stop
                         git stash
                         git pull origin master
                         make restart
