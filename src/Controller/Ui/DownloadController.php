@@ -47,12 +47,11 @@ final class DownloadController extends AbstractController
             $this->addFlash('success', 'Video was added to queue.');
 
             return $this->redirectToRoute('ui_source_index');
-        } else {
-            if ($session->has('lastSelectedQuality')) {
-                $form->get('quality')->setData(
-                    $session->get('lastSelectedQuality')
-                );
-            }
+        }
+        if ($session->has('lastSelectedQuality')) {
+            $form->get('quality')->setData(
+                $session->get('lastSelectedQuality')
+            );
         }
 
         $totalPendingDownloads    = $messengerQueueCounter->getQueueCount();
