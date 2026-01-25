@@ -2,35 +2,39 @@ help:
 	@echo "+------------------------------------------------------------------------------+"
 	@echo "|                         List of available commands:                          |"
 	@echo "+------------------------------------------------------------------------------+"
-	@echo "1. init ........................ Initialize new application with empty database."
-	@echo "2. restart ......................... Restart application with existing database."
-	@echo "3. stop ............................ Stop application, make down all containers."
-	@echo "4. supervisor-start ..................... Start supervisor for queue processing."
-	@echo "5. supervisor-stop ....................... Stop supervisor for queue processing."
-	@echo "6. supervisor-restart ................. Restart supervisor for queue processing."
-	@echo "7. docker-compose-up ............................. Up docker compose containers."
-	@echo "8. docker-compose-down ......................... Down docker compose containers."
-	@echo "9. composer-install ............................. Install composer dependencies."
-	@echo "10. composer-update .............................. Update composer dependencies."
-	@echo "11. db-setup ... Setup database (drop existing, create new, migrate migrations)."
-	@echo "12. db-purge ........................................ Delete database directory."
-	@echo "13. cs-check ................ Check project by php-cs-fixer without any changes."
-	@echo "14. cs-fix ........................................ Fix project by php-cs-fixer."
-	@echo "15. test ................................................ Execute PhpUnit tests."
-	@echo "16. phpstan ...................... Check project by phpstan without any changes."
-	@echo "17. docker-php ....................... Enter to bash shell of php-fpm container."
-	@echo "18. docker-pgsql ....................... Enter to bash shell of pgsql container."
-	@echo "19. cache-clear ........................................... Clear symfony cache."
-	@echo "20. cache-purge ........................................ Delete cache directory."
-	@echo "21. lint .......... Fix project by php-cs-fixer and after that check by phpstan."
-	@echo "22. yt-dlp-update ....................................... Update yt-dlp package."
-	@echo "23. bash .......................................... Alias for docker-php command"
-	@echo "24. rm-tmp ................. Clear system directory /tmp inside docker container"
-	@echo "25. rm-tmp-chromium . Clear directory /tmp/chromium_data inside docker container"
-	@echo "26. peck ......................................... Grammar check by peck linter."
+	@echo "1. env-setup ................................. Generate local environment files."
+	@echo "2. init ........................ Initialize new application with empty database."
+	@echo "3. restart ......................... Restart application with existing database."
+	@echo "4. stop ............................ Stop application, make down all containers."
+	@echo "5. supervisor-start ..................... Start supervisor for queue processing."
+	@echo "6. supervisor-stop ....................... Stop supervisor for queue processing."
+	@echo "7. supervisor-restart ................. Restart supervisor for queue processing."
+	@echo "8. docker-compose-up ............................. Up docker compose containers."
+	@echo "9. docker-compose-down ......................... Down docker compose containers."
+	@echo "10. composer-install ............................. Install composer dependencies."
+	@echo "11. composer-update .............................. Update composer dependencies."
+	@echo "12. db-setup ... Setup database (drop existing, create new, migrate migrations)."
+	@echo "13. db-purge ........................................ Delete database directory."
+	@echo "14. cs-check ................ Check project by php-cs-fixer without any changes."
+	@echo "15. cs-fix ........................................ Fix project by php-cs-fixer."
+	@echo "16. test ................................................ Execute PhpUnit tests."
+	@echo "17. phpstan ...................... Check project by phpstan without any changes."
+	@echo "18. docker-php ....................... Enter to bash shell of php-fpm container."
+	@echo "19. docker-pgsql ....................... Enter to bash shell of pgsql container."
+	@echo "20. cache-clear ........................................... Clear symfony cache."
+	@echo "21. cache-purge ........................................ Delete cache directory."
+	@echo "22. lint .......... Fix project by php-cs-fixer and after that check by phpstan."
+	@echo "23. yt-dlp-update ....................................... Update yt-dlp package."
+	@echo "24. bash .......................................... Alias for docker-php command"
+	@echo "25. rm-tmp ................. Clear system directory /tmp inside docker container"
+	@echo "26. rm-tmp-chromium . Clear directory /tmp/chromium_data inside docker container"
+	@echo "27. peck ......................................... Grammar check by peck linter."
 	@echo "+------------------------------------------------------------------------------+"
 
-init: db-purge docker-compose-up composer-install composer-update db-setup supervisor-start cache-clear
+env-setup:
+	@bash bin/generate-env.sh
+
+init: env-setup db-purge docker-compose-up composer-install composer-update db-setup supervisor-start cache-clear
 
 restart: docker-compose-down docker-compose-up supervisor-start cache-clear cache-purge
 
@@ -58,6 +62,7 @@ composer-update:
 	docker exec ytdownloader-php-fpm composer update
 
 db-setup:
+	docker exec ytdownloader-pgsql sh -c 'echo "Waiting for Postgres..."; for i in $$(seq 1 30); do pg_isready -U "$$POSTGRES_USER" >/dev/null 2>&1 && exit 0; sleep 1; done; pg_isready -U "$$POSTGRES_USER"'
 	docker exec ytdownloader-php-fpm php bin/console doctrine:database:create --if-not-exists
 	docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate
 
