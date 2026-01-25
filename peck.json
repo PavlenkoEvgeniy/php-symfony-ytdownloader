@@ -43,7 +43,10 @@
             "auth",
             "async",
             "vhost",
-            "webhook"
+            "webhook",
+            "dl",
+            "basename",
+            "errored"
         ],
         "paths": [
             "vendor"
