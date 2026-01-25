@@ -38,72 +38,57 @@ services.
 
 ### ⚡ Run the Project:
 
-1. **Environment**
-   > 📝 **Note**: Create `.env.local` with DB config (host name must be
-   `ytdownloader-pgsql`)
-   ```yaml
-   DATABASE_URL="postgresql://example_user_name:example_passwd12345@'ytdownloader-pgsql':5432/ytdownloader?serverVersion=16&charset=utf8"
-   REDIS="redis://:example_passwd12345@ytdownloader-redis:6379"
-   RABBITMQ_DSN="amqp://user:password@rabbitmq:5672/%2f"
-   ```
-
-2. **Docker environment**:  
-   Copy docker .env from .env.example and update credentials for docker
-   containers
-    ```bash
-    cp docker/.env.example docker/.env
-    ```
-
-3. **Initialize new application**:
+1. **Initialize new application**:
    ```bash
    make init
    ```
+   Remarks: during project init process all env files (for project and for docker) will be generated automatically, if it was not done you can generate env files by running command in bash: "make env-setup" 
 
-4. **Restart application**:
+2. **Restart application**:
    ```bash
    make restart
    ```
 
-5. **Stop application**:
+3. **Stop application**:
    ```bash
    make stop
    ```
 
-6. **Setup database (if needed)**:
+4. **Setup database (if needed)**:
    ```bash
    make db-setup
    ```
 
-7. **Start queue worker (if needed)**:
+5. **Start queue worker (if needed)**:
    ```bash
    make supervisor-start
    ```
 
-8. **Create admin user by console command**:
+6. **Create admin user by console command**:
    ```bash
    make docker-php
    php bin/console app:user-add <username> [password]
    ```
 
-9. **Run tests**:
+7. **Run tests**:
    ```bash
    make test
    ```
 
-10. **List of all available 'make' commands**:
+8. **List of all available 'make' commands**:
     ```bash
     make help
     ```
 
-11. **Health check url**:
+9. **Health check url**:
     ```
-    GET http://host.tld/health
+    GET http://host.tld/health-check
     ```
-12. **Admin dashboard**:
+10. **Admin dashboard**:
     ```
     GET http://host.tld/admin
     ```
-13. **Telegram bot**:
+11. **Telegram bot**:
     - add enable true for telegram bot in .env.local file
     - add your bot token to .env.local file
     - add telegram host url to .env.local file
@@ -117,7 +102,7 @@ services.
     make docker-php
     php bin/console app:telegram:unhook
     ```
-14. **Telegram bot commands**:
+12. **Telegram bot commands**:
     ```
     /start - start bot
     ```
