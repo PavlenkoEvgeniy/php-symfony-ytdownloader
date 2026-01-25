@@ -46,7 +46,8 @@
             "webhook",
             "dl",
             "basename",
-            "errored"
+            "errored",
+            "env"
         ],
         "paths": [
             "vendor"
