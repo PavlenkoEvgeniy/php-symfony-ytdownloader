@@ -53,7 +53,7 @@ final class UserCrudController extends AbstractCrudController
             ->setRequired(true);
 
         yield BooleanField::new('isEnabled', 'Enabled')
-            ->renderAsSwitch(false);
+            ->renderAsSwitch(true);
 
         yield ChoiceField::new('roles', 'Roles')
             ->setChoices([

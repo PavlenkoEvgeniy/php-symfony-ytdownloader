@@ -104,9 +104,8 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
                         $telegramUserId,
                     );
                     exit;
-                } else {
-                    $this->logger->error(\sprintf('Error during downloading: %s', $video->getError()));
                 }
+                $this->logger->error(\sprintf('Error during downloading: %s', $video->getError()));
             } else {
                 $filename = $video->getFile()->getBasename();
                 $path     = $video->getFile()->getPath();

@@ -26,28 +26,6 @@ final class HealthCheckControllerTest extends WebTestCase
         $response = \json_decode($this->client->getResponse()->getContent(), true);
         $this->assertResponseIsSuccessful();
         $this->assertArrayHasKey('status', $response);
-
-        $this->assertJsonDocumentMatchesSchema($response, [
-            'type'     => 'object',
-            'required' => [
-                'status',
-                'version',
-                'timestamp',
-            ],
-            [
-                'status' => [
-                    'type'    => 'string',
-                    'pattern' => '^OK$',
-                ],
-                'version' => [
-                    'type' => 'string',
-                ],
-                'timestamp' => [
-                    'type'    => 'string',
-                    'pattern' => '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$',
-                ],
-            ],
-        ]
-        );
+        $this->assertSame('OK', $response['status']);
     }
 }

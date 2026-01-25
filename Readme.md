@@ -71,7 +71,7 @@ services.
 
 6. **Setup database (if needed)**:
    ```bash
-   sudo make db-setup
+   make db-setup
    ```
 
 7. **Start queue worker (if needed)**:
