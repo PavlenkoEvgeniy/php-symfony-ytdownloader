@@ -18,6 +18,7 @@ final class TelegramNotifierTest extends TestCase
             ->method('say')
             ->with('error occurred', 'user-id');
 
+        /** @phpstan-ignore-next-line */
         $botService = $this->createMock(TelegramBotService::class);
         $botService->expects($this->once())
             ->method('getBot')
@@ -34,6 +35,7 @@ final class TelegramNotifierTest extends TestCase
             ->method('say')
             ->with('done', 'user-id');
 
+        /** @phpstan-ignore-next-line */
         $botService = $this->createMock(TelegramBotService::class);
         $botService->expects($this->once())
             ->method('getBot')

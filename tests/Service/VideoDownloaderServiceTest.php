@@ -18,11 +18,16 @@ final class VideoDownloaderServiceTest extends TestCase
 {
     public function testProcessLogsAndStoresSuccessfulDownload(): void
     {
+        /** @phpstan-ignore-next-line */
         $youtubeDl      = $this->createMock(YoutubeDlWrapper::class);
+        /** @phpstan-ignore-next-line */
         $formatResolver = $this->createMock(FormatResolver::class);
+        /** @phpstan-ignore-next-line */
         $sourceManager  = $this->createMock(SourceManager::class);
+        /** @phpstan-ignore-next-line */
         $logManager     = $this->createMock(LogManager::class);
         $logger         = $this->createMock(LoggerInterface::class);
+        /** @phpstan-ignore-next-line */
         $notifier       = $this->createMock(TelegramNotifier::class);
 
         $formatResolver->expects($this->once())
@@ -87,11 +92,16 @@ final class VideoDownloaderServiceTest extends TestCase
 
     public function testProcessNotifiesErrorAndStopsWhenDownloadFails(): void
     {
+        /** @phpstan-ignore-next-line */
         $youtubeDl      = $this->createMock(YoutubeDlWrapper::class);
+        /** @phpstan-ignore-next-line */
         $formatResolver = $this->createMock(FormatResolver::class);
+        /** @phpstan-ignore-next-line */
         $sourceManager  = $this->createMock(SourceManager::class);
+        /** @phpstan-ignore-next-line */
         $logManager     = $this->createMock(LogManager::class);
         $logger         = $this->createMock(LoggerInterface::class);
+        /** @phpstan-ignore-next-line */
         $notifier       = $this->createMock(TelegramNotifier::class);
 
         $formatResolver->method('resolve')->willReturn(['fmt', true]);
@@ -171,6 +181,7 @@ final class VideoDownloaderServiceTest extends TestCase
             {
             }
 
+            /** @phpstan-ignore-next-line */
             public function getError(): ?string
             {
                 return null;
@@ -190,12 +201,13 @@ final class VideoDownloaderServiceTest extends TestCase
             {
             }
 
-            public function getError(): ?string
+            public function getError(): string
             {
                 return $this->error;
             }
 
-            public function getFile(): ?object
+            /** @return null */
+            public function getFile()
             {
                 return null;
             }

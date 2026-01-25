@@ -181,12 +181,15 @@ final class RabbitMQApiQueueServiceTest extends TestCase
 final class HttpClientStub implements HttpClientInterface
 {
     /**
-     * @param callable(string, string, array): ResponseInterface $callback
+     * @param \Closure(string, string, array<string, mixed>): ResponseInterface $callback
      */
-    public function __construct(private $callback)
+    public function __construct(private readonly \Closure $callback)
     {
     }
 
+    /**
+     * @param array<string, mixed> $options
+     */
     public function request(string $method, string $url, array $options = []): ResponseInterface
     {
         return ($this->callback)($method, $url, $options);
@@ -197,6 +200,9 @@ final class HttpClientStub implements HttpClientInterface
         throw new \LogicException('Not implemented for this test stub.');
     }
 
+    /**
+     * @param array<string, mixed> $options
+     */
     public function withOptions(array $options): static
     {
         return $this;
@@ -230,6 +236,9 @@ final class ResponseStub implements ResponseInterface
         return '';
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(bool $throw = true): array
     {
         return $this->data;

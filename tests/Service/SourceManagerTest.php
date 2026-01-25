@@ -16,6 +16,7 @@ final class SourceManagerTest extends TestCase
     {
         $source = new Source();
 
+        /** @phpstan-ignore-next-line */
         $repository = $this->getMockBuilder(SourceRepository::class)
             ->disableOriginalConstructor()
             ->addMethods(['findOneByFilename'])
@@ -34,6 +35,7 @@ final class SourceManagerTest extends TestCase
 
     public function testCreateFromDownloadedFilePersistsAndReturnsSource(): void
     {
+        /** @phpstan-ignore-next-line */
         $repository = $this->getMockBuilder(SourceRepository::class)
             ->disableOriginalConstructor()
             ->addMethods(['findOneByFilename'])
@@ -60,6 +62,7 @@ final class SourceManagerTest extends TestCase
 
     public function testFlushDelegatesToEntityManager(): void
     {
+        /** @phpstan-ignore-next-line */
         $repository = $this->getMockBuilder(SourceRepository::class)
             ->disableOriginalConstructor()
             ->addMethods(['findOneByFilename'])

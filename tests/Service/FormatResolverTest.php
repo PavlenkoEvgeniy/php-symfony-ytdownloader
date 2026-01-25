@@ -26,6 +26,8 @@ final class FormatResolverTest extends TestCase
 
     /**
      * @dataProvider formatProvider
+     *
+     * @param array{string, bool} $expected
      */
     public function testResolveReturnsExpectedFormat(string $input, array $expected): void
     {
