@@ -86,7 +86,7 @@ final class UserCrudControllerTest extends TestCase
 
             if ('isEnabled' === $prop) {
                 $isEnabledFound = true;
-                $this->assertSame(false, $this->getFieldCustomOption($f, BooleanField::OPTION_RENDER_AS_SWITCH));
+                $this->assertSame(true, $this->getFieldCustomOption($f, BooleanField::OPTION_RENDER_AS_SWITCH));
             }
 
             if ('roles' === $prop) {
