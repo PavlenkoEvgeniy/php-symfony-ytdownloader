@@ -26,7 +26,9 @@ help:
 	@echo "22. yt-dlp-update ....................................... Update yt-dlp package."
 	@echo "23. bash .......................................... Alias for docker-php command"
 	@echo "24. rm-tmp ................. Clear system directory /tmp inside docker container"
-	@echo "25. rm-tmp-cromium .. Clear directory /tmp/chromium_data inside docker container"
+	@echo "25. rm-tmp-chromium . Clear directory /tmp/chromium_data inside docker container"
+	@echo "26. peck ......................................... Grammar check by peck linter."
+	@echo "+------------------------------------------------------------------------------+"
 
 init: db-purge docker-compose-up composer-install composer-update db-setup supervisor-start cache-clear
 
@@ -90,7 +92,7 @@ cache-clear:
 cache-purge:
 	rm -rf ./var/cache/
 
-lint: cs-fix phpstan
+lint: cs-fix phpstan peck
 
 yt-dlp-update:
 	docker exec ytdownloader-php-fpm pip install --upgrade yt-dlp --break-system-packages
@@ -102,3 +104,6 @@ rm-tmp:
 
 rm-tmp-chromium:
 	docker exec ytdownloader-php-fpm rm -rf /tmp/chromium_data/*
+
+peck:
+	docker exec ytdownloader-php-fpm vendor/bin/peck
