@@ -117,7 +117,7 @@ peck:
 	docker exec ytdownloader-php-fpm vendor/bin/peck
 
 generate-jwt-keypair:
-	docker exec ytdownloader-php-fpm php bin/console lexik:jwt:generate-keypair --overwrite
+	docker exec ytdownloader-php-fpm php bin/console lexik:jwt:generate-keypair --overwrite -n
 
 telegram-bot-hook:
 	docker exec ytdownloader-php-fpm php bin/console app:telegram-hook
