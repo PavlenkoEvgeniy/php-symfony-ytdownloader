@@ -28,7 +28,7 @@ final class SourceControllerTest extends WebTestCase
         $this->client           = static::createClient();
         $this->em               = $this->getContainer()->get(EntityManagerInterface::class);
         $this->sourceRepository = $this->getContainer()->get(SourceRepository::class);
-        $this->downloadsDir     = (string) ($_ENV['APP_DOWNLOADS_DIR'] ?? $this->getContainer()->getParameter('kernel.project_dir') . '/var/downloads');
+        $this->downloadsDir     = \sprintf('%s/var/downloads', $this->getContainer()->getParameter('kernel.project_dir'));
     }
 
     protected function tearDown(): void
