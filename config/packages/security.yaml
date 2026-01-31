@@ -10,6 +10,17 @@ security:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: app_user_provider
+            json_login:
+                check_path: /api/v1/auth/login
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+            jwt: ~
         main:
             lazy: true
             provider: app_user_provider
@@ -27,6 +38,8 @@ security:
             access_denied_handler: App\Security\AccessDeniedHandler
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/auth/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/health, roles: PUBLIC_ACCESS }
         - { path: ^/ui, roles: ROLE_USER }
         - { path: ^/admin, roles: ROLE_ADMIN }
