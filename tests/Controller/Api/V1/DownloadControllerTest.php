@@ -61,7 +61,9 @@ final class DownloadControllerTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
 
-        $data = \json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
+        $content = $this->client->getResponse()->getContent();
+        $this->assertNotFalse($content);
+        $data = \json_decode($content, true, 512, JSON_THROW_ON_ERROR);
 
         return (string) ($data['token'] ?? '');
     }

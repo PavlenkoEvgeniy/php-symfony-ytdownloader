@@ -28,13 +28,14 @@ final class SourceController extends AbstractController
 
         $items = [];
         foreach ($sources as $source) {
-            $items[] = [
+            $createdAt = $source->getCreatedAt();
+            $items[]   = [
                 'id'         => $source->getId(),
                 'filename'   => $source->getFilename(),
                 'filepath'   => $source->getFilepath(),
                 'size'       => $source->getSize(),
-                'created_at' => \method_exists($source, 'getCreatedAt') && $source->getCreatedAt()
-                    ? $source->getCreatedAt()->format(DATE_ATOM)
+                'created_at' => $createdAt
+                    ? $createdAt->format(DATE_ATOM)
                     : null,
                 'download_url' => $this->generateUrl('api_v1_source_download', ['id' => $source->getId()]),
             ];

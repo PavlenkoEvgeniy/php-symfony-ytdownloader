@@ -18,7 +18,9 @@ final class SourceControllerTest extends WebTestCase
     private EntityManagerInterface $em;
     private SourceRepository $sourceRepository;
     private string $downloadsDir;
+    /** @var list<int> */
     private array $createdSourceIds = [];
+    /** @var list<string> */
     private array $createdFiles     = [];
 
     public function setUp(): void
@@ -60,7 +62,9 @@ final class SourceControllerTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
 
-        $data = \json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
+        $content = $this->client->getResponse()->getContent();
+        $this->assertNotFalse($content);
+        $data = \json_decode($content, true, 512, JSON_THROW_ON_ERROR);
         $this->assertArrayHasKey('items', $data);
         $this->assertArrayHasKey('count', $data);
     }
@@ -127,7 +131,9 @@ final class SourceControllerTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
 
-        $data = \json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
+        $content = $this->client->getResponse()->getContent();
+        $this->assertNotFalse($content);
+        $data = \json_decode($content, true, 512, JSON_THROW_ON_ERROR);
 
         return (string) ($data['token'] ?? '');
     }
