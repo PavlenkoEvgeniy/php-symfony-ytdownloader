@@ -15,7 +15,7 @@ final class TelegramHookCommandTest extends TestCase
 {
     public function testExecuteSetsWebhookAndReturnsSuccess(): void
     {
-        $token = 'test-token';
+        $token   = 'test-token';
         $hostUrl = 'https://example.test';
 
         $response = $this->createMock(ResponseInterface::class);
@@ -39,7 +39,7 @@ final class TelegramHookCommandTest extends TestCase
             ->willReturn($response);
 
         $command = new TelegramHookCommand($token, $hostUrl, $httpClient);
-        $tester = new CommandTester($command);
+        $tester  = new CommandTester($command);
 
         $exitCode = $tester->execute([]);
 

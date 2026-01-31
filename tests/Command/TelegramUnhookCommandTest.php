@@ -23,7 +23,7 @@ final class TelegramUnhookCommandTest extends TestCase
         };
 
         $command = new TelegramUnhookCommand($token, $requester);
-        $tester = new CommandTester($command);
+        $tester  = new CommandTester($command);
 
         $exitCode = $tester->execute([]);
 
