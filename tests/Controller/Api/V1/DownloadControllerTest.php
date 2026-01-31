@@ -29,7 +29,7 @@ final class DownloadControllerTest extends WebTestCase
         $token = $this->loginAndGetToken('admin@admin.local', 'admin123456');
 
         $this->client->jsonRequest(Request::METHOD_POST, '/api/v1/download/create', [
-            'url' => 'not-a-url',
+            'url'     => 'not-a-url',
             'quality' => 'best',
         ], [
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
@@ -43,7 +43,7 @@ final class DownloadControllerTest extends WebTestCase
         $token = $this->loginAndGetToken('admin@admin.local', 'admin123456');
 
         $this->client->jsonRequest(Request::METHOD_POST, '/api/v1/download/create', [
-            'url' => 'https://example.com',
+            'url'     => 'https://example.com',
             'quality' => 'moderate',
         ], [
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
@@ -55,13 +55,13 @@ final class DownloadControllerTest extends WebTestCase
     private function loginAndGetToken(string $email, string $password): string
     {
         $this->client->jsonRequest(Request::METHOD_POST, '/api/v1/auth/login', [
-            'email' => $email,
+            'email'    => $email,
             'password' => $password,
         ]);
 
         $this->assertResponseIsSuccessful();
 
-        $data = json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
+        $data = \json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
 
         return (string) ($data['token'] ?? '');
     }

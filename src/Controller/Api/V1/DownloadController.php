@@ -29,7 +29,7 @@ final class DownloadController extends AbstractController
             return $this->json(['message' => 'Invalid JSON payload.'], Response::HTTP_BAD_REQUEST);
         }
 
-        $url = isset($data['url']) ? \trim((string) $data['url']) : '';
+        $url     = isset($data['url']) ? \trim((string) $data['url']) : '';
         $quality = isset($data['quality']) ? \trim((string) $data['quality']) : 'moderate';
 
         if ('' === $url) {
@@ -51,7 +51,7 @@ final class DownloadController extends AbstractController
 
         return $this->json([
             'message' => 'Download was added to queue.',
-            'url' => $url,
+            'url'     => $url,
             'quality' => $quality,
         ], Response::HTTP_ACCEPTED);
     }

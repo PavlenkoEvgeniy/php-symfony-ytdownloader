@@ -21,13 +21,13 @@ final class AuthControllerTest extends WebTestCase
     public function testLoginReturnsToken(): void
     {
         $this->client->jsonRequest(Request::METHOD_POST, '/api/v1/auth/login', [
-            'email' => 'admin@admin.local',
+            'email'    => 'admin@admin.local',
             'password' => 'admin123456',
         ]);
 
         $this->assertResponseIsSuccessful();
 
-        $data = json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
+        $data = \json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
         $this->assertArrayHasKey('token', $data);
         $this->assertNotEmpty($data['token']);
     }
@@ -48,7 +48,7 @@ final class AuthControllerTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
 
-        $data = json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
+        $data = \json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
         $this->assertSame('admin@admin.local', $data['email'] ?? null);
         $this->assertContains('ROLE_ADMIN', $data['roles'] ?? []);
     }
@@ -67,13 +67,13 @@ final class AuthControllerTest extends WebTestCase
     private function loginAndGetToken(string $email, string $password): string
     {
         $this->client->jsonRequest(Request::METHOD_POST, '/api/v1/auth/login', [
-            'email' => $email,
+            'email'    => $email,
             'password' => $password,
         ]);
 
         $this->assertResponseIsSuccessful();
 
-        $data = json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
+        $data = \json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
 
         return (string) ($data['token'] ?? '');
     }

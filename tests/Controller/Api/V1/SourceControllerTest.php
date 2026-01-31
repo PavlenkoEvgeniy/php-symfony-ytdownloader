@@ -19,21 +19,21 @@ final class SourceControllerTest extends WebTestCase
     private SourceRepository $sourceRepository;
     private string $downloadsDir;
     private array $createdSourceIds = [];
-    private array $createdFiles = [];
+    private array $createdFiles     = [];
 
     public function setUp(): void
     {
-        $this->client = static::createClient();
-        $this->em = $this->getContainer()->get(EntityManagerInterface::class);
+        $this->client           = static::createClient();
+        $this->em               = $this->getContainer()->get(EntityManagerInterface::class);
         $this->sourceRepository = $this->getContainer()->get(SourceRepository::class);
-        $this->downloadsDir = (string) ($_ENV['APP_DOWNLOADS_DIR'] ?? $this->getContainer()->getParameter('kernel.project_dir') . '/var/downloads');
+        $this->downloadsDir     = (string) ($_ENV['APP_DOWNLOADS_DIR'] ?? $this->getContainer()->getParameter('kernel.project_dir') . '/var/downloads');
     }
 
     protected function tearDown(): void
     {
         foreach ($this->createdFiles as $file) {
-            if (is_file($file)) {
-                @unlink($file);
+            if (\is_file($file)) {
+                @\unlink($file);
             }
         }
 
@@ -60,7 +60,7 @@ final class SourceControllerTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
 
-        $data = json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
+        $data = \json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
         $this->assertArrayHasKey('items', $data);
         $this->assertArrayHasKey('count', $data);
     }
@@ -68,7 +68,7 @@ final class SourceControllerTest extends WebTestCase
     public function testDownloadReturnsFile(): void
     {
         $source = $this->createSourceWithFile('test-download.mp4');
-        $token = $this->loginAndGetToken('admin@admin.local', 'admin123456');
+        $token  = $this->loginAndGetToken('admin@admin.local', 'admin123456');
 
         $this->client->request(Request::METHOD_GET, '/api/v1/source/' . $source->getId() . '/download', server: [
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
@@ -82,7 +82,7 @@ final class SourceControllerTest extends WebTestCase
     public function testDeleteRemovesFileAndEntity(): void
     {
         $source = $this->createSourceWithFile('test-delete.mp4');
-        $token = $this->loginAndGetToken('admin@admin.local', 'admin123456');
+        $token  = $this->loginAndGetToken('admin@admin.local', 'admin123456');
 
         $this->client->request(Request::METHOD_DELETE, '/api/v1/source/' . $source->getId(), server: [
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
@@ -96,24 +96,24 @@ final class SourceControllerTest extends WebTestCase
 
     private function createSourceWithFile(string $filename): Source
     {
-        if (!is_dir($this->downloadsDir)) {
-            mkdir($this->downloadsDir, 0775, true);
+        if (!\is_dir($this->downloadsDir)) {
+            \mkdir($this->downloadsDir, 0775, true);
         }
 
         $filePath = $this->downloadsDir . '/' . $filename;
-        file_put_contents($filePath, 'test');
+        \file_put_contents($filePath, 'test');
 
         $source = new Source();
         $source
             ->setFilename($filename)
             ->setFilepath($this->downloadsDir)
-            ->setSize((float) filesize($filePath));
+            ->setSize((float) \filesize($filePath));
 
         $this->em->persist($source);
         $this->em->flush();
 
         $this->createdSourceIds[] = (int) $source->getId();
-        $this->createdFiles[] = $filePath;
+        $this->createdFiles[]     = $filePath;
 
         return $source;
     }
@@ -121,13 +121,13 @@ final class SourceControllerTest extends WebTestCase
     private function loginAndGetToken(string $email, string $password): string
     {
         $this->client->jsonRequest(Request::METHOD_POST, '/api/v1/auth/login', [
-            'email' => $email,
+            'email'    => $email,
             'password' => $password,
         ]);
 
         $this->assertResponseIsSuccessful();
 
-        $data = json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
+        $data = \json_decode($this->client->getResponse()->getContent() ?? '', true, 512, JSON_THROW_ON_ERROR);
 
         return (string) ($data['token'] ?? '');
     }

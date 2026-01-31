@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Controller\Api\V1;
 
 use App\Entity\User;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 final class AuthController extends AbstractController
 {
@@ -28,7 +28,7 @@ final class AuthController extends AbstractController
         }
 
         return $this->json([
-            'id' => $user->getId(),
+            'id'    => $user->getId(),
             'email' => $user->getEmail(),
             'roles' => $user->getRoles(),
         ]);

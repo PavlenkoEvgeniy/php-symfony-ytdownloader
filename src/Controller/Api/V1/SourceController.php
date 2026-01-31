@@ -29,11 +29,11 @@ final class SourceController extends AbstractController
         $items = [];
         foreach ($sources as $source) {
             $items[] = [
-                'id' => $source->getId(),
-                'filename' => $source->getFilename(),
-                'filepath' => $source->getFilepath(),
-                'size' => $source->getSize(),
-                'created_at' => method_exists($source, 'getCreatedAt') && $source->getCreatedAt()
+                'id'         => $source->getId(),
+                'filename'   => $source->getFilename(),
+                'filepath'   => $source->getFilepath(),
+                'size'       => $source->getSize(),
+                'created_at' => \method_exists($source, 'getCreatedAt') && $source->getCreatedAt()
                     ? $source->getCreatedAt()->format(DATE_ATOM)
                     : null,
                 'download_url' => $this->generateUrl('api_v1_source_download', ['id' => $source->getId()]),
@@ -53,7 +53,7 @@ final class SourceController extends AbstractController
 
         if (!\file_exists($filePath)) {
             $logger->alert('File not found for API download', [
-                'message' => \sprintf('File not found, not possible to download file: %s', $filePath),
+                'message'  => \sprintf('File not found, not possible to download file: %s', $filePath),
                 'sourceId' => $source->getId(),
             ]);
 
@@ -76,7 +76,7 @@ final class SourceController extends AbstractController
 
         if (!\file_exists($filePath)) {
             $logger->alert('File not found for API delete', [
-                'message' => \sprintf('File not found, not possible to delete file: %s', $filePath),
+                'message'  => \sprintf('File not found, not possible to delete file: %s', $filePath),
                 'sourceId' => $source->getId(),
             ]);
 
@@ -87,7 +87,7 @@ final class SourceController extends AbstractController
             \unlink($filePath);
         } catch (\Throwable $e) {
             $logger->alert('Error deleting file via API', [
-                'message' => $e->getMessage(),
+                'message'  => $e->getMessage(),
                 'sourceId' => $source->getId(),
                 'filepath' => $filePath,
             ]);
