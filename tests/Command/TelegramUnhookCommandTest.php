@@ -6,26 +6,28 @@ namespace App\Tests\Command;
 
 use App\Command\TelegramUnhookCommand;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
 final class TelegramUnhookCommandTest extends TestCase
 {
-    public function testExecuteShowsReplyFromTelegram(): void
+    public function testExecuteRemovesWebhookAndReturnsSuccess(): void
     {
-        $command = new TelegramUnhookCommand('dummy-token', function (string $url, $context) {
-            // ensure token is present in URL
-            TestCase::assertStringContainsString('dummy-token', $url);
+        $token = 'test-token';
 
-            return '{"ok":true,"result":true}';
-        });
+        $requester = function (string $url, $context) use ($token): string {
+            TestCase::assertSame('https://api.telegram.org/bot' . $token . '/setWebhook', $url);
+            TestCase::assertIsResource($context);
 
+            return '{"ok":true}';
+        };
+
+        $command = new TelegramUnhookCommand($token, $requester);
         $tester = new CommandTester($command);
-        $status = $tester->execute([]);
 
-        $output = $tester->getDisplay();
+        $exitCode = $tester->execute([]);
 
-        $this->assertStringContainsString('Reply from telegram:', $output);
-        $this->assertStringContainsString('{"ok":true,"result":true}', $output);
-        $this->assertEquals(0, $status);
+        $this->assertSame(Command::SUCCESS, $exitCode);
+        $this->assertStringContainsString('Reply from telegram', $tester->getDisplay());
     }
 }
