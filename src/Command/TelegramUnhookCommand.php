@@ -11,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
-    name: 'app:telegram:unhook',
+    name: 'app:telegram-unhook',
     description: 'Remove a webhook for the Telegram bot',
 )]
 final class TelegramUnhookCommand extends Command
