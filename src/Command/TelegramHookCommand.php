@@ -12,7 +12,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 #[AsCommand(
-    name: 'app:telegram:hook',
+    name: 'app:telegram-hook',
     description: 'Add a webhook for the Telegram bot',
 )]
 final class TelegramHookCommand extends Command

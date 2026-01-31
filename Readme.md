@@ -88,24 +88,104 @@ services.
     ```
     GET http://host.tld/admin
     ```
-11. **Telegram bot**:
-    - add enable true for telegram bot in .env.local file
-    - add your bot token to .env.local file
-    - add telegram host url to .env.local file
+
+## 🤖 Telegram bot
+1. **Init**:
+    - add enable true for telegram bot in .env.local file (TELEGRAM_BOT_ENABLED=true)
+    - add your bot token to .env.local file (TELEGRAM_BOT_TOKEN=change_me_please)
+    - add telegram host url to .env.local file (TELEGRAM_HOST_URL=https://host.tld)
     - run the command to setup webhook:
     ```bash
-    make docker-php
-    php bin/console app:telegram:hook
+   make telegram-bot-hook
     ```
-    - for unhook run command:
+    - or for unhook telegram bot run command:
     ```bash
-    make docker-php
-    php bin/console app:telegram:unhook
+   make telegram-bot-unhook
     ```
-12. **Telegram bot commands**:
+2. **Telegram bot commands**:
     ```
-    /start - start bot
+   /start - start bot
     ```
+
+## 🔐 REST API v1 (JWT)
+
+All API endpoints are prefixed with `/api/v1` and require a Bearer token, except the login endpoint.
+
+### 1) Login (get JWT token)
+
+**Request**
+```
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+   "email": "admin@admin.local",
+   "password": "admin123456"
+}
+```
+
+**Response**
+```
+{
+   "token": "<jwt>"
+}
+```
+
+### 2) Authenticated requests
+
+Add the JWT token to the `Authorization` header:
+```
+Authorization: Bearer <jwt>
+```
+
+### 3) Get current user
+
+```
+GET /api/v1/auth/me
+Authorization: Bearer <jwt>
+```
+
+### 4) Logout (client-side)
+
+JWT is stateless, so logout just tells the client to discard the token:
+```
+POST /api/v1/auth/logout
+Authorization: Bearer <jwt>
+```
+
+### 5) Add new download
+
+```
+POST /api/v1/download/create
+Authorization: Bearer <jwt>
+Content-Type: application/json
+
+{
+   "url": "https://example.com",
+   "quality": "best"  // best|moderate|poor|audio
+}
+```
+
+### 6) List downloaded files
+
+```
+GET /api/v1/source?order=desc
+Authorization: Bearer <jwt>
+```
+
+### 7) Download file by id
+
+```
+GET /api/v1/source/{id}/download
+Authorization: Bearer <jwt>
+```
+
+### 8) Delete file by id
+
+```
+DELETE /api/v1/source/{id}
+Authorization: Bearer <jwt>
+```
 
 ## 📝 Todo Roadmap
 
@@ -117,7 +197,7 @@ services.
 ✅ ~~Health check endpoint~~  
 ✅ ~~YouTube cache/cookies optimization (avoid anti-bot detection)~~  
 ✅ ~~Download statistics counter~~  
-🔳 REST API implementation  
+✅ ~~REST API implementation~~  
 ✅ ~~Telegram bot integration~~  
 ✅ ~~Setup automation script~~  
 ✅ ~~Admin dashboard~~  

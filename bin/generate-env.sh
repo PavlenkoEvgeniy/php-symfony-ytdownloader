@@ -54,6 +54,12 @@ load_docker_env() {
 
 create_env_local() {
     if [ -f "${ENV_LOCAL}" ]; then
+        if ! grep -q '^JWT_PASSPHRASE=' "${ENV_LOCAL}"; then
+            echo "JWT_PASSPHRASE=${JWT_PASSPHRASE_VALUE}" >> "${ENV_LOCAL}"
+            log "Added JWT_PASSPHRASE to .env.local"
+        else
+            log "JWT_PASSPHRASE already set in .env.local"
+        fi
         log ".env.local already exists; skipping generation"
         return
     fi
@@ -68,6 +74,7 @@ TELEGRAM_BOT_ENABLED=false
 TELEGRAM_BOT_TOKEN=change_me_please
 TELEGRAM_HOST_URL=https://change_me_please.tld
 APP_DOWNLOADS_DIR="%kernel.project_dir%/var/downloads"
+JWT_PASSPHRASE=${JWT_PASSPHRASE_VALUE}
 EOF
 
     log "Created .env.local"
@@ -117,6 +124,7 @@ main() {
 
     APP_SECRET_VALUE="${APP_SECRET:-$(generate_secret)}"
     APP_SECRET_TEST_VALUE="${APP_SECRET_TEST:-$(generate_secret)}"
+    JWT_PASSPHRASE_VALUE="${JWT_PASSPHRASE:-$(generate_secret)}"
 
     create_env_local
     create_env_test_local

@@ -5,28 +5,45 @@ declare(strict_types=1);
 namespace App\Tests\Command;
 
 use App\Command\TelegramHookCommand;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
-use Symfony\Component\HttpClient\MockHttpClient;
-use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
-class TelegramHookCommandTest extends KernelTestCase
+final class TelegramHookCommandTest extends TestCase
 {
-    public function testExecuteSendsWebhook(): void
+    public function testExecuteSetsWebhookAndReturnsSuccess(): void
     {
-        $kernel = static::bootKernel();
+        $token   = 'test-token';
+        $hostUrl = 'https://example.test';
 
-        $response = new MockResponse('{"ok":true,"result":true}');
-        $mock     = new MockHttpClient($response);
+        $response = $this->createMock(ResponseInterface::class);
+        $response->expects($this->once())
+            ->method('getContent')
+            ->with(false)
+            ->willReturn('{"ok":true}');
 
-        $command = new TelegramHookCommand('TEST_BOT_TOKEN', 'https://example.local', $mock);
+        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient->expects($this->once())
+            ->method('request')
+            ->with(
+                'POST',
+                'https://api.telegram.org/bot' . $token . '/setWebhook',
+                [
+                    'body' => [
+                        'url' => $hostUrl . '/telegram/hook',
+                    ],
+                ]
+            )
+            ->willReturn($response);
+
+        $command = new TelegramHookCommand($token, $hostUrl, $httpClient);
         $tester  = new CommandTester($command);
 
-        $tester->execute([]);
+        $exitCode = $tester->execute([]);
 
-        $tester->assertCommandIsSuccessful();
-
-        $output = $tester->getDisplay();
-        $this->assertStringContainsString('Reply from telegram: {"ok":true,"result":true}', $output);
+        $this->assertSame(Command::SUCCESS, $exitCode);
+        $this->assertStringContainsString('Reply from telegram', $tester->getDisplay());
     }
 }
