@@ -187,6 +187,108 @@ DELETE /api/v1/source/{id}
 Authorization: Bearer <jwt>
 ```
 
+## 🔐 REST API v2 (JWT + Refresh token)
+
+All API endpoints are prefixed with `/api/v2`. The login endpoint returns a JWT plus a refresh token. Use the JWT for authenticated requests. When the JWT expires, call refresh to get a new pair.
+
+### 1) Login (get JWT + refresh token)
+
+**Request**
+```
+POST /api/v2/auth/login
+Content-Type: application/json
+
+{
+   "email": "admin@admin.local",
+   "password": "admin123456"
+}
+```
+
+**Response**
+```
+{
+   "token": "<jwt>",
+   "refresh_token": "<refresh_token>",
+   "refresh_token_expires_at": "2026-01-31T12:00:00+00:00"
+}
+```
+
+### 2) Authenticated requests
+
+Add the JWT token to the `Authorization` header:
+```
+Authorization: Bearer <jwt>
+```
+
+### 3) Refresh tokens
+
+**Request**
+```
+POST /api/v2/auth/refresh
+Content-Type: application/json
+
+{
+   "refresh_token": "<refresh_token>"
+}
+```
+
+**Response**
+```
+{
+   "token": "<jwt>",
+   "refresh_token": "<refresh_token>",
+   "refresh_token_expires_at": "2026-01-31T12:00:00+00:00"
+}
+```
+
+### 4) Get current user
+
+```
+GET /api/v2/auth/me
+Authorization: Bearer <jwt>
+```
+
+### 5) Logout
+
+```
+POST /api/v2/auth/logout
+Authorization: Bearer <jwt>
+```
+
+### 6) Add new download
+
+```
+POST /api/v2/download/create
+Authorization: Bearer <jwt>
+Content-Type: application/json
+
+{
+   "url": "https://example.com",
+   "quality": "best"  // best|moderate|poor|audio
+}
+```
+
+### 7) List downloaded files
+
+```
+GET /api/v2/source?order=desc
+Authorization: Bearer <jwt>
+```
+
+### 8) Download file by id
+
+```
+GET /api/v2/source/{id}/download
+Authorization: Bearer <jwt>
+```
+
+### 9) Delete file by id
+
+```
+DELETE /api/v2/source/{id}
+Authorization: Bearer <jwt>
+```
+
 ## 📝 Todo Roadmap
 
 ✅ ~~Background video downloads (queues)~~  
