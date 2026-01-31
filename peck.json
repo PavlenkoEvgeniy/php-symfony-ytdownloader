@@ -47,7 +47,9 @@
             "dl",
             "basename",
             "errored",
-            "env"
+            "env",
+            "jwt",
+            "lexik"
         ],
         "paths": [
             "vendor"
