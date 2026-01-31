@@ -54,7 +54,6 @@ final class SourceManagerTest extends TestCase
 
         $source = $manager->createFromDownloadedFile('bar.mp4', '/tmp', 123.4);
 
-        $this->assertInstanceOf(Source::class, $source);
         $this->assertSame('bar.mp4', $source->getFilename());
         $this->assertSame('/tmp', $source->getFilepath());
         $this->assertSame(123.4, $source->getSize());

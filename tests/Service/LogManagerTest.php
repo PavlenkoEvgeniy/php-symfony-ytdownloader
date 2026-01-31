@@ -27,7 +27,6 @@ final class LogManagerTest extends TestCase
 
         $log = $manager->create('info', 'hello world', 12.5);
 
-        $this->assertInstanceOf(Log::class, $log);
         $this->assertSame('info', $log->getType());
         $this->assertSame('hello world', $log->getMessage());
         $this->assertSame(12.5, $log->getSize());
