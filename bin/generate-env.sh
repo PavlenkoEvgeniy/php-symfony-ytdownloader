@@ -54,6 +54,12 @@ load_docker_env() {
 
 create_env_local() {
     if [ -f "${ENV_LOCAL}" ]; then
+        if ! grep -q '^JWT_PASSPHRASE=' "${ENV_LOCAL}"; then
+            echo "JWT_PASSPHRASE=${JWT_PASSPHRASE_VALUE}" >> "${ENV_LOCAL}"
+            log "Added JWT_PASSPHRASE to .env.local"
+        else
+            log "JWT_PASSPHRASE already set in .env.local"
+        fi
         log ".env.local already exists; skipping generation"
         return
     fi
