@@ -14,101 +14,32 @@ jobs:
             -   name: Checkout code
                 uses: actions/checkout@v4
 
-            -   name: Create .env file for docker
-                run: |
-                    touch docker/.env
-                    echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> docker/.env
-                    echo "NGINX_PORT=${{ secrets.NGINX_PORT }}" >> docker/.env
-                    echo "DB_CONNECTION=${{ secrets.DB_CONNECTION }}" >> docker/.env
-                    echo "DB_HOST=${{ secrets.DB_HOST }}" >> docker/.env
-                    echo "DB_PORT=${{ secrets.DB_PORT }}" >> docker/.env
-                    echo "DB_DATABASE=${{ secrets.DB_DATABASE }}" >> docker/.env
-                    echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> docker/.env
-                    echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> docker/.env
-                    echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> docker/.env
-                    echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> docker/.env
-                    echo "RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}" >> docker/.env
-                    echo "RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}" >> docker/.env
-                    echo "RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}" >> docker/.env
-                    echo "RABBITMQ_VHOST=${{ secrets.RABBITMQ_VHOST }}" >> docker/.env
-                    echo "RABBITMQ_PORT=${{ secrets.RABBITMQ_PORT }}" >> docker/.env
-                    echo "RABBITMQ_MANAGEMENT_PORT=${{ secrets.RABBITMQ_MANAGEMENT_PORT }}" >> docker/.env
-                    cat docker/.env
-
-            -   name: Create application .env.local file for dev
-                run: |
-                    touch .env.local
-                    echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env.local
-                    echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.local
-                    echo "REDIS=${{ secrets.REDIS }}" >> .env.local
-                    echo "RABBIT_HOST=${{ secrets.RABBIT_HOST }}" >> .env.local
-                    echo "RABBIT_USER=${{ secrets.RABBIT_USER }}" >> .env.local
-                    echo "RABBIT_PASSWORD=${{ secrets.RABBIT_PASSWORD }}" >> .env.local
-                    echo "RABBIT_VHOST=${{ secrets.RABBIT_VHOST }}" >> .env.local
-                    echo "RABBIT_PORT=${{ secrets.RABBIT_PORT }}" >> .env.local
-                    echo "RABBIT_MANAGEMENT_PORT=${{ secrets.RABBIT_MANAGEMENT_PORT }}" >> .env.local
-                    echo "RABBITMQ_DSN=${{ secrets.RABBITMQ_DSN }}" >> .env.local
-                    echo "APP_ENV=dev" >> .env.local
-                    cat .env.local
-
-            -   name: Create application .env.test file for test
-                run: |
-                    touch .env.test.local
-                    echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env.test.local
-                    echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.test.local
-                    echo "REDIS=${{ secrets.REDIS }}" >> .env.test.local
-                    echo "RABBIT_HOST=${{ secrets.RABBIT_HOST }}" >> .env.test.local
-                    echo "RABBIT_USER=${{ secrets.RABBIT_USER }}" >> .env.test.local
-                    echo "RABBIT_PASSWORD=${{ secrets.RABBIT_PASSWORD }}" >> .env.test.local
-                    echo "RABBIT_VHOST=${{ secrets.RABBIT_VHOST }}" >> .env.test.local
-                    echo "RABBIT_PORT=${{ secrets.RABBIT_PORT }}" >> .env.test.local
-                    echo "RABBIT_MANAGEMENT_PORT=${{ secrets.RABBIT_MANAGEMENT_PORT }}" >> .env.test.local
-                    echo "RABBITMQ_DSN=${{ secrets.RABBITMQ_DSN }}" >> .env.test.local
-                    echo "APP_ENV=test" >> .env.test.local
-                    cat .env.test.local
-
             -   name: Set up Docker Buildx
                 uses: docker/setup-buildx-action@v3
 
             -   name: Build and start containers
-                run: docker compose -f docker/docker-compose.yml up -d
-
-            -   name: Composer install
-                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm composer install
-
-            -   name: Database setup
                 run: |
-                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:create --if-not-exists
-                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:migrations:migrate
-
-            -   name: Supervisor start
-                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm /etc/init.d/supervisor start
-
-            -   name: Cache clear
-                run: |
-                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console cache:clear
-                    rm -rf ./var/cache/
-
-            -   name: Run php-cs-fixer check
-                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm vendor/bin/php-cs-fixer fix --dry-run --diff --allow-risky=yes
+                    make init
 
             -   name: Cache warmup
                 run: |
-                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console cache:warmup
+                    make cache-warmup
+
+            -   name: Run php-cs-fixer check
+                run: |
+                    make cs-check
 
             -   name: Run phpstan check
-                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm vendor/bin/phpstan analyse --memory-limit=256M
+                run: |
+                    make phpstan
 
             -   name: Run peck check
-                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm vendor/bin/peck
+                run: |
+                    make peck
 
             -   name: Run tests
                 run: |
-                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:drop --if-exists --force --env=test
-                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:create --env=test
-                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:migrations:migrate --no-interaction --env=test
-                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:fixtures:load --no-interaction --group=all --env=test
-                    docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/phpunit
+                    make test
 
             -   name: Stop containers
                 if: always()
