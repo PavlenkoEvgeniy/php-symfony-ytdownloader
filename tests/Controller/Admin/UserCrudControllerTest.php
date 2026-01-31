@@ -111,7 +111,6 @@ final class UserCrudControllerTest extends TestCase
         $controller = new UserCrudController($hasher);
 
         $closure = $this->getHashPasswordClosure($controller);
-        $this->assertInstanceOf(\Closure::class, $closure);
 
         // case: invalid form
         $formInvalid = $this->createMock(FormInterface::class);
@@ -143,7 +142,6 @@ final class UserCrudControllerTest extends TestCase
         $controller = new UserCrudController($hasher);
 
         $closure = $this->getHashPasswordClosure($controller);
-        $this->assertInstanceOf(\Closure::class, $closure);
 
         $user = new User();
 

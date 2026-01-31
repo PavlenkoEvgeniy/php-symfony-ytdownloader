@@ -28,6 +28,10 @@ readonly class AccessDeniedHandler implements AccessDeniedHandlerInterface
 
     private function addFlash(Request $request, string $type, string $message): void
     {
+        if (!$request->hasSession()) {
+            return;
+        }
+
         $session = $request->getSession();
 
         if ($session instanceof Session) {
