@@ -37,7 +37,7 @@ help:
 env-setup:
 	@bash bin/generate-env.sh
 
-init: env-setup db-purge docker-compose-up composer-install composer-update db-setup generate-jwt-keypair supervisor-start cache-clear
+init: env-setup db-purge docker-compose-up composer-install db-setup generate-jwt-keypair supervisor-start cache-clear
 
 restart: docker-compose-down docker-compose-up supervisor-start cache-clear cache-purge
 
