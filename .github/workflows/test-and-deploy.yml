@@ -76,9 +76,6 @@ jobs:
             -   name: Composer install
                 run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm composer install
 
-            -   name: Composer update
-                run: docker exec ${{ secrets.PROJECT_NAME }}-php-fpm composer update
-
             -   name: Database setup
                 run: |
                     docker exec ${{ secrets.PROJECT_NAME }}-php-fpm php bin/console doctrine:database:create --if-not-exists
