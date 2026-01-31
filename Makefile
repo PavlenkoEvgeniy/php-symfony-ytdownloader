@@ -11,7 +11,7 @@ help:
 	@echo "7. supervisor-restart ................. Restart supervisor for queue processing."
 	@echo "8. docker-compose-up ............................. Up docker compose containers."
 	@echo "9. docker-compose-down ......................... Down docker compose containers."
-	@echo "10. composer-install ............................. Install composer dependencies."
+	@echo "10. composer-install ............................ Install composer dependencies."
 	@echo "11. composer-update .............................. Update composer dependencies."
 	@echo "12. db-setup ... Setup database (drop existing, create new, migrate migrations)."
 	@echo "13. db-purge ........................................ Delete database directory."
@@ -22,16 +22,17 @@ help:
 	@echo "18. docker-php ....................... Enter to bash shell of php-fpm container."
 	@echo "19. docker-pgsql ....................... Enter to bash shell of pgsql container."
 	@echo "20. cache-clear ........................................... Clear symfony cache."
-	@echo "21. cache-purge ........................................ Delete cache directory."
-	@echo "22. lint .......... Fix project by php-cs-fixer and after that check by phpstan."
-	@echo "23. yt-dlp-update ....................................... Update yt-dlp package."
-	@echo "24. bash .......................................... Alias for docker-php command"
-	@echo "25. rm-tmp ................. Clear system directory /tmp inside docker container"
-	@echo "26. rm-tmp-chromium . Clear directory /tmp/chromium_data inside docker container"
-	@echo "27. peck ......................................... Grammar check by peck linter."
-	@echo "28. generate-jwt-keypair ................................ Generate JWT key pair."
-	@echo "29. telegram-bot-hook ................................ Add Telegram bot webhook."
-	@echo "30. telegram-bot-unhook ........................... Remove Telegram bot webhook."
+	@echo "21. cache-warmup ........................................ Warm up symfony cache."
+	@echo "22. cache-purge ........................................ Delete cache directory."
+	@echo "23. lint .......... Fix project by php-cs-fixer and after that check by phpstan."
+	@echo "24. yt-dlp-update ....................................... Update yt-dlp package."
+	@echo "25. bash ......................................... Alias for docker-php command."
+	@echo "26. rm-tmp ....................... Clear directory /tmp inside docker container."
+	@echo "27. rm-tmp-chromium ................................. Clear chromium temp files."
+	@echo "28. peck ......................................... Grammar check by peck linter."
+	@echo "29. generate-jwt-keypair ................................ Generate JWT key pair."
+	@echo "30. telegram-bot-hook ................................ Add Telegram bot webhook."
+	@echo "31. telegram-bot-unhook ........................... Remove Telegram bot webhook."
 	@echo "+------------------------------------------------------------------------------+"
 
 env-setup:
@@ -99,6 +100,9 @@ cache-clear:
 
 cache-purge:
 	rm -rf ./var/cache/
+
+cache-warmup:
+	docker exec ytdownloader-php-fpm php bin/console cache:warmup
 
 lint: cs-fix phpstan peck
 
