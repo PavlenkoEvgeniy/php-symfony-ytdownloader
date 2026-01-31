@@ -29,12 +29,13 @@ help:
 	@echo "25. rm-tmp ................. Clear system directory /tmp inside docker container"
 	@echo "26. rm-tmp-chromium . Clear directory /tmp/chromium_data inside docker container"
 	@echo "27. peck ......................................... Grammar check by peck linter."
+	@echo "28. generate-jwt-keypair ................................ Generate JWT key pair."
 	@echo "+------------------------------------------------------------------------------+"
 
 env-setup:
 	@bash bin/generate-env.sh
 
-init: env-setup db-purge docker-compose-up composer-install composer-update db-setup supervisor-start cache-clear
+init: env-setup db-purge docker-compose-up composer-install composer-update db-setup generate-jwt-keypair supervisor-start cache-clear
 
 restart: docker-compose-down docker-compose-up supervisor-start cache-clear cache-purge
 
@@ -112,3 +113,6 @@ rm-tmp-chromium:
 
 peck:
 	docker exec ytdownloader-php-fpm vendor/bin/peck
+
+generate-jwt-keypair:
+	docker exec ytdownloader-php-fpm php bin/console lexik:jwt:generate-keypair --overwrite
