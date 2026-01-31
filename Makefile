@@ -30,6 +30,8 @@ help:
 	@echo "26. rm-tmp-chromium . Clear directory /tmp/chromium_data inside docker container"
 	@echo "27. peck ......................................... Grammar check by peck linter."
 	@echo "28. generate-jwt-keypair ................................ Generate JWT key pair."
+	@echo "29. telegram-bot-hook ................................ Add Telegram bot webhook."
+	@echo "30. telegram-bot-unhook ........................... Remove Telegram bot webhook."
 	@echo "+------------------------------------------------------------------------------+"
 
 env-setup:
@@ -116,3 +118,9 @@ peck:
 
 generate-jwt-keypair:
 	docker exec ytdownloader-php-fpm php bin/console lexik:jwt:generate-keypair --overwrite
+
+telegram-bot-hook:
+	docker exec ytdownloader-php-fpm php bin/console app:telegram-hook
+
+telegram-bot-unhook:
+	docker exec ytdownloader-php-fpm php bin/console app:telegram-unhook
