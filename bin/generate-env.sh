@@ -19,6 +19,17 @@ generate_secret() {
     fi
 }
 
+set_env_value() {
+    local key="$1"
+    local value="$2"
+
+    if grep -q "^${key}=" "${DOCKER_ENV}"; then
+        sed -i "s/^${key}=.*/${key}=${value}/" "${DOCKER_ENV}"
+    else
+        echo "${key}=${value}" >> "${DOCKER_ENV}"
+    fi
+}
+
 encode_rabbit_vhost() {
     local vhost="${1:-/}"
 
@@ -37,6 +48,8 @@ ensure_docker_env() {
 
     if [ ! -f "${DOCKER_ENV}" ]; then
         cp "${DOCKER_ENV_EXAMPLE}" "${DOCKER_ENV}"
+        set_env_value "DB_PASSWORD" "$(generate_secret)"
+        set_env_value "REDIS_PASSWORD" "$(generate_secret)"
         log "Created docker/.env from docker/.env.example"
     else
         log "docker/.env already exists; keeping current values"
@@ -52,11 +65,25 @@ load_docker_env() {
     fi
 }
 
+ensure_test_local_jwt_passphrase() {
+    if [ ! -f "${ENV_TEST_LOCAL}" ]; then
+        return
+    fi
+
+    if ! grep -q '^JWT_PASSPHRASE=' "${ENV_TEST_LOCAL}"; then
+        echo "JWT_PASSPHRASE=${JWT_PASSPHRASE_VALUE}" >> "${ENV_TEST_LOCAL}"
+        log "Added JWT_PASSPHRASE to .env.test.local"
+    else
+        log "JWT_PASSPHRASE already set in .env.test.local"
+    fi
+}
+
 create_env_local() {
     if [ -f "${ENV_LOCAL}" ]; then
         if ! grep -q '^JWT_PASSPHRASE=' "${ENV_LOCAL}"; then
             echo "JWT_PASSPHRASE=${JWT_PASSPHRASE_VALUE}" >> "${ENV_LOCAL}"
             log "Added JWT_PASSPHRASE to .env.local"
+            ensure_test_local_jwt_passphrase
         else
             log "JWT_PASSPHRASE already set in .env.local"
         fi
@@ -96,6 +123,7 @@ PANTHER_ERROR_SCREENSHOT_DIR=./var/error-screenshots
 DATABASE_URL="postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_INTERNAL_PORT}/${DB_DATABASE}?serverVersion=16&charset=utf8"
 REDIS="redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_INTERNAL_PORT}"
 RABBITMQ_DSN="amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST}:${RABBITMQ_INTERNAL_PORT}/${RABBITMQ_VHOST_ENCODED}"
+JWT_PASSPHRASE=${JWT_PASSPHRASE_VALUE}
 EOF
 
     log "Created .env.test.local"
