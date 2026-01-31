@@ -93,6 +93,6 @@ final class UserAuthenticatorTest extends TestCase
         $request  = new Request();
         $response = $authenticator->start($request);
         $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('/login', $response->getTargetUrl());
+        $this->assertSame('/login', $response->headers->get('location'));
     }
 }
