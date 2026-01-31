@@ -16,6 +16,7 @@
         "easycorp/easyadmin-bundle": "^4.27.8",
         "gedmo/doctrine-extensions": "^3.22",
         "knplabs/knp-paginator-bundle": "^6.10",
+        "lexik/jwt-authentication-bundle": "^3.2",
         "norkunas/youtube-dl-php": "^2.13",
         "oskarstark/readable-filesize-extension": "^1.5.1",
         "peckphp/peck": "^0.2.0",
