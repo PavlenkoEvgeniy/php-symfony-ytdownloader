@@ -10,7 +10,7 @@ use App\Entity\User;
 use App\Helper\Helper;
 use App\Repository\LogRepository;
 use App\Repository\UserRepository;
-use App\Service\QueueCounterService;
+use App\Service\MessengerQueueCounterService;
 use App\Service\RabbitMQApiQueueService;
 use Doctrine\DBAL\Exception;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
@@ -30,7 +30,7 @@ final class DashboardController extends AbstractDashboardController
     public function __construct(
         private readonly UserRepository $userRepository,
         private readonly LogRepository $logRepository,
-        private readonly QueueCounterService $queueCounter,
+        private readonly MessengerQueueCounterService $messengerQueueCounterService,
         private readonly RabbitMQApiQueueService $rabbitMQApiQueueService,
     ) {
     }
@@ -43,7 +43,7 @@ final class DashboardController extends AbstractDashboardController
     {
         $totalUsers               = $this->userRepository->getTotalCount();
         $totalSuccessDownloads    = $this->logRepository->getTotalSuccessCount();
-        $totalPendingDownloads    = $this->queueCounter->getQueueCount();
+        $totalPendingDownloads    = $this->messengerQueueCounterService->getQueueCount();
         $totalInProgressDownloads = $this->rabbitMQApiQueueService->getProcessingMessagesCount();
         $totalErrorDownloads      = $this->logRepository->getTotalErrorCount();
         $totalSizeDownloaded      = $this->logRepository->getTotalSize();
