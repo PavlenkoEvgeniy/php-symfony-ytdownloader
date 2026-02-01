@@ -185,6 +185,71 @@ jobs:
                 echo "====================================================="
             fi
 
+  security-check:
+    runs-on: ubuntu-latest
+    needs: build-image
+    env:
+      DOCKER_COMPOSE_FILES: docker/docker-compose.ci.yml
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull php-fpm image
+        run: |
+          IMAGE_NAME=ghcr.io/pavlenkoevgeniy/php-symfony-ytdownloader/php-fpm
+          PRIMARY_TAG=${IMAGE_NAME}:ci-${{ github.sha }}
+          FALLBACK_TAG=${IMAGE_NAME}:ci-latest
+          if docker pull "$PRIMARY_TAG"; then
+            echo "PHP_FPM_IMAGE=$PRIMARY_TAG" >> $GITHUB_ENV
+          elif docker pull "$FALLBACK_TAG"; then
+            echo "PHP_FPM_IMAGE=$FALLBACK_TAG" >> $GITHUB_ENV
+          else
+            echo "No prebuilt image available in GHCR. Aborting to avoid local builds."
+            exit 1
+          fi
+
+      - name: Start containers (no build)
+        run: |
+          make env-setup
+          docker compose -f docker/docker-compose.ci.yml up -d --pull always --no-build
+
+      - name: Prepare application
+        run: |
+          make ci-cd-init
+
+      - name: Cache warmup
+        run: |
+          make cache-warmup
+
+      - name: Security check
+        run: |
+          docker exec ytdownloader-php-fpm composer audit --no-interaction
+
+      - name: Stop containers
+        if: always()
+        run: |
+            docker compose -f docker/docker-compose.ci.yml down --remove-orphans
+            if [ "${{ job.status }}" == "success" ]; then
+                echo "====================================================="
+                echo "✅ Security check completed successfully!"
+                echo "====================================================="
+            else
+                echo "====================================================="
+                echo "❌ Security check failed! Please review the errors above."
+                echo "====================================================="
+            fi
+
   test:
     runs-on: ubuntu-latest
     needs: build-image
