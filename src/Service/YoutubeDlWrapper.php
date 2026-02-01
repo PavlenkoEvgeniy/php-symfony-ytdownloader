@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Enum\VideoDownloaderOption;
 use YoutubeDl\Options;
 use YoutubeDl\YoutubeDl;
 
@@ -14,7 +15,7 @@ final readonly class YoutubeDlWrapper
     }
 
     /**
-     * @return mixed collection returned by YoutubeDl (preserves original behaviour)
+     * @return mixed collection returned by YoutubeDl
      */
     public function download(string $videoUrl, string $downloadFormat, bool $mergeAsVideo): mixed
     {
@@ -26,8 +27,8 @@ final readonly class YoutubeDlWrapper
                     ->downloadPath($this->downloadsDir)
                     ->url(\sprintf('%s --cookies-from-browser chromium+gnomekeyring:/tmp/chromium_data', $videoUrl))
                     ->format($downloadFormat)
-                    ->mergeOutputFormat(VideoDownloaderService::MERGE_OUTPUT_FORMAT_VIDEO)
-                    ->output(VideoDownloaderService::OUTPUT_FILE_FORMAT_VIDEO)
+                    ->mergeOutputFormat(VideoDownloaderOption::MERGE_OUTPUT_FORMAT_VIDEO->value)
+                    ->output(VideoDownloaderOption::OUTPUT_FILE_FORMAT_VIDEO->value)
             );
         }
 
@@ -36,8 +37,8 @@ final readonly class YoutubeDlWrapper
                 ->downloadPath($this->downloadsDir)
                 ->url($videoUrl)
                 ->extractAudio(true)
-                ->audioFormat(VideoDownloaderService::FORMAT_AUDIO)
-                ->output(VideoDownloaderService::OUTPUT_FILE_FORMAT_AUDIO)
+                ->audioFormat(VideoDownloaderOption::FORMAT_AUDIO->value)
+                ->output(VideoDownloaderOption::OUTPUT_FILE_FORMAT_AUDIO->value)
         );
     }
 }
