@@ -8,6 +8,7 @@ use App\Entity\User;
 use App\Service\RefreshTokenManager;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerInterface;
 
@@ -22,11 +23,11 @@ final class AuthenticationSuccessHandler implements AuthenticationSuccessHandler
         $user = $token->getUser();
 
         if (!$user instanceof User) {
-            return new JsonResponse(['message' => 'Unauthorized.'], JsonResponse::HTTP_UNAUTHORIZED);
+            return new JsonResponse(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
         }
 
         $payload = $this->refreshTokenManager->issueTokens($user);
 
-        return new JsonResponse($payload, JsonResponse::HTTP_OK);
+        return new JsonResponse($payload, Response::HTTP_OK);
     }
 }
