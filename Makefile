@@ -53,11 +53,15 @@ supervisor-stop:
 supervisor-restart:
 	docker exec ytdownloader-php-fpm /etc/init.d/supervisor restart
 
+DOCKER_COMPOSE_FILES ?= docker/docker-compose.yml
+DOCKER_COMPOSE_UP_ARGS ?=
+DOCKER_COMPOSE_DOWN_ARGS ?=
+
 docker-compose-up:
-	docker compose -f docker/docker-compose.yml up -d
+	docker compose $(foreach file,$(DOCKER_COMPOSE_FILES),-f $(file)) up -d $(DOCKER_COMPOSE_UP_ARGS)
 
 docker-compose-down:
-	docker compose -f docker/docker-compose.yml down
+	docker compose $(foreach file,$(DOCKER_COMPOSE_FILES),-f $(file)) down $(DOCKER_COMPOSE_DOWN_ARGS)
 
 composer-install:
 	docker exec ytdownloader-php-fpm composer install
