@@ -1,0 +1,5 @@
+services:
+  php-fpm:
+    image: ${PHP_FPM_IMAGE}
+    build: null
+    pull_policy: always
