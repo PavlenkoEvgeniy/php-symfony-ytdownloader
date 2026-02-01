@@ -22,7 +22,7 @@ final class HealthCheckControllerTest extends WebTestCase
 
     public function testHealthCheckIsOk(): void
     {
-        $this->client->request(Request::METHOD_GET, '/health-check');
+        $this->client->request(Request::METHOD_GET, '/health');
         $response = \json_decode($this->client->getResponse()->getContent(), true);
         $this->assertResponseIsSuccessful();
         $this->assertArrayHasKey('status', $response);

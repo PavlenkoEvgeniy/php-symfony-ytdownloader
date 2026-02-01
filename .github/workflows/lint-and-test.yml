@@ -1,0 +1,316 @@
+name: Lint and Test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        if: github.event_name == 'push'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/pavlenkoevgeniy/php-symfony-ytdownloader/php-fpm
+          tags: |
+            type=raw,value=ci-${{ github.sha }}
+            type=raw,value=ci-latest,enable={{is_default_branch}}
+
+      - name: Build and push php-fpm image
+        uses: docker/build-push-action@v5
+        if: github.event_name == 'push'
+        with:
+          context: docker/sourcefiles/php-fpm
+          file: docker/sourcefiles/php-fpm/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  lint:
+    runs-on: ubuntu-latest
+    needs: build-image
+    env:
+      DOCKER_COMPOSE_FILES: docker/docker-compose.ci.yml
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull php-fpm image
+        run: |
+          IMAGE_NAME=ghcr.io/pavlenkoevgeniy/php-symfony-ytdownloader/php-fpm
+          PRIMARY_TAG=${IMAGE_NAME}:ci-${{ github.sha }}
+          FALLBACK_TAG=${IMAGE_NAME}:ci-latest
+          if docker pull "$PRIMARY_TAG"; then
+            echo "PHP_FPM_IMAGE=$PRIMARY_TAG" >> $GITHUB_ENV
+          elif docker pull "$FALLBACK_TAG"; then
+            echo "PHP_FPM_IMAGE=$FALLBACK_TAG" >> $GITHUB_ENV
+          else
+            echo "No prebuilt image available in GHCR. Aborting to avoid local builds."
+            exit 1
+          fi
+
+      - name: Start containers (no build)
+        run: |
+          make env-setup
+          docker compose -f docker/docker-compose.ci.yml up -d --pull always --no-build
+
+      - name: Prepare application
+        run: |
+          make ci-cd-init
+
+      - name: Cache warmup
+        run: |
+          make cache-warmup
+
+      - name: Run php-cs-fixer check
+        run: |
+          make cs-check
+
+      - name: Run phpstan check
+        run: |
+          make phpstan
+
+      - name: Stop containers
+        if: always()
+        run: |
+            docker compose -f docker/docker-compose.ci.yml down --remove-orphans
+            if [ "${{ job.status }}" == "success" ]; then
+                echo "====================================================="
+                echo "✅ Lint checks completed successfully!"
+                echo "====================================================="
+            else
+                echo "====================================================="
+                echo "❌ Lint checks failed! Please review the errors above."
+                echo "====================================================="
+            fi
+
+  grammar-check:
+    runs-on: ubuntu-latest
+    needs: build-image
+    env:
+      DOCKER_COMPOSE_FILES: docker/docker-compose.ci.yml
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull php-fpm image
+        run: |
+          IMAGE_NAME=ghcr.io/pavlenkoevgeniy/php-symfony-ytdownloader/php-fpm
+          PRIMARY_TAG=${IMAGE_NAME}:ci-${{ github.sha }}
+          FALLBACK_TAG=${IMAGE_NAME}:ci-latest
+          if docker pull "$PRIMARY_TAG"; then
+            echo "PHP_FPM_IMAGE=$PRIMARY_TAG" >> $GITHUB_ENV
+          elif docker pull "$FALLBACK_TAG"; then
+            echo "PHP_FPM_IMAGE=$FALLBACK_TAG" >> $GITHUB_ENV
+          else
+            echo "No prebuilt image available in GHCR. Aborting to avoid local builds."
+            exit 1
+          fi
+
+      - name: Start containers (no build)
+        run: |
+          make env-setup
+          docker compose -f docker/docker-compose.ci.yml up -d --pull always --no-build
+
+      - name: Prepare application
+        run: |
+          make ci-cd-init
+
+      - name: Cache warmup
+        run: |
+          make cache-warmup
+
+      - name: Grammar check
+        run: |
+          make peck
+
+      - name: Stop containers
+        if: always()
+        run: |
+            docker compose -f docker/docker-compose.ci.yml down --remove-orphans
+            if [ "${{ job.status }}" == "success" ]; then
+                echo "====================================================="
+                echo "✅ Grammar check completed successfully!"
+                echo "====================================================="
+            else
+                echo "====================================================="
+                echo "❌ Grammar check failed! Please review the errors above."
+                echo "====================================================="
+            fi
+
+  security-check:
+    runs-on: ubuntu-latest
+    needs: build-image
+    env:
+      DOCKER_COMPOSE_FILES: docker/docker-compose.ci.yml
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull php-fpm image
+        run: |
+          IMAGE_NAME=ghcr.io/pavlenkoevgeniy/php-symfony-ytdownloader/php-fpm
+          PRIMARY_TAG=${IMAGE_NAME}:ci-${{ github.sha }}
+          FALLBACK_TAG=${IMAGE_NAME}:ci-latest
+          if docker pull "$PRIMARY_TAG"; then
+            echo "PHP_FPM_IMAGE=$PRIMARY_TAG" >> $GITHUB_ENV
+          elif docker pull "$FALLBACK_TAG"; then
+            echo "PHP_FPM_IMAGE=$FALLBACK_TAG" >> $GITHUB_ENV
+          else
+            echo "No prebuilt image available in GHCR. Aborting to avoid local builds."
+            exit 1
+          fi
+
+      - name: Start containers (no build)
+        run: |
+          make env-setup
+          docker compose -f docker/docker-compose.ci.yml up -d --pull always --no-build
+
+      - name: Prepare application
+        run: |
+          make ci-cd-init
+
+      - name: Cache warmup
+        run: |
+          make cache-warmup
+
+      - name: Security check
+        run: |
+          docker exec ytdownloader-php-fpm composer audit --no-interaction
+
+      - name: Stop containers
+        if: always()
+        run: |
+            docker compose -f docker/docker-compose.ci.yml down --remove-orphans
+            if [ "${{ job.status }}" == "success" ]; then
+                echo "====================================================="
+                echo "✅ Security check completed successfully!"
+                echo "====================================================="
+            else
+                echo "====================================================="
+                echo "❌ Security check failed! Please review the errors above."
+                echo "====================================================="
+            fi
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build-image
+    env:
+      DOCKER_COMPOSE_FILES: docker/docker-compose.ci.yml
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull php-fpm image
+        run: |
+          IMAGE_NAME=ghcr.io/pavlenkoevgeniy/php-symfony-ytdownloader/php-fpm
+          PRIMARY_TAG=${IMAGE_NAME}:ci-${{ github.sha }}
+          FALLBACK_TAG=${IMAGE_NAME}:ci-latest
+          if docker pull "$PRIMARY_TAG"; then
+            echo "PHP_FPM_IMAGE=$PRIMARY_TAG" >> $GITHUB_ENV
+          elif docker pull "$FALLBACK_TAG"; then
+            echo "PHP_FPM_IMAGE=$FALLBACK_TAG" >> $GITHUB_ENV
+          else
+            echo "No prebuilt image available in GHCR. Aborting to avoid local builds."
+            exit 1
+          fi
+
+      - name: Start containers (no build)
+        run: |
+          make env-setup
+          docker compose -f docker/docker-compose.ci.yml up -d --pull always --no-build
+
+      - name: Prepare application
+        run: |
+          make ci-cd-init
+
+      - name: Cache warmup
+        run: |
+          make cache-warmup
+
+      - name: Run tests
+        run: |
+          make test
+
+      - name: Stop containers
+        if: always()
+        run: |
+            docker compose -f docker/docker-compose.ci.yml down --remove-orphans
+            if [ "${{ job.status }}" == "success" ]; then
+                echo "====================================================="
+                echo "✅ Tests completed successfully!"
+                echo "====================================================="
+            else
+                echo "====================================================="
+                echo "❌ Tests failed! Please review the errors above."
+                echo "====================================================="
+            fi

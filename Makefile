@@ -4,41 +4,44 @@ help:
 	@echo "+------------------------------------------------------------------------------+"
 	@echo "1. env-setup ................................. Generate local environment files."
 	@echo "2. init ........................ Initialize new application with empty database."
-	@echo "3. restart ......................... Restart application with existing database."
-	@echo "4. stop ............................ Stop application, make down all containers."
-	@echo "5. supervisor-start ..................... Start supervisor for queue processing."
-	@echo "6. supervisor-stop ....................... Stop supervisor for queue processing."
-	@echo "7. supervisor-restart ................. Restart supervisor for queue processing."
-	@echo "8. docker-compose-up ............................. Up docker compose containers."
-	@echo "9. docker-compose-down ......................... Down docker compose containers."
-	@echo "10. composer-install ............................ Install composer dependencies."
-	@echo "11. composer-update .............................. Update composer dependencies."
-	@echo "12. db-setup ... Setup database (drop existing, create new, migrate migrations)."
-	@echo "13. db-purge ........................................ Delete database directory."
-	@echo "14. cs-check ................ Check project by php-cs-fixer without any changes."
-	@echo "15. cs-fix ........................................ Fix project by php-cs-fixer."
-	@echo "16. test ................................................ Execute PhpUnit tests."
-	@echo "17. phpstan ...................... Check project by phpstan without any changes."
-	@echo "18. docker-php ....................... Enter to bash shell of php-fpm container."
-	@echo "19. docker-pgsql ....................... Enter to bash shell of pgsql container."
-	@echo "20. cache-clear ........................................... Clear symfony cache."
-	@echo "21. cache-warmup ........................................ Warm up symfony cache."
-	@echo "22. cache-purge ........................................ Delete cache directory."
-	@echo "23. lint .......... Fix project by php-cs-fixer and after that check by phpstan."
-	@echo "24. yt-dlp-update ....................................... Update yt-dlp package."
-	@echo "25. bash ......................................... Alias for docker-php command."
-	@echo "26. rm-tmp ....................... Clear directory /tmp inside docker container."
-	@echo "27. rm-tmp-chromium ................................. Clear chromium temp files."
-	@echo "28. peck ......................................... Grammar check by peck linter."
-	@echo "29. generate-jwt-keypair ................................ Generate JWT key pair."
-	@echo "30. telegram-bot-hook ................................ Add Telegram bot webhook."
-	@echo "31. telegram-bot-unhook ........................... Remove Telegram bot webhook."
+	@echo "3. ci-cd-init ............................ Initialize new application for CI/CD."
+	@echo "4. restart ......................... Restart application with existing database."
+	@echo "5. stop ............................ Stop application, make down all containers."
+	@echo "6. supervisor-start ..................... Start supervisor for queue processing."
+	@echo "7. supervisor-stop ....................... Stop supervisor for queue processing."
+	@echo "8. supervisor-restart ................. Restart supervisor for queue processing."
+	@echo "9. docker-compose-up ............................. Up docker compose containers."
+	@echo "10. docker-compose-down ........................ Down docker compose containers."
+	@echo "11. composer-install ............................ Install composer dependencies."
+	@echo "12. composer-update .............................. Update composer dependencies."
+	@echo "13. db-setup ... Setup database (drop existing, create new, migrate migrations)."
+	@echo "14. db-purge ........................................ Delete database directory."
+	@echo "15. cs-check ................ Check project by php-cs-fixer without any changes."
+	@echo "16. cs-fix ........................................ Fix project by php-cs-fixer."
+	@echo "17. test ................................................ Execute PhpUnit tests."
+	@echo "18. phpstan ...................... Check project by phpstan without any changes."
+	@echo "19. docker-php ....................... Enter to bash shell of php-fpm container."
+	@echo "20. docker-pgsql ....................... Enter to bash shell of pgsql container."
+	@echo "21. cache-clear ........................................... Clear symfony cache."
+	@echo "22. cache-warmup ........................................ Warm up symfony cache."
+	@echo "23. cache-purge ........................................ Delete cache directory."
+	@echo "24. lint .......... Fix project by php-cs-fixer and after that check by phpstan."
+	@echo "25. yt-dlp-update ....................................... Update yt-dlp package."
+	@echo "26. bash ......................................... Alias for docker-php command."
+	@echo "27. rm-tmp ....................... Clear directory /tmp inside docker container."
+	@echo "28. rm-tmp-chromium ................................. Clear chromium temp files."
+	@echo "29. peck ......................................... Grammar check by peck linter."
+	@echo "30. generate-jwt-keypair ................................ Generate JWT key pair."
+	@echo "31. telegram-bot-hook ................................ Add Telegram bot webhook."
+	@echo "32. telegram-bot-unhook ........................... Remove Telegram bot webhook."
 	@echo "+------------------------------------------------------------------------------+"
 
 env-setup:
 	@bash bin/generate-env.sh
 
 init: env-setup db-purge docker-compose-up composer-install generate-jwt-keypair db-setup supervisor-start cache-clear
+
+ci-cd-init: composer-install generate-jwt-keypair db-setup supervisor-start cache-clear
 
 restart: docker-compose-down docker-compose-up supervisor-start cache-clear cache-purge
 
@@ -53,11 +56,15 @@ supervisor-stop:
 supervisor-restart:
 	docker exec ytdownloader-php-fpm /etc/init.d/supervisor restart
 
+DOCKER_COMPOSE_FILES ?= docker/docker-compose.yml
+DOCKER_COMPOSE_UP_ARGS ?=
+DOCKER_COMPOSE_DOWN_ARGS ?=
+
 docker-compose-up:
-	docker compose -f docker/docker-compose.yml up -d
+	docker compose $(foreach file,$(DOCKER_COMPOSE_FILES),-f $(file)) up -d $(DOCKER_COMPOSE_UP_ARGS)
 
 docker-compose-down:
-	docker compose -f docker/docker-compose.yml down
+	docker compose $(foreach file,$(DOCKER_COMPOSE_FILES),-f $(file)) down $(DOCKER_COMPOSE_DOWN_ARGS)
 
 composer-install:
 	docker exec ytdownloader-php-fpm composer install

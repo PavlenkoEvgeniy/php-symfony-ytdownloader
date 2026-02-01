@@ -1,6 +1,6 @@
-# 🎬 Download video and audio from YouTube, Instagram, Telegram, TikTok and others 
+# 🎬 Video & Audio Downloader for YouTube, Instagram, Telegram, TikTok, and More
 
-*A lightweight service for downloading video and audio from YouTube, Instagram, Telegram, TikTok and others*
+*Lightweight service to download video and audio from YouTube, Instagram, Telegram, TikTok, and more.*
 
 **🛠 Tech Stack**:
 
@@ -21,11 +21,13 @@
 
 ## ⚠️ Legal Disclaimer:
 
-This program is for personal use only. Downloading copyrighted material without
-permission is against YouTube's terms of services. By using this program, you
-are solely responsible for any copyright violations. We are not responsible for
-people who attempt to use this program in any way that breaks YouTube's terms of
-services.
+This program is strictly for lawful personal use. You must not use it to
+download, distribute, or otherwise process copyrighted material without
+explicit permission from the rights holder. Any use that violates YouTube's
+terms of service, applicable laws, or third‑party rights is prohibited. By
+using this program, you accept full responsibility for your actions and agree
+that the authors and contributors are not liable for any misuse or resulting
+violations.
 
 ## 📋 Tested within:
 
@@ -42,7 +44,7 @@ services.
    ```bash
    make init
    ```
-   Remarks: during project init process all env files (for project and for docker) will be generated automatically, if it was not done you can generate env files by running command in bash: "make env-setup" 
+   Remarks: During initialization, all env files (project and Docker) are generated automatically. If they are missing, run `make env-setup`.
 
 2. **Restart application**:
    ```bash
@@ -80,32 +82,27 @@ services.
     make help
     ```
 
-9. **Health check url**:
-    ```
-    GET http://host.tld/health-check
-    ```
-10. **Admin dashboard**:
-    ```
-    GET http://host.tld/admin
-    ```
+9. **Useful URLs**:
+   - Health check: `GET http://host.tld/health`
+   - Admin dashboard: `GET http://host.tld/admin`
 
 ## 🤖 Telegram bot
-1. **Init**:
-    - add enable true for telegram bot in .env.local file (TELEGRAM_BOT_ENABLED=true)
-    - add your bot token to .env.local file (TELEGRAM_BOT_TOKEN=change_me_please)
-    - add telegram host url to .env.local file (TELEGRAM_HOST_URL=https://host.tld)
-    - run the command to setup webhook:
-    ```bash
-   make telegram-bot-hook
-    ```
-    - or for unhook telegram bot run command:
-    ```bash
-   make telegram-bot-unhook
-    ```
-2. **Telegram bot commands**:
-    ```
-   /start - start bot
-    ```
+1. **Initialize**:
+      - Enable the bot in .env.local: `TELEGRAM_BOT_ENABLED=true`
+      - Set your bot token: `TELEGRAM_BOT_TOKEN=change_me_please`
+      - Set the public host URL: `TELEGRAM_HOST_URL=https://host.tld`
+      - Register the webhook:
+         ```bash
+         make telegram-bot-hook
+         ```
+      - To remove the webhook:
+         ```bash
+         make telegram-bot-unhook
+         ```
+2. **Commands**:
+      ```
+      /start - start bot
+      ```
 
 ## 🔐 REST API v1 (JWT)
 
@@ -291,15 +288,15 @@ Authorization: Bearer <jwt>
 
 ## 📝 Todo Roadmap
 
-✅ ~~Background video downloads (queues)~~  
-✅ ~~Download status notifications~~  
-✅ ~~Playlist special characters fix~~  
-✅ ~~Tests coverage~~  
-✅ ~~Refactor to services~~  
-✅ ~~Health check endpoint~~  
-✅ ~~YouTube cache/cookies optimization (avoid anti-bot detection)~~  
-✅ ~~Download statistics counter~~  
-✅ ~~REST API implementation~~  
-✅ ~~Telegram bot integration~~  
-✅ ~~Setup automation script~~  
-✅ ~~Admin dashboard~~  
+- [x] Admin dashboard
+- [x] Background video downloads (queues)
+- [x] Download statistics counter
+- [x] Download status notifications
+- [x] Tests coverage
+- [x] Health check endpoint
+- [x] YouTube cache/cookies optimization (avoid anti-bot detection)
+- [x] Telegram bot integration
+- [x] REST API implementation
+- [x] Playlist special characters fix
+- [x] Refactor to services
+- [x] Setup automation script
