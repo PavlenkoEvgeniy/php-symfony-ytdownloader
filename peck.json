@@ -50,7 +50,8 @@
             "env",
             "jwt",
             "lexik",
-            "ttl"
+            "ttl",
+            "enum"
         ],
         "paths": [
             "vendor"
