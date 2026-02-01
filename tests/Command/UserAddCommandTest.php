@@ -34,7 +34,7 @@ class UserAddCommandTest extends KernelTestCase
         $this->commandTester->assertCommandIsSuccessful();
 
         $output = $this->commandTester->getDisplay();
-        $this->assertStringContainsString('[OK] User command-app-user-add-test@test.local:123456 created successfully', $output);
+        $this->assertStringContainsString('[OK] User command-app-user-add-test@test.local created successfully', $output);
 
         $newUser = $this->userRepository->findOneByEmail('command-app-user-add-test@test.local');
         $this->assertNotNull($newUser);

@@ -41,10 +41,10 @@ final class UserAddCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        $username = $input->getArgument('username');
+        $username = \trim((string) $input->getArgument('username'));
 
         // Check if username is empty
-        if (null === $username) {
+        if ('' === $username) {
             $io->error('Username is required');
 
             return Command::FAILURE;
@@ -52,16 +52,16 @@ final class UserAddCommand extends Command
 
         $username = \mb_strtolower($username);
 
-        // Check if user already exists
-        if ($this->userRepository->findOneByEmail($username)) {
-            $io->error('User with this email already exists');
+        // Check if username is valid
+        if (!\filter_var($username, FILTER_VALIDATE_EMAIL)) {
+            $io->error('Username should have email format');
 
             return Command::FAILURE;
         }
 
-        // Check if username is valid
-        if (!\filter_var($username, FILTER_VALIDATE_EMAIL)) {
-            $io->error('Username should have email format');
+        // Check if user already exists
+        if ($this->userRepository->findOneByEmail($username)) {
+            $io->error('User with this email already exists');
 
             return Command::FAILURE;
         }
@@ -77,7 +77,6 @@ final class UserAddCommand extends Command
             ->setEmail($username)
             ->setPassword($hashedPassword)
             ->setRoles([User::ROLE_ADMIN])
-            ->setPassword($hashedPassword)
         ;
 
         try {
@@ -89,7 +88,11 @@ final class UserAddCommand extends Command
             return Command::FAILURE;
         }
 
-        $io->success(\sprintf('User %s:%s created successfully', $username, $plainPassword));
+        if (null === $input->getArgument('password')) {
+            $io->success(\sprintf('User %s created successfully. Generated password: %s', $username, $plainPassword));
+        } else {
+            $io->success(\sprintf('User %s created successfully. Password: %s', $username, $plainPassword));
+        }
 
         return Command::SUCCESS;
     }
