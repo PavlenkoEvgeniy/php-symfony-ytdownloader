@@ -83,10 +83,8 @@ jobs:
           elif docker pull "$FALLBACK_TAG"; then
             echo "PHP_FPM_IMAGE=$FALLBACK_TAG" >> $GITHUB_ENV
           else
-            echo "No prebuilt image available; falling back to local build."
-            echo "DOCKER_COMPOSE_FILES=docker/docker-compose.yml" >> $GITHUB_ENV
-            echo "DOCKER_COMPOSE_UP_ARGS=" >> $GITHUB_ENV
-            echo "DOCKER_COMPOSE_DOWN_ARGS=" >> $GITHUB_ENV
+            echo "No prebuilt image available in GHCR. Aborting to avoid local builds."
+            exit 1
           fi
 
       - name: Build and start containers
@@ -155,10 +153,8 @@ jobs:
           elif docker pull "$FALLBACK_TAG"; then
             echo "PHP_FPM_IMAGE=$FALLBACK_TAG" >> $GITHUB_ENV
           else
-            echo "No prebuilt image available; falling back to local build."
-            echo "DOCKER_COMPOSE_FILES=docker/docker-compose.yml" >> $GITHUB_ENV
-            echo "DOCKER_COMPOSE_UP_ARGS=" >> $GITHUB_ENV
-            echo "DOCKER_COMPOSE_DOWN_ARGS=" >> $GITHUB_ENV
+            echo "No prebuilt image available in GHCR. Aborting to avoid local builds."
+            exit 1
           fi
 
       - name: Build and start containers
