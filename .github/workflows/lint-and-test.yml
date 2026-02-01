@@ -92,12 +92,7 @@ jobs:
 
       - name: Prepare application
         run: |
-          make db-purge
-          make composer-install
-          make generate-jwt-keypair
-          make db-setup
-          make supervisor-start
-          make cache-clear
+          make ci-cd-init
 
       - name: Cache warmup
         run: |
@@ -170,12 +165,7 @@ jobs:
 
       - name: Prepare application
         run: |
-          make db-purge
-          make composer-install
-          make generate-jwt-keypair
-          make db-setup
-          make supervisor-start
-          make cache-clear
+          make ci-cd-init
 
       - name: Cache warmup
         run: |
