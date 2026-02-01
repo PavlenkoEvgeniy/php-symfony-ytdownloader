@@ -34,7 +34,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ toLower(github.repository) }}/php-fpm
+          images: ghcr.io/pavlenkoevgeniy/php-symfony-ytdownloader/php-fpm
           tags: |
             type=raw,value=ci-${{ github.sha }}
             type=raw,value=ci-latest,enable={{is_default_branch}}
@@ -73,7 +73,7 @@ jobs:
 
       - name: Pull php-fpm image
         run: |
-          IMAGE_NAME=ghcr.io/${{ toLower(github.repository) }}/php-fpm
+          IMAGE_NAME=ghcr.io/pavlenkoevgeniy/php-symfony-ytdownloader/php-fpm
           PRIMARY_TAG=${IMAGE_NAME}:ci-${{ github.sha }}
           FALLBACK_TAG=${IMAGE_NAME}:ci-latest
           if docker pull "$PRIMARY_TAG"; then
@@ -151,7 +151,7 @@ jobs:
 
       - name: Pull php-fpm image
         run: |
-          IMAGE_NAME=ghcr.io/${{ toLower(github.repository) }}/php-fpm
+          IMAGE_NAME=ghcr.io/pavlenkoevgeniy/php-symfony-ytdownloader/php-fpm
           PRIMARY_TAG=${IMAGE_NAME}:ci-${{ github.sha }}
           FALLBACK_TAG=${IMAGE_NAME}:ci-latest
           if docker pull "$PRIMARY_TAG"; then
