@@ -82,7 +82,7 @@ services.
 
 9. **Health check url**:
     ```
-    GET http://host.tld/health-check
+    GET http://host.tld/health
     ```
 10. **Admin dashboard**:
     ```
