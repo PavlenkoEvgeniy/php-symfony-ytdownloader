@@ -41,7 +41,7 @@ env-setup:
 
 init: env-setup db-purge docker-compose-up composer-install generate-jwt-keypair db-setup supervisor-start cache-clear
 
-ci-cd-init: env-setup docker-compose-up composer-install generate-jwt-keypair db-setup supervisor-start cache-clear
+ci-cd-init: composer-install generate-jwt-keypair db-setup supervisor-start cache-clear
 
 restart: docker-compose-down docker-compose-up supervisor-start cache-clear cache-purge
 
