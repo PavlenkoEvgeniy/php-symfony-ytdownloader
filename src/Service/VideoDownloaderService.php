@@ -9,7 +9,6 @@ use Psr\Log\LoggerInterface;
 
 final readonly class VideoDownloaderService implements VideoProcessorInterface
 {
-
     public function __construct(
         private YoutubeDlWrapper $youtubeDl,
         private FormatResolver $formatResolver,
