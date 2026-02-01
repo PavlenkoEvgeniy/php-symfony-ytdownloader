@@ -56,8 +56,6 @@ jobs:
     needs: build-image
     env:
       DOCKER_COMPOSE_FILES: docker/docker-compose.ci.yml
-      DOCKER_COMPOSE_UP_ARGS: --no-build --pull always
-      DOCKER_COMPOSE_DOWN_ARGS: --remove-orphans
 
     steps:
       - name: Checkout code
@@ -87,9 +85,19 @@ jobs:
             exit 1
           fi
 
-      - name: Build and start containers
+      - name: Start containers (no build)
         run: |
-          make init
+          make env-setup
+          docker compose -f docker/docker-compose.ci.yml up -d --pull always --no-build
+
+      - name: Prepare application
+        run: |
+          make db-purge
+          make composer-install
+          make generate-jwt-keypair
+          make db-setup
+          make supervisor-start
+          make cache-clear
 
       - name: Cache warmup
         run: |
@@ -110,24 +118,22 @@ jobs:
       - name: Stop containers
         if: always()
         run: |
-          make docker-compose-down
-          if [ "${{ job.status }}" == "success" ]; then
-              echo "====================================================="
-              echo "✅ Lint checks completed successfully!"
-              echo "====================================================="
-          else
-              echo "====================================================="
-              echo "❌ Lint checks failed! Please review the errors above."
-              echo "====================================================="
-          fi
+            docker compose -f docker/docker-compose.ci.yml down --remove-orphans
+            if [ "${{ job.status }}" == "success" ]; then
+                echo "====================================================="
+                echo "✅ Lint checks completed successfully!"
+                echo "====================================================="
+            else
+                echo "====================================================="
+                echo "❌ Lint checks failed! Please review the errors above."
+                echo "====================================================="
+            fi
 
   test:
     runs-on: ubuntu-latest
     needs: build-image
     env:
       DOCKER_COMPOSE_FILES: docker/docker-compose.ci.yml
-      DOCKER_COMPOSE_UP_ARGS: --no-build --pull always
-      DOCKER_COMPOSE_DOWN_ARGS: --remove-orphans
 
     steps:
       - name: Checkout code
@@ -157,9 +163,19 @@ jobs:
             exit 1
           fi
 
-      - name: Build and start containers
+      - name: Start containers (no build)
         run: |
-          make init
+          make env-setup
+          docker compose -f docker/docker-compose.ci.yml up -d --pull always --no-build
+
+      - name: Prepare application
+        run: |
+          make db-purge
+          make composer-install
+          make generate-jwt-keypair
+          make db-setup
+          make supervisor-start
+          make cache-clear
 
       - name: Cache warmup
         run: |
@@ -172,13 +188,13 @@ jobs:
       - name: Stop containers
         if: always()
         run: |
-          make docker-compose-down
-          if [ "${{ job.status }}" == "success" ]; then
-              echo "====================================================="
-              echo "✅ Tests completed successfully!"
-              echo "====================================================="
-          else
-              echo "====================================================="
-              echo "❌ Tests failed! Please review the errors above."
-              echo "====================================================="
-          fi
+            docker compose -f docker/docker-compose.ci.yml down --remove-orphans
+            if [ "${{ job.status }}" == "success" ]; then
+                echo "====================================================="
+                echo "✅ Tests completed successfully!"
+                echo "====================================================="
+            else
+                echo "====================================================="
+                echo "❌ Tests failed! Please review the errors above."
+                echo "====================================================="
+            fi
