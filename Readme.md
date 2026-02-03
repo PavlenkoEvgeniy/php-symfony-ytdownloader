@@ -76,13 +76,17 @@ violations.
    ```bash
    make test
    ```
+8. **Run tests with coverage**:
+   ```bash
+   make test-coverage
+   ```
 
-8. **List of all available 'make' commands**:
+9. **List of all available 'make' commands**:
     ```bash
     make help
     ```
 
-9. **Useful URLs**:
+10. **Useful URLs**:
    - Health check: `GET http://host.tld/health`
    - Admin dashboard: `GET http://host.tld/admin`
 
