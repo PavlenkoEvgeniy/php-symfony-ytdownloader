@@ -25,6 +25,10 @@ RUN apt-get update && apt-get install -y \
     git \
     curl
 
+# Install Xdebug for code coverage
+RUN pecl install xdebug \
+    && docker-php-ext-enable xdebug
+
 RUN apt-get update && apt-get install -y \
     curl \
     && curl -sL https://deb.nodesource.com/setup_20.x | bash - \
