@@ -19,21 +19,22 @@ help:
 	@echo "15. cs-check ................ Check project by php-cs-fixer without any changes."
 	@echo "16. cs-fix ........................................ Fix project by php-cs-fixer."
 	@echo "17. test ................................................ Execute PhpUnit tests."
-	@echo "18. phpstan ...................... Check project by phpstan without any changes."
-	@echo "19. docker-php ....................... Enter to bash shell of php-fpm container."
-	@echo "20. docker-pgsql ....................... Enter to bash shell of pgsql container."
-	@echo "21. cache-clear ........................................... Clear symfony cache."
-	@echo "22. cache-warmup ........................................ Warm up symfony cache."
-	@echo "23. cache-purge ........................................ Delete cache directory."
-	@echo "24. lint .......... Fix project by php-cs-fixer and after that check by phpstan."
-	@echo "25. yt-dlp-update ....................................... Update yt-dlp package."
-	@echo "26. bash ......................................... Alias for docker-php command."
-	@echo "27. rm-tmp ....................... Clear directory /tmp inside docker container."
-	@echo "28. rm-tmp-chromium ................................. Clear chromium temp files."
-	@echo "29. peck ......................................... Grammar check by peck linter."
-	@echo "30. generate-jwt-keypair ................................ Generate JWT key pair."
-	@echo "31. telegram-bot-hook ................................ Add Telegram bot webhook."
-	@echo "32. telegram-bot-unhook ........................... Remove Telegram bot webhook."
+	@echo "18. test-coverage ......................... Execute PhpUnit tests with coverage."
+	@echo "19. phpstan ...................... Check project by phpstan without any changes."
+	@echo "20. docker-php ....................... Enter to bash shell of php-fpm container."
+	@echo "21. docker-pgsql ....................... Enter to bash shell of pgsql container."
+	@echo "22. cache-clear ........................................... Clear symfony cache."
+	@echo "23. cache-warmup ........................................ Warm up symfony cache."
+	@echo "24. cache-purge ........................................ Delete cache directory."
+	@echo "25. lint .......... Fix project by php-cs-fixer and after that check by phpstan."
+	@echo "26. yt-dlp-update ....................................... Update yt-dlp package."
+	@echo "27. bash ......................................... Alias for docker-php command."
+	@echo "28. rm-tmp ....................... Clear directory /tmp inside docker container."
+	@echo "29. rm-tmp-chromium ................................. Clear chromium temp files."
+	@echo "30. peck ......................................... Grammar check by peck linter."
+	@echo "31. generate-jwt-keypair ................................ Generate JWT key pair."
+	@echo "32. telegram-bot-hook ................................ Add Telegram bot webhook."
+	@echo "33. telegram-bot-unhook ........................... Remove Telegram bot webhook."
 	@echo "+------------------------------------------------------------------------------+"
 
 env-setup:
@@ -91,7 +92,14 @@ test:
 	docker exec ytdownloader-php-fpm php bin/console doctrine:database:create --env=test
 	docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate --no-interaction --env=test
 	docker exec ytdownloader-php-fpm php bin/console doctrine:fixtures:load --no-interaction --group=all --env=test
-	docker exec ytdownloader-php-fpm php bin/phpunit
+	docker exec ytdownloader-php-fpm php bin/phpunit --colors=always
+
+test-coverage:
+	docker exec ytdownloader-php-fpm php bin/console doctrine:database:drop --if-exists --force --env=test
+	docker exec ytdownloader-php-fpm php bin/console doctrine:database:create --env=test
+	docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate --no-interaction --env=test
+	docker exec ytdownloader-php-fpm php bin/console doctrine:fixtures:load --no-interaction --group=all --env=test
+	docker exec ytdownloader-php-fpm php bin/phpunit --colors=always --coverage-text
 
 phpstan:
 	docker exec ytdownloader-php-fpm vendor/bin/phpstan analyse --memory-limit=256M

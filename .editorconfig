@@ -17,3 +17,6 @@ trim_trailing_whitespace = false
 
 [COMMIT_EDITMSG]
 max_line_length = 0
+
+[{Makefile,makefile,*.mk}]
+indent_style = tab
