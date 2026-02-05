@@ -23,14 +23,19 @@ services:
             - redis
             - rabbitmq
         working_dir: /application
-        environment:
-            - PHP_WORKER_INSTALL_BCMATH=true
         volumes:
             - ./../:/application
             - ./sourcefiles/php-fpm/php-ini-overrides.ini:/usr/local/etc/php/conf.d/99-overrides.ini
             - ./sourcefiles/php-fpm/conf.d/messenger-worker.conf:/etc/supervisor/conf.d/messenger-worker.conf
         networks:
             - internal
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        environment:
+            - PHP_WORKER_INSTALL_BCMATH=true
+            - XDEBUG_MODE=debug
+            - XDEBUG_CLIENT_HOST=host.docker.internal
+            - XDEBUG_CLIENT_PORT=9003
 
     pgsql:
         image: postgres:16-alpine
