@@ -127,6 +127,7 @@
         "symfony/maker-bundle": "^1.65.1",
         "symfony/phpunit-bridge": "^7.4.3",
         "symfony/stopwatch": "7.4.*",
-        "symfony/web-profiler-bundle": "7.4.*"
+        "symfony/web-profiler-bundle": "7.4.*",
+        "vimeo/psalm": "^6.15"
     }
 }
