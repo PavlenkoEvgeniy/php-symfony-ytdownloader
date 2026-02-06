@@ -14,6 +14,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
+/** @extends AbstractCrudController<Source> */
 final class SourceCrudController extends AbstractCrudController
 {
     #[\Override]

@@ -18,6 +18,7 @@ final class AuthenticationSuccessHandler implements AuthenticationSuccessHandler
     {
     }
 
+    #[\Override]
     public function onAuthenticationSuccess(Request $request, TokenInterface $token): JsonResponse
     {
         $user = $token->getUser();

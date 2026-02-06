@@ -22,14 +22,15 @@ help:
 	@echo "18. test ................................................ Execute PhpUnit tests."
 	@echo "19. test-coverage ......................... Execute PhpUnit tests with coverage."
 	@echo "20. phpstan ...................... Check project by phpstan without any changes."
-	@echo "21. docker-php ....................... Enter to bash shell of php-fpm container."
-	@echo "22. docker-pgsql ....................... Enter to bash shell of pgsql container."
-	@echo "23. cache-clear ........................................... Clear symfony cache."
-	@echo "24. cache-warmup ........................................ Warm up symfony cache."
-	@echo "25. cache-purge ........................................ Delete cache directory."
-	@echo "26. lint .......... Fix project by php-cs-fixer and after that check by phpstan."
-	@echo "27. yt-dlp-update ....................................... Update yt-dlp package."
-	@echo "28. bash ......................................... Alias for docker-php command."
+	@echo "21. psalm .......................... Check project by psalm without any changes."
+	@echo "22. docker-php ....................... Enter to bash shell of php-fpm container."
+	@echo "23. docker-pgsql ....................... Enter to bash shell of pgsql container."
+	@echo "24. cache-clear ........................................... Clear symfony cache."
+	@echo "25. cache-warmup ........................................ Warm up symfony cache."
+	@echo "26. cache-purge ........................................ Delete cache directory."
+	@echo "27. lint .......... Fix project by php-cs-fixer and after that check by phpstan."
+	@echo "28. yt-dlp-update ....................................... Update yt-dlp package."
+	@echo "29. bash ......................................... Alias for docker-php command."
 	@echo "29. rm-tmp ....................... Clear directory /tmp inside docker container."
 	@echo "29. rm-tmp-chromium ................................. Clear chromium temp files."
 	@echo "30. peck ......................................... Grammar check by peck linter."
@@ -108,6 +109,9 @@ test-coverage:
 phpstan:
 	docker exec ytdownloader-php-fpm vendor/bin/phpstan analyse --memory-limit=256M
 
+psalm:
+	docker exec ytdownloader-php-fpm vendor/bin/psalm --no-cache --config=psalm.xml.dist
+
 docker-php:
 	docker exec -it ytdownloader-php-fpm bash
 
@@ -123,7 +127,7 @@ cache-purge:
 cache-warmup:
 	docker exec ytdownloader-php-fpm php bin/console cache:warmup
 
-lint: cs-fix phpstan peck
+lint: cs-fix phpstan psalm peck
 
 yt-dlp-update:
 	docker exec ytdownloader-php-fpm pip install --upgrade yt-dlp --break-system-packages
