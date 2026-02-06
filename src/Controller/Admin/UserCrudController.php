@@ -23,6 +23,7 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
+/** @extends AbstractCrudController<User> */
 final class UserCrudController extends AbstractCrudController
 {
     public function __construct(

@@ -10,11 +10,11 @@ final class Helper
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
 
-        $bytes = \max($bytes, 0);
-        $pow   = \floor(($bytes ? \log($bytes) : 0) / \log(1024));
-        $pow   = \min($pow, \count($units) - 1);
+        $bytes = (float) \max((float) ($bytes ?? 0), 0);
+        $pow   = $bytes > 0 ? (int) \floor(\log($bytes, 1024)) : 0;
+        $pow   = \min(\max($pow, 0), \count($units) - 1);
 
-        $bytes /= (1 << (10 * $pow));
+        $bytes /= \pow(1024.0, (float) $pow);
 
         return \sprintf('%.1f %s', \round($bytes, $precision), $units[$pow]);
     }
@@ -24,15 +24,15 @@ final class Helper
      */
     public static function getFreeSpace(): array
     {
-        $free  = \disk_free_space('/');
-        $total = \disk_total_space('/');
+        $free  = \disk_free_space('/') ?: 0.0;
+        $total = \disk_total_space('/') ?: 0.0;
         $used  = $total - $free;
 
         return [
             'free'       => Helper::formatBytes($free),
             'used'       => Helper::formatBytes($used),
             'total'      => Helper::formatBytes($total),
-            'percentage' => \round(($used / (float) $total) * 100.0, 2),
+            'percentage' => $total > 0 ? \round(($used / $total) * 100.0, 2) : 0.0,
         ];
     }
 }

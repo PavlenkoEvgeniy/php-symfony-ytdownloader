@@ -22,6 +22,7 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
     /**
      * @throws BotManException
      */
+    #[\Override]
     public function process(string $videoUrl, string $format, ?string $telegramUserId = null): void
     {
         $initialLog = $this->logManager->create('commenced', 'Started downloading.');
