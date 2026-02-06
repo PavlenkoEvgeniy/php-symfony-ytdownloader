@@ -106,6 +106,10 @@ jobs:
         run: |
           make phpstan
 
+      - name: Run psalm check
+        run: |
+          make psalm
+
       - name: Stop containers
         if: always()
         run: |
