@@ -25,9 +25,11 @@ RUN apt-get update && apt-get install -y \
     git \
     curl
 
-# Install Xdebug for code coverage
-RUN pecl install xdebug \
-    && docker-php-ext-enable xdebug
+# Install Xdebug only when requested
+ARG XDEBUG_INSTALL=false
+RUN if [ "$XDEBUG_INSTALL" = "true" ]; then \
+        pecl install xdebug && docker-php-ext-enable xdebug; \
+    fi
 
 RUN apt-get update && apt-get install -y \
     curl \
