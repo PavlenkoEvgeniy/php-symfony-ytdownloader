@@ -4,6 +4,7 @@ services:
         container_name: ${PROJECT_NAME}-webserver
         env_file:
             - .env
+        restart: always
         working_dir: /application
         networks:
             - internal
@@ -33,9 +34,10 @@ services:
             - "host.docker.internal:host-gateway"
         environment:
             - PHP_WORKER_INSTALL_BCMATH=true
-            - XDEBUG_MODE=debug
-            - XDEBUG_CLIENT_HOST=host.docker.internal
-            - XDEBUG_CLIENT_PORT=9003
+            - XDEBUG_MODE=${XDEBUG_MODE:-off}
+            - XDEBUG_CLIENT_HOST=${XDEBUG_CLIENT_HOST:-host.docker.internal}
+            - XDEBUG_CLIENT_PORT=${XDEBUG_CLIENT_PORT:-9003}
+            - PHP_IDE_CONFIG=serverName=Docker
 
     pgsql:
         image: postgres:16-alpine
