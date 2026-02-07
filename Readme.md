@@ -90,6 +90,21 @@ violations.
    - Health check: `GET http://host.tld/health`
    - Admin dashboard: `GET http://host.tld/admin`
 
+### 🧰 Docker env Xdebug defaults
+
+Generated during `make init` (or `make env-setup`). Defaults below are from `docker/.env.example`:
+
+- Xdebug: `XDEBUG_INSTALL=false`, `XDEBUG_MODE=off`, `XDEBUG_CLIENT_HOST=host.docker.internal`, `XDEBUG_CLIENT_PORT=9003`
+
+### 🧪 Enable Xdebug (optional)
+
+Set `XDEBUG_INSTALL=true` and `XDEBUG_MODE=debug` in your docker env file (created from `docker/.env.example`), then restart the stack:
+
+```bash
+make build
+make restart
+```
+
 ## 🤖 Telegram bot
 1. **Initialize**:
       - Enable the bot in .env.local: `TELEGRAM_BOT_ENABLED=true`
