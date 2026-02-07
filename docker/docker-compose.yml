@@ -15,7 +15,10 @@ services:
             - ${NGINX_PORT}:80
 
     php-fpm:
-        build: sourcefiles/php-fpm
+        build:
+            context: sourcefiles/php-fpm
+            args:
+                XDEBUG_INSTALL: ${XDEBUG_INSTALL:-false}
         container_name: ${PROJECT_NAME}-php-fpm
         env_file:
             - .env
@@ -37,6 +40,7 @@ services:
             - XDEBUG_MODE=${XDEBUG_MODE:-off}
             - XDEBUG_CLIENT_HOST=${XDEBUG_CLIENT_HOST:-host.docker.internal}
             - XDEBUG_CLIENT_PORT=${XDEBUG_CLIENT_PORT:-9003}
+            - XDEBUG_CONFIG=client_host=${XDEBUG_CLIENT_HOST:-host.docker.internal} client_port=${XDEBUG_CLIENT_PORT:-9003}
             - PHP_IDE_CONFIG=serverName=Docker
 
     pgsql:
