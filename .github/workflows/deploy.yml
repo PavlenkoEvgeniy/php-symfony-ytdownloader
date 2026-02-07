@@ -28,6 +28,7 @@ jobs:
             make stop
             git stash
             git pull origin master
+            make build
             make restart
             make composer-install
             make cache-clear
