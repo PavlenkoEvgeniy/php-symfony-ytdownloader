@@ -12,7 +12,7 @@
 - Redis 🚀
 - RabbitMQ 🐇
 - yt-dlp ⚡
-- norkunas/youtube-dl-php 📦
+- p3sdev/php-ytdlp-wrapper 📦
 - botman/botman 🤖
 
 ## 📸 Preview
