@@ -319,3 +319,4 @@ Authorization: Bearer <jwt>
 - [x] Playlist special characters fix
 - [x] Refactor to services
 - [x] Setup automation script
+- [x] Own yt-dlp wrapper implementation
