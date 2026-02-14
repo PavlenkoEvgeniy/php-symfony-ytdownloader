@@ -1,3 +1,5 @@
+name: ${PROJECT_NAME:-ytdownloader}
+
 services:
   php-fpm:
     image: ${PHP_FPM_IMAGE}
