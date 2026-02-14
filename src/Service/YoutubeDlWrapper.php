@@ -25,6 +25,7 @@ final readonly class YoutubeDlWrapper
             'paths'        => $this->downloadsDir,
             'print'        => 'after_move:filepath',
             'yes-playlist' => true,
+            'write-auto-subs' => true,
         ];
 
         if ($mergeAsVideo) {
