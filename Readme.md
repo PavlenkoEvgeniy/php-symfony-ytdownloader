@@ -12,7 +12,7 @@
 - Redis 🚀
 - RabbitMQ 🐇
 - yt-dlp ⚡
-- norkunas/youtube-dl-php 📦
+- p3sdev/php-ytdlp-wrapper 📦
 - botman/botman 🤖
 
 ## 📸 Preview
@@ -319,3 +319,4 @@ Authorization: Bearer <jwt>
 - [x] Playlist special characters fix
 - [x] Refactor to services
 - [x] Setup automation script
+- [x] Own yt-dlp wrapper implementation

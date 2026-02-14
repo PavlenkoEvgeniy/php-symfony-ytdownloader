@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "702aab3d0e5d96a9fc500858d9e90872",
+    "content-hash": "a9b0a981089bd28636adf2dc4a6aa01c",
     "packages": [
         {
             "name": "botman/botman",
@@ -2766,68 +2766,6 @@
             "time": "2026-01-29T09:26:29+00:00"
         },
         {
-            "name": "norkunas/youtube-dl-php",
-            "version": "v2.13.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/norkunas/youtube-dl-php.git",
-                "reference": "d5be987b379663b2811ec5c3105583b13e0da99f"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/norkunas/youtube-dl-php/zipball/d5be987b379663b2811ec5c3105583b13e0da99f",
-                "reference": "d5be987b379663b2811ec5c3105583b13e0da99f",
-                "shasum": ""
-            },
-            "require": {
-                "ext-json": "*",
-                "php": ">=7.4.0",
-                "symfony/filesystem": "^5.1|^6.0|^7.0|^8.0",
-                "symfony/polyfill-php80": "^1.33",
-                "symfony/process": "^5.1|^6.0|^7.0|^8.0"
-            },
-            "require-dev": {
-                "mikey179/vfsstream": "^1.6.12",
-                "php-cs-fixer/shim": "^3.92.3",
-                "phpstan/phpstan": "^1.12.32",
-                "phpstan/phpstan-phpunit": "^1.4.2",
-                "phpstan/phpstan-strict-rules": "^1.6.2",
-                "symfony/phpunit-bridge": "^6.4.10|^7.4.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "YoutubeDl\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Tomas Norkūnas",
-                    "email": "norkunas.tom@gmail.com"
-                }
-            ],
-            "description": "youtube-dl / yt-dlp wrapper for php",
-            "keywords": [
-                "youtube",
-                "youtube-dl",
-                "yt-dlp"
-            ],
-            "support": {
-                "issues": "https://github.com/norkunas/youtube-dl-php/issues",
-                "source": "https://github.com/norkunas/youtube-dl-php/tree/v2.13.0"
-            },
-            "time": "2025-12-22T11:22:54+00:00"
-        },
-        {
             "name": "nunomaduro/termwind",
             "version": "v2.3.3",
             "source": {
@@ -2967,6 +2905,63 @@
                 "source": "https://github.com/OskarStark/readable-filesize-extension/tree/1.5.1"
             },
             "time": "2026-01-12T07:10:06+00:00"
+        },
+        {
+            "name": "p3sdev/php-ytdlp-wrapper",
+            "version": "v1.0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/PavlenkoEvgeniy/php-ytdlp-wrapper.git",
+                "reference": "6347fca01b88bf28f5115795597bacf7f6e94917"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/PavlenkoEvgeniy/php-ytdlp-wrapper/zipball/6347fca01b88bf28f5115795597bacf7f6e94917",
+                "reference": "6347fca01b88bf28f5115795597bacf7f6e94917",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.4",
+                "symfony/config": "^7.4.4",
+                "symfony/dependency-injection": "^7.4.5",
+                "symfony/http-kernel": "^7.4.5",
+                "symfony/process": "^7.4.5"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.94",
+                "peckphp/peck": "^0.2.0",
+                "phpstan/phpstan": "^2.1.39",
+                "phpunit/phpunit": "^11.5.53",
+                "vimeo/psalm": "^6.15.1"
+            },
+            "suggest": {
+                "symfony/framework-bundle": "Required for full Symfony bundle integration"
+            },
+            "type": "symfony-bundle",
+            "autoload": {
+                "psr-4": {
+                    "P3s\\YtDlp\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Robust PHP 8.4 yt-dlp wrapper with Symfony 7 bundle integration",
+            "homepage": "https://github.com/p3s/php-ytdlp-wrapper",
+            "keywords": [
+                "bundle",
+                "download",
+                "php",
+                "symfony",
+                "youtube",
+                "yt-dlp"
+            ],
+            "support": {
+                "issues": "https://github.com/p3s/php-ytdlp-wrapper/issues",
+                "source": "https://github.com/p3s/php-ytdlp-wrapper"
+            },
+            "time": "2026-02-14T02:29:25+00:00"
         },
         {
             "name": "paragonie/constant_time_encoding",

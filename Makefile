@@ -31,12 +31,13 @@ help:
 	@echo "27. lint .......... Fix project by php-cs-fixer and after that check by phpstan."
 	@echo "28. yt-dlp-update ....................................... Update yt-dlp package."
 	@echo "29. bash ......................................... Alias for docker-php command."
-	@echo "29. rm-tmp ....................... Clear directory /tmp inside docker container."
-	@echo "29. rm-tmp-chromium ................................. Clear chromium temp files."
-	@echo "30. peck ......................................... Grammar check by peck linter."
-	@echo "31. generate-jwt-keypair ................................ Generate JWT key pair."
-	@echo "32. telegram-bot-hook ................................ Add Telegram bot webhook."
-	@echo "33. telegram-bot-unhook ........................... Remove Telegram bot webhook."
+	@echo "30. rm-tmp ....................... Clear directory /tmp inside docker container."
+	@echo "31. rm-tmp-chromium ................................. Clear chromium temp files."
+	@echo "32. peck ......................................... Grammar check by peck linter."
+	@echo "33. generate-jwt-keypair ................................ Generate JWT key pair."
+	@echo "34. telegram-bot-hook ................................ Add Telegram bot webhook."
+	@echo "35. telegram-bot-unhook ........................... Remove Telegram bot webhook."
+	@echo "36. security-check ........... Check Composer packages for known security issues."
 	@echo "+------------------------------------------------------------------------------+"
 
 env-setup:
@@ -77,6 +78,9 @@ composer-install:
 
 composer-update:
 	docker exec ytdownloader-php-fpm composer update
+
+security-check:
+	docker exec ytdownloader-php-fpm composer audit --no-interaction
 
 db-setup:
 	docker exec ytdownloader-pgsql sh -c 'echo "Waiting for Postgres..."; for i in $$(seq 1 30); do pg_isready -U "$$POSTGRES_USER" >/dev/null 2>&1 && exit 0; sleep 1; done; pg_isready -U "$$POSTGRES_USER"'

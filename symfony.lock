@@ -98,6 +98,9 @@
             "config/packages/oskarstark_readable_filesize_extension.yaml"
         ]
     },
+    "p3sdev/php-ytdlp-wrapper": {
+        "version": "v1.0.4"
+    },
     "phpstan/phpstan": {
         "version": "2.1",
         "recipe": {
