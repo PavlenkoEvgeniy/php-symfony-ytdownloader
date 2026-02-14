@@ -22,8 +22,9 @@ final readonly class YoutubeDlWrapper
     public function download(string $videoUrl, string $downloadFormat, bool $mergeAsVideo): object
     {
         $options = [
-            'paths' => $this->downloadsDir,
-            'print' => 'after_move:filepath',
+            'paths'        => $this->downloadsDir,
+            'print'        => 'after_move:filepath',
+            'yes-playlist' => true,
         ];
 
         if ($mergeAsVideo) {
