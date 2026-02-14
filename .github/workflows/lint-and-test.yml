@@ -238,7 +238,7 @@ jobs:
 
       - name: Security check
         run: |
-          docker exec ytdownloader-php-fpm composer audit --no-interaction
+          make security-check
 
       - name: Stop containers
         if: always()
