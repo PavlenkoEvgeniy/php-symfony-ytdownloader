@@ -84,3 +84,8 @@ services:
             $rabbitmqUser: '%env(RABBIT_USER)%'
             $rabbitmqPassword: '%env(RABBIT_PASSWORD)%'
             $rabbitmqVhost: '%env(RABBIT_VHOST)%'
+
+    # Rate Limiter Event Listener
+    App\RateLimiter\RateLimitEventListener:
+        arguments:
+            $factory: '@limiter.api'

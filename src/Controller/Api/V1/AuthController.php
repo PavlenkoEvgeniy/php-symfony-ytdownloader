@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Controller\Api\V1;
 
 use App\Entity\User;
+use App\RateLimiter\RateLimitAttribute;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
+#[RateLimitAttribute(limit: 60, interval: 60)]
 final class AuthController extends AbstractController
 {
     #[Route(path: '/api/v1/auth/login', name: 'api_v1_auth_login', methods: [Request::METHOD_POST])]
