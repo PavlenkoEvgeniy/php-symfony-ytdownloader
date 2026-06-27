@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Api\V2;
 
 use App\Message\DownloadMessage;
+use App\RateLimiter\RateLimitAttribute;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,6 +14,7 @@ use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
+#[RateLimitAttribute(limit: 60, interval: 60)]
 final class DownloadController extends AbstractController
 {
     private const ALLOWED_QUALITIES = ['best', 'moderate', 'poor', 'audio'];

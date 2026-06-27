@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Api\V2;
 
 use App\Entity\Source;
+use App\RateLimiter\RateLimitAttribute;
 use App\Repository\SourceRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -16,6 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Attribute\Route;
 
+#[RateLimitAttribute(limit: 60, interval: 60)]
 final class SourceController extends AbstractController
 {
     #[Route(path: '/api/v2/source', name: 'api_v2_source_index', methods: [Request::METHOD_GET])]

@@ -16,11 +16,10 @@ final class SourceManagerTest extends TestCase
     {
         $source = new Source();
 
-        /** @phpstan-ignore-next-line */
         $repository = $this->getMockBuilder(SourceRepository::class)
             ->disableOriginalConstructor()
             ->addMethods(['findOneByFilename'])
-            ->getMock();
+            ->getMock(); /** @phpstan-ignore-line */
         $repository->expects($this->once())
             ->method('findOneByFilename')
             ->with('foo.mp4')
@@ -35,11 +34,10 @@ final class SourceManagerTest extends TestCase
 
     public function testCreateFromDownloadedFilePersistsAndReturnsSource(): void
     {
-        /** @phpstan-ignore-next-line */
         $repository = $this->getMockBuilder(SourceRepository::class)
             ->disableOriginalConstructor()
             ->addMethods(['findOneByFilename'])
-            ->getMock();
+            ->getMock(); /** @phpstan-ignore-line */
         $em         = $this->createMock(EntityManagerInterface::class);
 
         $em->expects($this->once())
@@ -61,11 +59,10 @@ final class SourceManagerTest extends TestCase
 
     public function testFlushDelegatesToEntityManager(): void
     {
-        /** @phpstan-ignore-next-line */
         $repository = $this->getMockBuilder(SourceRepository::class)
             ->disableOriginalConstructor()
             ->addMethods(['findOneByFilename'])
-            ->getMock();
+            ->getMock(); /** @phpstan-ignore-line */
         $em         = $this->createMock(EntityManagerInterface::class);
 
         $em->expects($this->once())->method('flush');

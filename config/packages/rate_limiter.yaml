@@ -1,0 +1,8 @@
+# Rate limiter configuration
+framework:
+    rate_limiter:
+        api:
+            policy: 'sliding_window'
+            limit: 60
+            interval: '1 minute'
+            cache_pool: 'cache.app'
