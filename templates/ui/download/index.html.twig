@@ -34,8 +34,8 @@
 
     <h3 class="mt-5">Disk Space Available:</h3>
     <p>Total: {{ diskSpace.total }}</p>
-    <p>Used: {{ diskSpace.used }} ({{ diskSpace.percentage }}%)</p>
-    <p>Free: {{ diskSpace.free }}</p>
+    <p>Used: {{ diskSpace.used }} ({{ diskSpace.usedPercentage }}%)</p>
+    <p>Free: {{ diskSpace.free }} ({{ diskSpace.freePercentage }}%)</p>
 
     <h3 class="mt-5">Statistics:</h3>
     <p>In Queue: {{ totalPendingDownloads }}</p>

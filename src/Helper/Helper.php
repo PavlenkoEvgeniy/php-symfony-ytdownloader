@@ -29,10 +29,11 @@ final class Helper
         $used  = $total - $free;
 
         return [
-            'free'       => Helper::formatBytes($free),
-            'used'       => Helper::formatBytes($used),
-            'total'      => Helper::formatBytes($total),
-            'percentage' => $total > 0 ? \round(($used / $total) * 100.0, 2) : 0.0,
+            'free'           => Helper::formatBytes($free),
+            'used'           => Helper::formatBytes($used),
+            'total'          => Helper::formatBytes($total),
+            'usedPercentage' => $total > 0 ? \round(($used / $total) * 100.0, 2) : 0.0,
+            'freePercentage' => $total > 0 ? \round(($free / $total) * 100.0, 2) : 0.0,
         ];
     }
 }
