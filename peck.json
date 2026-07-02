@@ -53,7 +53,16 @@
             "ttl",
             "enum",
             "dlp",
-            "stdout"
+            "stdout",
+            "getters",
+            "nullable",
+            "getter",
+            "timestampable",
+            "deduplicates",
+            "codec",
+            "unmapped",
+            "stderr",
+            "whitespace"
         ],
         "paths": [
             "vendor"
