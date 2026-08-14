@@ -57,6 +57,7 @@ security:
         - { path: ^/health, roles: PUBLIC_ACCESS }
         - { path: ^/ui, roles: ROLE_USER }
         - { path: ^/admin, roles: ROLE_ADMIN }
+        - { path: ^/ui/source/download, roles: PUBLIC_ACCESS }
 
 when@test:
     security:
