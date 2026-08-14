@@ -22,9 +22,6 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 final class DashboardController extends AbstractDashboardController
 {
-    /**
-     * @throws Exception
-     */
     #[\Override]
     public function index(): RedirectResponse
     {
