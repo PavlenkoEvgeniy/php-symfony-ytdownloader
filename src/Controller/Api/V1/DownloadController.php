@@ -17,7 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[RateLimitAttribute(limit: 60, interval: 60)]
 final class DownloadController extends AbstractController
 {
-    private const ALLOWED_QUALITIES = ['best', 'moderate', 'poor', 'audio'];
+    private const array ALLOWED_QUALITIES = ['best', 'moderate', 'poor', 'audio'];
 
     /**
      * @throws ExceptionInterface
