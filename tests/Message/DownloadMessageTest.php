@@ -116,4 +116,18 @@ final class DownloadMessageTest extends TestCase
         $this->assertNotEmpty($message->getQuality());
         $this->assertNotEmpty($message->getTelegramUserId());
     }
+
+    public function testDownloadMessageTaskIdDefaultsToNull(): void
+    {
+        $message = new DownloadMessage('https://youtube.com/watch?v=test', 'best');
+
+        $this->assertNull($message->getTaskId());
+    }
+
+    public function testDownloadMessageTaskIdReturnsValue(): void
+    {
+        $message = new DownloadMessage('https://youtube.com/watch?v=test', 'best', '12345', 7);
+
+        $this->assertSame(7, $message->getTaskId());
+    }
 }

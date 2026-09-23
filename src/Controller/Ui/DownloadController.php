@@ -6,33 +6,26 @@ namespace App\Controller\Ui;
 
 use App\Form\DownloadForm;
 use App\Helper\Helper;
-use App\Message\DownloadMessage;
-use App\Repository\LogRepository;
-use App\Service\MessengerQueueCounterService;
-use App\Service\RabbitMQApiQueueService;
+use App\Service\DownloadDispatcher;
+use App\Service\QueueStatsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Symfony\Component\Messenger\Exception\ExceptionInterface;
-use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class DownloadController extends AbstractController
 {
-    /**
-     * @throws ExceptionInterface
-     */
+    public function __construct(
+        private readonly DownloadDispatcher $downloadDispatcher,
+        private readonly QueueStatsService $queueStatsService,
+    ) {
+    }
+
     #[Route('/ui/download', name: 'ui_download_index', methods: [Request::METHOD_GET, Request::METHOD_POST])]
-    public function index(
-        Request $request,
-        MessageBusInterface $bus,
-        MessengerQueueCounterService $messengerQueueCounter,
-        SessionInterface $session,
-        LogRepository $logRepository,
-        RabbitMQApiQueueService $rabbitMQApiQueueService,
-    ): Response|RedirectResponse {
+    public function index(Request $request, SessionInterface $session): Response|RedirectResponse
+    {
         $form = $this->createForm(DownloadForm::class);
         $form->handleRequest($request);
 
@@ -42,7 +35,7 @@ final class DownloadController extends AbstractController
 
             $session->set('lastSelectedQuality', $quality);
 
-            $bus->dispatch(new DownloadMessage($videoUrl, $quality));
+            $this->downloadDispatcher->dispatch($videoUrl, $quality);
 
             $this->addFlash('success', 'Video was added to queue.');
 
@@ -54,18 +47,15 @@ final class DownloadController extends AbstractController
             );
         }
 
-        $totalPendingDownloads    = $messengerQueueCounter->getQueueCount();
-        $totalInProgressDownloads = $rabbitMQApiQueueService->getProcessingMessagesCount();
-        $totalSuccessDownloads    = $logRepository->getTotalSuccessCount();
-        $totalSizeDownloaded      = $logRepository->getTotalSize();
+        $stats = $this->queueStatsService->getStats();
 
         return $this->render('ui/download/index.html.twig', [
             'form'                     => $form,
             'diskSpace'                => Helper::getFreeSpace(),
-            'totalPendingDownloads'    => $totalPendingDownloads,
-            'totalInProgressDownloads' => $totalInProgressDownloads,
-            'totalSuccessDownloads'    => $totalSuccessDownloads,
-            'totalDownloaded'          => Helper::formatBytes($totalSizeDownloaded),
+            'totalPendingDownloads'    => $stats['queued'],
+            'totalInProgressDownloads' => $stats['processing'],
+            'totalSuccessDownloads'    => $stats['success'],
+            'totalDownloaded'          => Helper::formatBytes($stats['totalSize']),
         ]);
     }
 }

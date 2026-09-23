@@ -17,22 +17,4 @@ final class LogRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Log::class);
     }
-
-    public function getTotalSuccessCount(): int
-    {
-        return (int) $this->createQueryBuilder('l')
-            ->select('COUNT(l.id)')
-            ->andWhere('l.type = :type')
-            ->setParameter('type', 'success')
-            ->getQuery()
-            ->getSingleScalarResult();
-    }
-
-    public function getTotalSize(): int
-    {
-        return (int) $this->createQueryBuilder('l')
-            ->select('SUM(l.size) as totalSize')
-            ->getQuery()
-            ->getSingleScalarResult();
-    }
 }

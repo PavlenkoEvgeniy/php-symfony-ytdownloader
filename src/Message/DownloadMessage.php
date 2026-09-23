@@ -13,6 +13,7 @@ final readonly class DownloadMessage
         private string $url,
         private string $quality,
         private string $telegramUserId = '',
+        private ?int $taskId = null,
     ) {
     }
 
@@ -29,5 +30,10 @@ final readonly class DownloadMessage
     public function getTelegramUserId(): string
     {
         return $this->telegramUserId;
+    }
+
+    public function getTaskId(): ?int
+    {
+        return $this->taskId;
     }
 }
