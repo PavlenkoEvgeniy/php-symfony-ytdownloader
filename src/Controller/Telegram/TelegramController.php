@@ -4,20 +4,19 @@ declare(strict_types=1);
 
 namespace App\Controller\Telegram;
 
-use App\Message\DownloadMessage;
+use App\Service\DownloadDispatcher;
 use App\Service\TelegramBotService;
 use BotMan\BotMan\BotMan;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class TelegramController extends AbstractController
 {
     public function __construct(
-        private readonly MessageBusInterface $bus,
+        private readonly DownloadDispatcher $downloadDispatcher,
     ) {
     }
 
@@ -39,7 +38,7 @@ final class TelegramController extends AbstractController
         $bot->hears('(https://.*)', function (BotMan $bot, string $url) {
             $quality = 'best'; // Default quality
             $userId  = (string) $bot->getUser()->getId();
-            $this->bus->dispatch(new DownloadMessage($url, $quality, $userId));
+            $this->downloadDispatcher->dispatch($url, $quality, $userId);
 
             $bot->reply('Downloading is in progress. Please wait...');
         });

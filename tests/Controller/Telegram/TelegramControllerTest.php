@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller\Telegram;
 
-use App\Message\DownloadMessage;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
@@ -88,12 +87,14 @@ final class TelegramControllerTest extends WebTestCase
 
             return new \Symfony\Component\Messenger\Envelope($msg);
         });
+        $em         = $this->createMock(\Doctrine\ORM\EntityManagerInterface::class);
+        $dispatcher = new \App\Service\DownloadDispatcher($em, $bus);
 
         // simulate the controller's URL callback
-        $callback = function ($botman, string $url) use ($bus) {
+        $callback = function ($botman, string $url) use ($dispatcher) {
             $quality = 'best';
             $userId  = (string) $botman->getUser()->getId();
-            $bus->dispatch(new DownloadMessage($url, $quality, $userId));
+            $dispatcher->dispatch($url, $quality, $userId);
 
             $botman->reply('Downloading is in progress. Please wait...');
         };

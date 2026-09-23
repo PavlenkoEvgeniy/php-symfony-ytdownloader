@@ -7,13 +7,13 @@ namespace App\Controller\Ui;
 use App\Entity\Source;
 use App\Form\SourceForm;
 use App\Repository\SourceRepository;
-use App\Service\MessengerQueueCounterService;
-use App\Service\RabbitMQApiQueueService;
+use App\Service\QueueStatsService;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,8 +27,7 @@ final class SourceController extends AbstractController
 {
     public function __construct(
         private readonly string $downloadsDir,
-        private readonly MessengerQueueCounterService $messengerQueueCounter,
-        private readonly RabbitMQApiQueueService $rabbitMQApiQueueService,
+        private readonly QueueStatsService $queueStatsService,
     ) {
     }
 
@@ -44,9 +43,6 @@ final class SourceController extends AbstractController
             $order = $session->get('lastSelectedOrder');
         }
 
-        $totalPending    = $this->messengerQueueCounter->getQueueCount();
-        $totalInProgress = $this->rabbitMQApiQueueService->getProcessingMessagesCount();
-
         $files = $sourceRepository->findBy([], ['createdAt' => $order]);
 
         $perPage = 10;
@@ -60,13 +56,20 @@ final class SourceController extends AbstractController
         $currentPage    = $pagination->getCurrentPageNumber();
         $startingNumber = ($currentPage - 1) * $perPage + 1;
 
+        $stats = $this->queueStatsService->getStats();
+
         return $this->render('ui/source/index.html.twig', [
-            'pagination'       => $pagination,
-            'order'            => $order,
-            'startingNumber'   => $startingNumber,
-            'totalPending'     => $totalPending,
-            'totalInProgress'  => $totalInProgress,
+            'pagination'     => $pagination,
+            'order'          => $order,
+            'startingNumber' => $startingNumber,
+            'stats'          => $stats,
         ]);
+    }
+
+    #[Route('/ui/source/queue-stats', name: 'ui_source_queue_stats', methods: [Request::METHOD_GET])]
+    public function queueStats(): JsonResponse
+    {
+        return $this->json($this->queueStatsService->getStats());
     }
 
     #[Route('/ui/source/{id}', name: 'ui_source_show', methods: [Request::METHOD_GET])]

@@ -25,9 +25,43 @@
             {{ include('ui/source/_delete_all_form.html.twig') }}
         {% endif %}
     </div>
-    <div class="text-center mt-4">
-        <span class="fw-bold">In queue: {{ totalPending }}</span> |
-        <span class="fw-bold">In progress: {{ totalInProgress }}</span>
+    <div class="text-center mt-4" id="queue-stats" data-stats-url="{{ path('ui_source_queue_stats') }}">
+        <span class="fw-bold">In queue: <span data-counter="queued">{{ stats.queued }}</span></span> |
+        <span class="fw-bold">In progress: <span data-counter="processing">{{ stats.processing }}</span></span> |
+        <span class="fw-bold">Errors: <span data-counter="error">{{ stats.error }}</span></span>
+    </div>
+    <div class="mt-4">
+        <h5>Active tasks</h5>
+        <div class="table-responsive-lg">
+            <table class="table table-sm">
+                <thead class="text-center">
+                <tr>
+                    <th>No</th>
+                    <th>Url</th>
+                    <th>Quality</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                </tr>
+                </thead>
+                <tbody data-tasks-body>
+                {% for task in stats.tasks %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="text-break">{{ task.url }}</td>
+                        <td class="text-center">{{ task.quality }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-{{ task.status == 'queued' ? 'secondary' : (task.status == 'processing' ? 'primary' : 'danger') }}">{{ task.status }}</span>
+                        </td>
+                        <td class="text-center">{{ task.createdAt ? task.createdAt|date('Y-m-d H:i') : '' }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="text-center" colspan="5">No active tasks...</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     {% if pagination is not empty %}
         <div class="col-sm-3 col-md-2 col-lg-1">
@@ -98,4 +132,5 @@
     <div>
         {{ knp_pagination_render(pagination) }}
     </div>
+    {% include 'ui/source/_queue_stats_script.html.twig' %}
 {% endblock %}

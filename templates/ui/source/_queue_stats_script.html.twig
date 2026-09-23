@@ -1,0 +1,101 @@
+{# Live queue statistics: polls GET ui_source_queue_stats and updates all [data-counter] nodes. #}
+<script>
+    (function () {
+        const container = document.getElementById('queue-stats');
+        if (!container) {
+            return;
+        }
+
+        const statsUrl = container.dataset.statsUrl;
+        const counters = container.querySelectorAll('[data-counter]');
+        const tasksBody = container.querySelector('[data-tasks-body]');
+        const badgeClasses = { queued: 'bg-secondary', processing: 'bg-primary', success: 'bg-secondary', error: 'bg-danger' };
+        let timer = null;
+
+        function formatBytes(bytes) {
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            bytes = Math.max(Number(bytes) || 0, 0);
+            const pow = bytes > 0 ? Math.min(Math.max(Math.floor(Math.log(bytes) / Math.log(1024)), 0), units.length - 1) : 0;
+            return (bytes / Math.pow(1024, pow)).toFixed(1) + ' ' + units[pow];
+        }
+
+        function buildTaskRow(task, index) {
+            const row = document.createElement('tr');
+
+            const cellNo = document.createElement('td');
+            cellNo.textContent = index + 1;
+
+            const cellUrl = document.createElement('td');
+            cellUrl.className = 'text-break';
+            cellUrl.textContent = task.url;
+
+            const cellQuality = document.createElement('td');
+            cellQuality.className = 'text-center';
+            cellQuality.textContent = task.quality;
+
+            const cellStatus = document.createElement('td');
+            cellStatus.className = 'text-center';
+            const badge = document.createElement('span');
+            badge.className = 'badge ' + (badgeClasses[task.status] || 'bg-secondary');
+            badge.textContent = task.status;
+            cellStatus.appendChild(badge);
+
+            const cellCreated = document.createElement('td');
+            cellCreated.className = 'text-center';
+            cellCreated.textContent = task.createdAt ? new Date(task.createdAt).toLocaleString() : '';
+
+            row.append(cellNo, cellUrl, cellQuality, cellStatus, cellCreated);
+
+            return row;
+        }
+
+        async function refresh() {
+            try {
+                const response = await fetch(statsUrl, { headers: { 'Accept': 'application/json' } });
+                if (!response.ok) {
+                    return;
+                }
+
+                const stats = await response.json();
+
+                counters.forEach((node) => {
+                    node.textContent = node.dataset.counter === 'totalSize'
+                        ? formatBytes(stats.totalSize)
+                        : stats[node.dataset.counter];
+                });
+
+                if (tasksBody) {
+                    tasksBody.textContent = '';
+                    if (stats.tasks.length) {
+                        stats.tasks.forEach((task, index) => tasksBody.appendChild(buildTaskRow(task, index)));
+                    } else {
+                        const row = document.createElement('tr');
+                        const cell = document.createElement('td');
+                        cell.colSpan = 5;
+                        cell.className = 'text-center';
+                        cell.textContent = 'No active tasks...';
+                        row.appendChild(cell);
+                        tasksBody.appendChild(row);
+                    }
+                }
+            } catch (error) {
+                // Keep last known values on network errors.
+            }
+        }
+
+        function start() {
+            if (!timer) {
+                refresh();
+                timer = setInterval(refresh, 10000);
+            }
+        }
+
+        function stop() {
+            clearInterval(timer);
+            timer = null;
+        }
+
+        document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+        start();
+    })();
+</script>

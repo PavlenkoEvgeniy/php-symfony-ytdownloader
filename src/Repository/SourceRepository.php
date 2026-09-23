@@ -19,4 +19,12 @@ final class SourceRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Source::class);
     }
+
+    public function getTotalSize(): int
+    {
+        return (int) $this->createQueryBuilder('s')
+            ->select('SUM(s.size) as totalSize')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controller\Api\V2;
 
-use App\Message\DownloadMessage;
 use App\RateLimiter\RateLimitAttribute;
+use App\Service\DownloadDispatcher;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Messenger\Exception\ExceptionInterface;
-use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[RateLimitAttribute(limit: 60, interval: 60)]
@@ -19,11 +17,8 @@ final class DownloadController extends AbstractController
 {
     private const ALLOWED_QUALITIES = ['best', 'moderate', 'poor', 'audio'];
 
-    /**
-     * @throws ExceptionInterface
-     */
     #[Route(path: '/api/v2/download/create', name: 'api_v2_download_create', methods: [Request::METHOD_POST])]
-    public function create(Request $request, MessageBusInterface $bus): JsonResponse
+    public function create(Request $request, DownloadDispatcher $dispatcher): JsonResponse
     {
         try {
             $data = $request->toArray();
@@ -49,7 +44,7 @@ final class DownloadController extends AbstractController
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $bus->dispatch(new DownloadMessage($url, $quality));
+        $dispatcher->dispatch($url, $quality);
 
         return $this->json([
             'message' => 'Download was added to queue.',

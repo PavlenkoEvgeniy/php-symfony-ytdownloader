@@ -38,8 +38,11 @@
     <p>Free: {{ diskSpace.free }} ({{ diskSpace.freePercentage }}%)</p>
 
     <h3 class="mt-5">Statistics:</h3>
-    <p>In Queue: {{ totalPendingDownloads }}</p>
-    <p>In Progress: {{ totalInProgressDownloads }}</p>
-    <p>Completed: {{ totalSuccessDownloads }}</p>
-    <p>Total downloaded: {{ totalDownloaded }}</p>
+    <div id="queue-stats" data-stats-url="{{ path('ui_source_queue_stats') }}">
+        <p>In Queue: <span data-counter="queued">{{ totalPendingDownloads }}</span></p>
+        <p>In Progress: <span data-counter="processing">{{ totalInProgressDownloads }}</span></p>
+        <p>Completed: <span data-counter="success">{{ totalSuccessDownloads }}</span></p>
+        <p>Total downloaded: <span data-counter="totalSize">{{ totalDownloaded }}</span></p>
+    </div>
+    {% include 'ui/source/_queue_stats_script.html.twig' %}
 {% endblock %}
