@@ -18,6 +18,7 @@ final readonly class DownloadTaskFailureListener implements EventSubscriberInter
     ) {
     }
 
+    #[\Override]
     public static function getSubscribedEvents(): array
     {
         return [

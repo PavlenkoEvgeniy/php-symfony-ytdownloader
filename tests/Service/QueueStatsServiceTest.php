@@ -48,6 +48,8 @@ final class QueueStatsServiceTest extends KernelTestCase
 
     public function testGetStatsCountsPersistedTasks(): void
     {
+        $before = $this->queueStatsService->getStats();
+
         $task = new DownloadTask();
         $task->setUrl('https://youtube.com/watch?v=test')->setQuality('best');
         $this->em->persist($task);
@@ -55,13 +57,19 @@ final class QueueStatsServiceTest extends KernelTestCase
 
         $stats = $this->queueStatsService->getStats();
 
-        $this->assertSame(1, $stats['queued']);
-        $this->assertSame(0, $stats['processing']);
-        $this->assertSame(0, $stats['success']);
-        $this->assertSame(0, $stats['error']);
-        $this->assertCount(1, $stats['tasks']);
-        $this->assertSame('https://youtube.com/watch?v=test', $stats['tasks'][0]['url']);
-        $this->assertSame(DownloadTask::STATUS_QUEUED, $stats['tasks'][0]['status']);
-        $this->assertStringContainsString('T', $stats['tasks'][0]['createdAt']);
+        $this->assertSame($before['queued'] + 1, $stats['queued']);
+        $this->assertSame($before['processing'], $stats['processing']);
+        $this->assertSame($before['success'], $stats['success']);
+        $this->assertSame($before['error'], $stats['error']);
+        $this->assertCount($before['tasks'] ? \count($before['tasks']) + 1 : 1, $stats['tasks']);
+
+        $persisted = \array_values(\array_filter(
+            $stats['tasks'],
+            static fn (array $item): bool => 'https://youtube.com/watch?v=test' === $item['url']
+        ));
+
+        $this->assertCount(1, $persisted);
+        $this->assertSame(DownloadTask::STATUS_QUEUED, $persisted[0]['status']);
+        $this->assertStringContainsString('T', $persisted[0]['createdAt']);
     }
 }

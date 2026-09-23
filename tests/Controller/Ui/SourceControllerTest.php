@@ -36,7 +36,7 @@ final class SourceControllerTest extends WebTestCase
         $this->assertResponseRedirects();
     }
 
-    public function testQueueStatsReturnsJsonCounters(): void
+    public function testQueueStatsReturnsCounters(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
         $this->client->loginUser($user);
