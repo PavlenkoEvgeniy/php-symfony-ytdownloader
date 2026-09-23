@@ -62,6 +62,7 @@
     },
     "config": {
         "allow-plugins": {
+            "cweagans/composer-patches": true,
             "php-http/discovery": true,
             "symfony/flex": true,
             "symfony/runtime": true
@@ -106,12 +107,18 @@
         "symfony/symfony": "*"
     },
     "extra": {
+        "patches": {
+            "illuminate/collections": {
+                "Remove psalm-incompatible conditional @phpstan-this-out in Collection::prepend()": "patches/illuminate-collections-psalm-conditional-this-out.patch"
+            }
+        },
         "symfony": {
             "allow-contrib": false,
             "require": "7.4.*"
         }
     },
     "require-dev": {
+        "cweagans/composer-patches": "^2.0.0",
         "dg/bypass-finals": "^1.11.0",
         "doctrine/doctrine-fixtures-bundle": "^4.3.1",
         "friendsofphp/php-cs-fixer": "^3.95.27",

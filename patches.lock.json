@@ -1,0 +1,17 @@
+{
+    "_hash": "d500cbac5de24f5d0cb45194a4012d7a1a14a3a58c75a9414c4f8822e93d3918",
+    "patches": {
+        "illuminate/collections": [
+            {
+                "package": "illuminate/collections",
+                "description": "Remove psalm-incompatible conditional @phpstan-this-out in Collection::prepend()",
+                "url": "patches/illuminate-collections-psalm-conditional-this-out.patch",
+                "sha256": "ec8ae3982be2c6feb6bb47ef18e6547e3d4a9d5a2710ee173cd1519825b7653a",
+                "depth": 1,
+                "extra": {
+                    "provenance": "root"
+                }
+            }
+        ]
+    }
+}

@@ -1,0 +1,21 @@
+Remove the conditional @phpstan-this-out annotation from Collection::prepend().
+
+illuminate/collections v13.33.0 uses a PHPStan-only conditional type based on a
+method parameter ("$key is null ? ..."), which Psalm (6.x and 7.x) cannot parse:
+conditional types are only allowed on templates. Psalm crashes with
+"Unrecognized template '$key'" while scanning vendor autoload files.
+
+The annotation only affects static-analysis precision of vendor code, so
+removing it is safe.
+
+--- a/Collection.php
++++ b/Collection.php
+@@ -1058,8 +1058,6 @@
+      * @param  TValue  $value
+      * @param  TKey|null  $key
+      * @return $this
+-     *
+-     * @phpstan-this-out ($key is null ? static<TKey|int, TValue> : $this)
+      */
+     public function prepend($value, $key = null)
+     {
