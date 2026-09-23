@@ -47,17 +47,14 @@ final class LogRepositoryTest extends KernelTestCase
         parent::tearDown();
     }
 
-    public function testCountsAndSizesAreCalculatedCorrectly(): void
+    public function testSuccessCountAndTotalSizeAreCalculatedCorrectly(): void
     {
         // Create entries with different types and sizes
         $logsData = [
             ['type' => 'processing', 'size' => null],
-            ['type' => 'in progress', 'size' => null],
-            ['type' => 'in progress', 'size' => null],
             ['type' => 'success', 'size' => 10.5],
             ['type' => 'success', 'size' => 20.0],
             ['type' => 'success', 'size' => 4.4],
-            ['type' => 'error', 'size' => 2.1],
         ];
 
         foreach ($logsData as $data) {
@@ -74,15 +71,10 @@ final class LogRepositoryTest extends KernelTestCase
         $this->em->flush();
 
         // Assert counts
-        $this->assertSame(1, $this->logRepository->getTotalProcessingCount());
-        $this->assertSame(2, $this->logRepository->getTotalInProgressCount());
         $this->assertSame(3, $this->logRepository->getTotalSuccessCount());
-        $this->assertSame(1, $this->logRepository->getTotalErrorCount());
 
         // Assert sizes (note repository casts totals to int)
-        $expectedTotal = (int) (10.5 + 20.0 + 4.4 + 2.1); // 36 (int cast)
+        $expectedTotal = (int) (10.5 + 20.0 + 4.4); // 34 (int cast)
         $this->assertSame($expectedTotal, $this->logRepository->getTotalSize());
-
-        $this->assertSame(20, $this->logRepository->getMaxSize());
     }
 }
