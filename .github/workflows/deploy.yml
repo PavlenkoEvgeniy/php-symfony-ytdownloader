@@ -33,3 +33,4 @@ jobs:
             make composer-install
             make cache-clear
             make cache-purge
+            docker system prune --all --force
