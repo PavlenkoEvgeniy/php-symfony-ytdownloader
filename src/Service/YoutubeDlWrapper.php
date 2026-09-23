@@ -71,7 +71,7 @@ final readonly class YoutubeDlWrapper
 
         if ([] === $videos) {
             return $this->createCollection([
-                $this->createErroredVideo('yt-dlp finished successfully, but no downloaded file was reported.')
+                $this->createErroredVideo('yt-dlp finished successfully, but no downloaded file was reported.'),
             ]);
         }
 
