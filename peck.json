@@ -62,7 +62,8 @@
             "codec",
             "unmapped",
             "stderr",
-            "whitespace"
+            "whitespace",
+            "adr"
         ],
         "paths": [
             "vendor"

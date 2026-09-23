@@ -31,6 +31,7 @@ jobs:
             make build
             make restart
             make composer-install
+            docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate --no-interaction
             make cache-clear
             make cache-purge
             docker system prune --all --force

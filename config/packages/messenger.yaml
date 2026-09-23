@@ -4,16 +4,10 @@ framework:
 
         transports:
             async:
-                dsn: '%env(RABBITMQ_DSN)%'
-                options:
-                    queues:
-                        download_queue: ~
+                dsn: 'doctrine://default?queue_name=download_queue'
 
             failed:
-                dsn: '%env(RABBITMQ_DSN)%'
-                options:
-                    queues:
-                        failed_queue: ~
+                dsn: 'doctrine://default?queue_name=failed_queue'
 
         default_bus: messenger.bus.default
 

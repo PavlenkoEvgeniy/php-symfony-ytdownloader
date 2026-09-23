@@ -10,7 +10,6 @@
 - Docker 🐳
 - PostgreSQL 🐘
 - Redis 🚀
-- RabbitMQ 🐇
 - yt-dlp ⚡
 - p3sdev/php-ytdlp-wrapper 📦
 - botman/botman 🤖
