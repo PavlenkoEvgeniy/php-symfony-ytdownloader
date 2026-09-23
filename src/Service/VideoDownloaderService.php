@@ -25,7 +25,7 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
     #[\Override]
     public function process(string $videoUrl, string $format, ?string $telegramUserId = null): void
     {
-        $initialLog = $this->logManager->create('commenced', 'Started downloading.');
+        $this->logManager->create('commenced', 'Started downloading.');
         $this->logManager->flush();
 
         [$downloadFormat, $mergeAsVideo] = $this->formatResolver->resolve($format);

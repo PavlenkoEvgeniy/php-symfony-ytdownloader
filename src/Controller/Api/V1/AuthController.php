@@ -9,6 +9,7 @@ use App\RateLimiter\RateLimitAttribute;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[RateLimitAttribute(limit: 60, interval: 60)]
@@ -26,7 +27,7 @@ final class AuthController extends AbstractController
         $user = $this->getUser();
 
         if (!$user instanceof User) {
-            return $this->json(['message' => 'Unauthorized.'], JsonResponse::HTTP_UNAUTHORIZED);
+            return $this->json(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
         }
 
         return $this->json([
@@ -40,9 +41,9 @@ final class AuthController extends AbstractController
     public function logout(): JsonResponse
     {
         if (!$this->getUser() instanceof User) {
-            return $this->json(['message' => 'Unauthorized.'], JsonResponse::HTTP_UNAUTHORIZED);
+            return $this->json(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
         }
 
-        return $this->json(['message' => 'Logged out.'], JsonResponse::HTTP_OK);
+        return $this->json(['message' => 'Logged out.'], Response::HTTP_OK);
     }
 }

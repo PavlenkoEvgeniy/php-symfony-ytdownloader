@@ -70,7 +70,9 @@ final readonly class YoutubeDlWrapper
         }
 
         if ([] === $videos) {
-            return $this->createCollection([$this->createErroredVideo('yt-dlp finished successfully, but no downloaded file was reported.')]);
+            return $this->createCollection([
+                $this->createErroredVideo('yt-dlp finished successfully, but no downloaded file was reported.'),
+            ]);
         }
 
         return $this->createCollection($videos);
@@ -102,7 +104,7 @@ final readonly class YoutubeDlWrapper
      */
     private function createCollection(array $videos): object
     {
-        return new class($videos) {
+        return new readonly class($videos) {
             /**
              * @param list<object> $videos
              */
@@ -122,7 +124,7 @@ final readonly class YoutubeDlWrapper
 
     private function createErroredVideo(string $error): object
     {
-        return new class($error) {
+        return new readonly class($error) {
             public function __construct(private string $error)
             {
             }
@@ -144,7 +146,7 @@ final readonly class YoutubeDlWrapper
         $fileInfo = new \SplFileInfo($downloadedPath);
         $size     = $fileInfo->getSize();
 
-        return new class($fileInfo, false === $size ? 0.0 : (float) $size) {
+        return new readonly class($fileInfo, false === $size ? 0.0 : (float) $size) {
             public function __construct(private \SplFileInfo $fileInfo, private float $size)
             {
             }
@@ -156,7 +158,7 @@ final readonly class YoutubeDlWrapper
 
             public function getFile(): object
             {
-                return new class($this->fileInfo, $this->size) {
+                return new readonly class($this->fileInfo, $this->size) {
                     public function __construct(private \SplFileInfo $fileInfo, private float $size)
                     {
                     }
