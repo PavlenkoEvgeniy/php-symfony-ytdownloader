@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Ui;
 
 use App\Entity\Source;
+use App\Entity\User;
 use App\Form\SourceForm;
 use App\Repository\SourceRepository;
 use App\Service\QueueStatsService;
@@ -56,7 +57,7 @@ final class SourceController extends AbstractController
         $currentPage    = $pagination->getCurrentPageNumber();
         $startingNumber = ($currentPage - 1) * $perPage + 1;
 
-        $stats = $this->queueStatsService->getStats();
+        $stats = $this->queueStatsService->getStats($this->isGranted(User::ROLE_ADMIN));
 
         return $this->render('ui/source/index.html.twig', [
             'pagination'     => $pagination,
@@ -69,7 +70,7 @@ final class SourceController extends AbstractController
     #[Route('/ui/source/queue-stats', name: 'ui_source_queue_stats', methods: [Request::METHOD_GET])]
     public function queueStats(): JsonResponse
     {
-        return $this->json($this->queueStatsService->getStats());
+        return $this->json($this->queueStatsService->getStats($this->isGranted(User::ROLE_ADMIN)));
     }
 
     #[Route('/ui/source/{id}', name: 'ui_source_show', methods: [Request::METHOD_GET])]

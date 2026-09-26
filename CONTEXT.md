@@ -13,6 +13,10 @@ _Avoid_: job, message (a message is only the trigger for a task)
 **Task Status**:
 The lifecycle of a task: `queued` → `processing` → `success` | `error`.
 
+**Active Task**:
+A task in `queued`, `processing` or `error` status — anything not yet `success`. "Active" here means "not finished", not "currently downloading".
+_Avoid_: running, in progress
+
 **Processing**:
 The status meaning "the worker has picked this task up". It is not a guarantee that the download is still running: if the worker dies mid-task, the task stays `processing` until it is redone.
 _Avoid_: running, in progress
