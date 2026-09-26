@@ -72,4 +72,24 @@ final class QueueStatsServiceTest extends KernelTestCase
         $this->assertSame(DownloadTask::STATUS_QUEUED, $persisted[0]['status']);
         $this->assertStringContainsString('T', $persisted[0]['createdAt']);
     }
+
+    public function testGetStatsSkipsTasksQueryWhenDisabled(): void
+    {
+        $task = new DownloadTask();
+        $task->setUrl('https://youtube.com/watch?v=notasks')->setQuality('best');
+        $this->em->persist($task);
+        $this->em->flush();
+
+        $withTasks    = $this->queueStatsService->getStats(true);
+        $withoutTasks = $this->queueStatsService->getStats(false);
+
+        $this->assertSame($withTasks['queued'], $withoutTasks['queued']);
+        $this->assertSame($withTasks['processing'], $withoutTasks['processing']);
+        $this->assertSame($withTasks['success'], $withoutTasks['success']);
+        $this->assertSame($withTasks['error'], $withoutTasks['error']);
+        $this->assertSame($withTasks['totalSize'], $withoutTasks['totalSize']);
+
+        $this->assertNotEmpty($withTasks['tasks']);
+        $this->assertSame([], $withoutTasks['tasks']);
+    }
 }

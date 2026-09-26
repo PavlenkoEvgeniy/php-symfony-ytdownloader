@@ -56,4 +56,44 @@ final class SourceControllerTest extends WebTestCase
         $this->assertArrayHasKey('error', $data);
         $this->assertArrayHasKey('tasks', $data);
     }
+
+    public function testActiveTasksAreVisibleForAdmin(): void
+    {
+        $user = $this->userRepository->findOneByEmail('admin@admin.local');
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/ui/source');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('body', 'Active tasks');
+    }
+
+    public function testActiveTasksAreHiddenForNonAdmin(): void
+    {
+        $user = $this->userRepository->findOneByEmail('user@test.local');
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/ui/source');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextNotContains('body', 'Active tasks');
+    }
+
+    public function testQueueStatsHidesTasksForNonAdmin(): void
+    {
+        $user = $this->userRepository->findOneByEmail('user@test.local');
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/ui/source/queue-stats');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertResponseFormatSame('json');
+
+        $content = $this->client->getResponse()->getContent() ?: '{}';
+        $data    = \json_decode($content, true);
+
+        $this->assertIsArray($data);
+        $this->assertArrayHasKey('tasks', $data);
+        $this->assertSame([], $data['tasks']);
+    }
 }
