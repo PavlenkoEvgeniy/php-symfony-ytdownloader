@@ -19,9 +19,12 @@ final class DownloadTaskRepository extends ServiceEntityRepository
     }
 
     /**
+     * Active tasks are the ones not yet finished (queued, processing, error).
+     * The limit is a display-only guard: error tasks stay active until re-downloaded successfully.
+     *
      * @return DownloadTask[]
      */
-    public function getActiveTasks(): array
+    public function getRecentActiveTasks(int $limit = 50): array
     {
         return $this->findBy(
             ['status' => [
@@ -29,7 +32,8 @@ final class DownloadTaskRepository extends ServiceEntityRepository
                 DownloadTask::STATUS_PROCESSING,
                 DownloadTask::STATUS_ERROR,
             ]],
-            ['createdAt' => 'ASC']
+            ['createdAt' => 'DESC'],
+            $limit
         );
     }
 

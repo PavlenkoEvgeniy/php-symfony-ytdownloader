@@ -1,0 +1,45 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title 'Active Tasks' %}
+
+{% block main %}
+    <div class="mb-3 d-flex flex-wrap gap-2">
+        <span class="badge bg-secondary">Queued: {{ stats.queued }}</span>
+        <span class="badge bg-primary">Processing: {{ stats.processing }}</span>
+        <span class="badge bg-success">Success: {{ stats.success }}</span>
+        <span class="badge bg-danger">Errors: {{ stats.error }}</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Id</th>
+                <th>Url</th>
+                <th class="text-center">Quality</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">Created</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for task in tasks %}
+                <tr>
+                    <td>{{ task.id }}</td>
+                    <td class="text-break">
+                        <a href="{{ task.url }}" target="_blank" rel="noopener noreferrer">{{ task.url }}</a>
+                    </td>
+                    <td class="text-center">{{ task.quality }}</td>
+                    <td class="text-center">
+                        <span class="badge bg-{{ task.status == 'queued' ? 'secondary' : (task.status == 'processing' ? 'primary' : 'danger') }}">{{ task.status }}</span>
+                    </td>
+                    <td class="text-center">{{ task.createdAt ? task.createdAt|date('Y-m-d H:i') : '' }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td class="text-center" colspan="5">No active tasks...</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

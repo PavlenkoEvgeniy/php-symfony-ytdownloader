@@ -61,35 +61,6 @@ final class QueueStatsServiceTest extends KernelTestCase
         $this->assertSame($before['processing'], $stats['processing']);
         $this->assertSame($before['success'], $stats['success']);
         $this->assertSame($before['error'], $stats['error']);
-        $this->assertCount($before['tasks'] ? \count($before['tasks']) + 1 : 1, $stats['tasks']);
-
-        $persisted = \array_values(\array_filter(
-            $stats['tasks'],
-            static fn (array $item): bool => 'https://youtube.com/watch?v=test' === $item['url']
-        ));
-
-        $this->assertCount(1, $persisted);
-        $this->assertSame(DownloadTask::STATUS_QUEUED, $persisted[0]['status']);
-        $this->assertStringContainsString('T', $persisted[0]['createdAt']);
-    }
-
-    public function testGetStatsSkipsTasksQueryWhenDisabled(): void
-    {
-        $task = new DownloadTask();
-        $task->setUrl('https://youtube.com/watch?v=notasks')->setQuality('best');
-        $this->em->persist($task);
-        $this->em->flush();
-
-        $withTasks    = $this->queueStatsService->getStats(true);
-        $withoutTasks = $this->queueStatsService->getStats(false);
-
-        $this->assertSame($withTasks['queued'], $withoutTasks['queued']);
-        $this->assertSame($withTasks['processing'], $withoutTasks['processing']);
-        $this->assertSame($withTasks['success'], $withoutTasks['success']);
-        $this->assertSame($withTasks['error'], $withoutTasks['error']);
-        $this->assertSame($withTasks['totalSize'], $withoutTasks['totalSize']);
-
-        $this->assertNotEmpty($withTasks['tasks']);
-        $this->assertSame([], $withoutTasks['tasks']);
+        $this->assertSame($before['totalSize'], $stats['totalSize']);
     }
 }

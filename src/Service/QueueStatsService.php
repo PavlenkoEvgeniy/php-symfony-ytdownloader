@@ -22,27 +22,12 @@ final readonly class QueueStatsService
      *     processing: int,
      *     success: int,
      *     error: int,
-     *     totalSize: int,
-     *     tasks: list<array{id: ?int, url: ?string, quality: ?string, status: ?string, createdAt: ?string}>
+     *     totalSize: int
      * }
      */
-    public function getStats(bool $withTasks = true): array
+    public function getStats(): array
     {
         $counts = $this->downloadTaskRepository->getStatusCounts();
-
-        $tasks = [];
-        if ($withTasks) {
-            $tasks = \array_map(
-                static fn (DownloadTask $task): array => [
-                    'id'        => $task->getId(),
-                    'url'       => $task->getUrl(),
-                    'quality'   => $task->getQuality(),
-                    'status'    => $task->getStatus(),
-                    'createdAt' => $task->getCreatedAt()?->format(\DateTimeInterface::ATOM),
-                ],
-                $this->downloadTaskRepository->getActiveTasks()
-            );
-        }
 
         return [
             'queued'     => $counts[DownloadTask::STATUS_QUEUED],
@@ -50,7 +35,6 @@ final readonly class QueueStatsService
             'success'    => $counts[DownloadTask::STATUS_SUCCESS],
             'error'      => $counts[DownloadTask::STATUS_ERROR],
             'totalSize'  => $this->sourceRepository->getTotalSize(),
-            'tasks'      => $tasks,
         ];
     }
 }
