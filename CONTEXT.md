@@ -30,6 +30,12 @@ _Avoid_: RabbitMQ, broker queue, exchange
 **Worker**:
 The supervisor-driven background process that consumes messages and performs downloads.
 
+### Users
+
+**Avatar**:
+An image attached to a User, stored on the file system rather than in the database — unlike a Source, which is a download result.
+_Avoid_: profile picture, аватарка
+
 ### Release & Deploy
 
 **Release**:

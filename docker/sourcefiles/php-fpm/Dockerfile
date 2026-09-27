@@ -70,7 +70,9 @@ RUN chromium --headless --disable-gpu --no-sandbox --user-data-dir=/tmp/chromium
 # Install aspell for checking grammar in project
 RUN apt-get install aspell aspell-en -y
 
-# Create download directory
-RUN mkdir -p /application/var/downloads/
-RUN chmod -R 775 /application/var/downloads/
-RUN chown -R www-data:www-data /application/var/downloads/
+# Application-writable directories (var/, var/downloads/, public/uploads/avatars/)
+# are ensured by the entrypoint script at container start, not here: the
+# repository is bind-mounted over /application and shadows the image content.
+COPY ensure-app-dirs.sh /usr/local/bin/ensure-app-dirs.sh
+RUN chmod +x /usr/local/bin/ensure-app-dirs.sh
+ENTRYPOINT ["/usr/local/bin/ensure-app-dirs.sh"]

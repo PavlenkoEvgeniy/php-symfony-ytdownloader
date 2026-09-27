@@ -63,7 +63,8 @@
             "unmapped",
             "stderr",
             "whitespace",
-            "adr"
+            "adr",
+            "dirs"
         ],
         "paths": [
             "vendor"
