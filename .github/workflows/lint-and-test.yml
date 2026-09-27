@@ -113,6 +113,14 @@ jobs:
         run: |
           make psalm
 
+      - name: Debug containers (on failure)
+        if: failure()
+        run: |
+          docker compose -f docker/docker-compose.ci.yml ps -a
+          docker logs ytdownloader-php-fpm 2>&1 || true
+          docker logs ytdownloader-pgsql 2>&1 | tail -50 || true
+          docker logs ytdownloader-redis 2>&1 | tail -50 || true
+
       - name: Stop containers
         if: always()
         run: |
@@ -177,6 +185,14 @@ jobs:
       - name: Grammar check
         run: |
           make peck
+
+      - name: Debug containers (on failure)
+        if: failure()
+        run: |
+          docker compose -f docker/docker-compose.ci.yml ps -a
+          docker logs ytdownloader-php-fpm 2>&1 || true
+          docker logs ytdownloader-pgsql 2>&1 | tail -50 || true
+          docker logs ytdownloader-redis 2>&1 | tail -50 || true
 
       - name: Stop containers
         if: always()
@@ -243,6 +259,14 @@ jobs:
         run: |
           make security-check
 
+      - name: Debug containers (on failure)
+        if: failure()
+        run: |
+          docker compose -f docker/docker-compose.ci.yml ps -a
+          docker logs ytdownloader-php-fpm 2>&1 || true
+          docker logs ytdownloader-pgsql 2>&1 | tail -50 || true
+          docker logs ytdownloader-redis 2>&1 | tail -50 || true
+
       - name: Stop containers
         if: always()
         run: |
@@ -307,6 +331,14 @@ jobs:
       - name: Run tests
         run: |
           make test
+
+      - name: Debug containers (on failure)
+        if: failure()
+        run: |
+          docker compose -f docker/docker-compose.ci.yml ps -a
+          docker logs ytdownloader-php-fpm 2>&1 || true
+          docker logs ytdownloader-pgsql 2>&1 | tail -50 || true
+          docker logs ytdownloader-redis 2>&1 | tail -50 || true
 
       - name: Stop containers
         if: always()
