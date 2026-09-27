@@ -64,7 +64,10 @@
             "stderr",
             "whitespace",
             "adr",
-            "dirs"
+            "dirs",
+            "supervisord",
+            "middleware",
+            "acked"
         ],
         "paths": [
             "vendor"

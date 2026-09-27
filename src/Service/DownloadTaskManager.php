@@ -13,9 +13,25 @@ final readonly class DownloadTaskManager
     {
     }
 
-    public function markProcessing(int $taskId): void
+    /**
+     * Atomically claims a queued task for processing. There is no wrapping transaction
+     * (messenger has no doctrine_transaction middleware on purpose), so the UPDATE
+     * commits immediately: the task becomes visible as "processing" while the download
+     * is still running. Returning false means the task is gone, already processing,
+     * or finished — the message is a duplicate and must be skipped.
+     */
+    public function claimProcessing(int $taskId): bool
     {
-        $this->markStatus($taskId, DownloadTask::STATUS_PROCESSING);
+        $affected = (int) $this->em->getConnection()->executeStatement(
+            'UPDATE download_task SET status = :processing WHERE id = :id AND status = :queued',
+            [
+                'id'         => $taskId,
+                'processing' => DownloadTask::STATUS_PROCESSING,
+                'queued'     => DownloadTask::STATUS_QUEUED,
+            ],
+        );
+
+        return $affected > 0;
     }
 
     public function markSuccess(int $taskId): void

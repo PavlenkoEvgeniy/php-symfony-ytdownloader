@@ -7,6 +7,7 @@ namespace App\Controller\Admin;
 use App\Entity\User;
 use App\Repository\DownloadTaskRepository;
 use App\Service\QueuePurgeService;
+use App\Service\QueueResetService;
 use App\Service\QueueStatsService;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
@@ -68,6 +69,29 @@ final class DashboardController extends AbstractDashboardController
         $this->addFlash(
             'success',
             \sprintf('Purged %d task(s) and %d pending message(s).', $result['tasks'], $result['messages']),
+        );
+
+        return $this->redirectToRoute('admin_active_tasks');
+    }
+
+    /**
+     * Reset stuck work: processing tasks go back to queued and stuck in-flight
+     * transport messages become deliverable again.
+     */
+    #[AdminRoute(path: '/reset-stuck-tasks', name: 'reset_stuck_tasks', options: ['methods' => ['POST']])]
+    public function resetStuckTasks(Request $request, QueueResetService $queueResetService): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('reset_stuck_tasks', $request->getPayload()->getString('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+
+            return $this->redirectToRoute('admin_active_tasks');
+        }
+
+        $result = $queueResetService->reset();
+
+        $this->addFlash(
+            'success',
+            \sprintf('Reset %d processing task(s) and %d stuck message(s).', $result['processing'], $result['messages']),
         );
 
         return $this->redirectToRoute('admin_active_tasks');

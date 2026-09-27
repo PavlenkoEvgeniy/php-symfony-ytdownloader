@@ -18,6 +18,16 @@
                 </button>
             </form>
         {% endif %}
+
+        {% if stats.queued > 0 or stats.processing > 0 %}
+            <form method="post" action="{{ ea_url().setRoute('admin_reset_stuck_tasks') }}"
+                  onsubmit="return confirm('Reset processing task(s) to queued and redeliver stuck messages? Make sure no download is currently running.')">
+                <input type="hidden" name="_token" value="{{ csrf_token('reset_stuck_tasks') }}">
+                <button type="submit" class="btn btn-sm btn-outline-warning" title="Reset processing tasks and redeliver stuck messages">
+                    <i class="fa-solid fa-rotate-left"></i> Reset Stuck
+                </button>
+            </form>
+        {% endif %}
     </div>
 
     <div class="table-responsive">

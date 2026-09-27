@@ -76,7 +76,8 @@ RUN apt-get install aspell aspell-en -y
 COPY ensure-app-dirs.sh /usr/local/bin/ensure-app-dirs.sh
 RUN chmod +x /usr/local/bin/ensure-app-dirs.sh
 ENTRYPOINT ["/usr/local/bin/ensure-app-dirs.sh"]
-# ENTRYPOINT resets any CMD inherited from the base image, so php-fpm must be
-# set back explicitly — without it the container starts with no command and
-# exits with code 0 immediately.
-CMD ["php-fpm"]
+# The container runs supervisord as PID 1 with php-fpm and the messenger workers
+# as supervised programs, so a bare "docker compose up" always runs the workers
+# (see ADR-0003). Previously the workers were started by a manual make target,
+# and every restart that skipped it left the container alive with a frozen queue.
+CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]
