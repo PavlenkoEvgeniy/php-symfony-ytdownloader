@@ -29,3 +29,13 @@ _Avoid_: RabbitMQ, broker queue, exchange
 
 **Worker**:
 The supervisor-driven background process that consumes messages and performs downloads.
+
+### Release & Deploy
+
+**Release**:
+The event of pushing a new `v*` git tag. The only permitted basis for putting a new version on the VPS.
+_Avoid_: build, version
+
+**Deploy**:
+Running the deploy script on the VPS. Always follows a Release; a push to `master` alone never deploys.
+_Avoid_: ship, publish

@@ -2,7 +2,10 @@ name: Lint and Test
 
 on:
   push:
+    branches:
+      - '**'
   pull_request:
+  workflow_call:
 
 permissions:
   contents: read
@@ -24,7 +27,7 @@ jobs:
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -41,7 +44,7 @@ jobs:
 
       - name: Build and push php-fpm image
         uses: docker/build-push-action@v5
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         with:
           context: docker/sourcefiles/php-fpm
           file: docker/sourcefiles/php-fpm/Dockerfile

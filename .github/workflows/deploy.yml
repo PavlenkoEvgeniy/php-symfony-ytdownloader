@@ -1,17 +1,23 @@
 name: Deploy
 
 on:
-  workflow_run:
-    workflows: [ "Lint and Test" ]
-    types:
-      - completed
+  push:
+    tags: [ 'v*' ]
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
 
 jobs:
+  checks:
+    uses: ./.github/workflows/lint-and-test.yml
+    permissions:
+      contents: read
+      packages: write
+
   deploy:
     runs-on: ubuntu-latest
-    if: |
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'master'
+    needs: checks
 
     steps:
       - name: Checkout code
@@ -27,7 +33,8 @@ jobs:
             cd ${{ secrets.SSH_PROJECT_PATH }}
             make stop
             git stash
-            git pull origin master
+            git fetch origin --tags --force
+            git checkout --detach --force ${{ github.ref_name }}
             make build
             make restart
             make composer-install
