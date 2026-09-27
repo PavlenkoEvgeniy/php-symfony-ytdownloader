@@ -21,6 +21,12 @@ _Avoid_: running, in progress
 The status meaning "the worker has picked this task up". It is not a guarantee that the download is still running: if the worker dies mid-task, the task stays `processing` until it is redone.
 _Avoid_: running, in progress
 
+### Admin Panel
+
+**Admin Panel**:
+The EasyAdmin zone at `/admin`, gated by `ROLE_ADMIN`. The place for overview and administration — not a "dashboard" with widgets.
+_Avoid_: dashboard (the admin panel has menu items, not a dashboard)
+
 ### Queue
 
 **Queue**:

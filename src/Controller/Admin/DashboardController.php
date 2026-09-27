@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Entity\User;
+use App\Repository\DownloadTaskRepository;
+use App\Service\QueueStatsService;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
+use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
@@ -15,6 +18,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\UserMenu;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGeneratorInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
@@ -29,6 +33,20 @@ final class DashboardController extends AbstractDashboardController
                 ->setAction(Action::INDEX)
                 ->generateUrl()
         );
+    }
+
+    /**
+     * Display-only overview of the download queue: counters plus the recent active tasks.
+     */
+    #[AdminRoute(path: '/active-tasks', name: 'active_tasks')]
+    public function activeTasks(
+        QueueStatsService $queueStatsService,
+        DownloadTaskRepository $downloadTaskRepository,
+    ): Response {
+        return $this->render('admin/active_tasks.html.twig', [
+            'stats' => $queueStatsService->getStats(),
+            'tasks' => $downloadTaskRepository->getRecentActiveTasks(),
+        ]);
     }
 
     #[\Override]
@@ -57,6 +75,7 @@ final class DashboardController extends AbstractDashboardController
     #[\Override]
     public function configureMenuItems(): iterable
     {
+        yield MenuItem::linkToRoute('Active Tasks', 'fa-solid fa-list-check', 'admin_active_tasks');
         yield MenuItem::linkTo(UserCrudController::class, 'Users', 'fa fa-users');
         yield MenuItem::linkTo(SourceCrudController::class, 'Sources', 'fa-regular fa-file-video');
         yield MenuItem::linkTo(LogCrudController::class, 'Logs', 'fa-solid fa-book');

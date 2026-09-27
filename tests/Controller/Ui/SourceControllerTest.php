@@ -54,10 +54,14 @@ final class SourceControllerTest extends WebTestCase
         $this->assertArrayHasKey('processing', $data);
         $this->assertArrayHasKey('success', $data);
         $this->assertArrayHasKey('error', $data);
-        $this->assertArrayHasKey('tasks', $data);
+        $this->assertArrayNotHasKey('tasks', $data);
     }
 
-    public function testActiveTasksAreVisibleForAdmin(): void
+    /**
+     * Regression test for the move of the active tasks table to the admin panel:
+     * the UI page must not render the table for admins anymore, the admin panel owns it now.
+     */
+    public function testActiveTasksTableIsNotRenderedInUi(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
         $this->client->loginUser($user);
@@ -65,35 +69,7 @@ final class SourceControllerTest extends WebTestCase
         $this->client->request('GET', '/ui/source');
 
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorTextContains('body', 'Active tasks');
-    }
-
-    public function testActiveTasksAreHiddenForNonAdmin(): void
-    {
-        $user = $this->userRepository->findOneByEmail('user@test.local');
-        $this->client->loginUser($user);
-
-        $this->client->request('GET', '/ui/source');
-
-        $this->assertResponseIsSuccessful();
+        $this->assertSelectorNotExists('[data-tasks-body]');
         $this->assertSelectorTextNotContains('body', 'Active tasks');
-    }
-
-    public function testQueueStatsHidesTasksForNonAdmin(): void
-    {
-        $user = $this->userRepository->findOneByEmail('user@test.local');
-        $this->client->loginUser($user);
-
-        $this->client->request('GET', '/ui/source/queue-stats');
-
-        $this->assertResponseIsSuccessful();
-        $this->assertResponseFormatSame('json');
-
-        $content = $this->client->getResponse()->getContent() ?: '{}';
-        $data    = \json_decode($content, true);
-
-        $this->assertIsArray($data);
-        $this->assertArrayHasKey('tasks', $data);
-        $this->assertSame([], $data['tasks']);
     }
 }
