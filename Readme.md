@@ -60,32 +60,27 @@ violations.
    make db-setup
    ```
 
-5. **Start queue worker (if needed)**:
-   ```bash
-   make supervisor-start
-   ```
-
-6. **Create admin user by console command**:
+5. **Create admin user by console command**:
    ```bash
    make docker-php
    php bin/console app:user-add <username> [password]
    ```
 
-7. **Run tests**:
+6. **Run tests**:
    ```bash
    make test
    ```
-8. **Run tests with coverage**:
+7. **Run tests with coverage**:
    ```bash
    make test-coverage
    ```
 
-9. **List of all available 'make' commands**:
+8. **List of all available 'make' commands**:
     ```bash
     make help
     ```
 
-10. **Useful URLs**:
+9. **Useful URLs**:
    - Health check: `GET http://host.tld/health`
    - Admin dashboard: `GET http://host.tld/admin`
 

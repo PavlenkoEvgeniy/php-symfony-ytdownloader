@@ -31,7 +31,7 @@ services:
         volumes:
             - ./../:/application
             - ./sourcefiles/php-fpm/php-ini-overrides.ini:/usr/local/etc/php/conf.d/99-overrides.ini
-            - ./sourcefiles/php-fpm/conf.d/messenger-worker.conf:/etc/supervisor/conf.d/messenger-worker.conf
+            - ./sourcefiles/php-fpm/conf.d:/etc/supervisor/conf.d:ro
         networks:
             - internal
         extra_hosts:

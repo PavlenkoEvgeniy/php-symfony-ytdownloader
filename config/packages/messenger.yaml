@@ -14,9 +14,13 @@ framework:
         buses:
             messenger.bus.default:
                 middleware:
+                    # No doctrine_transaction middleware: it wrapped the whole download in one
+                    # transaction, so the task status (and progress logs) stayed invisible until
+                    # the download finished, and a kill mid-download left the message in flight
+                    # forever with the task rolled back to queued. Status marks commit
+                    # immediately instead (see CONTEXT.md "Processing" and QueueResetService).
                     - doctrine_ping_connection
                     - doctrine_close_connection
-                    - doctrine_transaction
 
         routing:
             App\Message\DownloadMessage: async

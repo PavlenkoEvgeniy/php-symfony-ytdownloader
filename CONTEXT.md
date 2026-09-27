@@ -36,9 +36,17 @@ _Avoid_: RabbitMQ, broker queue, exchange
 **Worker**:
 The supervisor-driven background process that consumes messages and performs downloads.
 
+**Stuck Task**:
+A task in `processing` that no worker is actually working on: the worker died mid-task and the status stayed behind. A discrepancy between status and reality, not a separate status.
+_Avoid_: zombie task, hanging task
+
 **Purge**:
 Irreversible deletion of all `queued` tasks together with every pending message in the messenger transports. Purge never touches non-`queued` tasks; the transport cleanup is part of it, not a separate act.
 _Avoid_: reset, clear, requeue (requeue means "run again", purge means "delete")
+
+**Reset**:
+Moving a stuck task from `processing` back to `queued` and re-dispatching it for processing. The counterpart of Purge: purge deletes, reset resumes.
+_Avoid_: retry, purge
 
 ### Users
 

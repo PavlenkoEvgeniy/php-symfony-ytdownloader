@@ -24,7 +24,11 @@ final readonly class DownloadMessageHandler
 
         // Messages dispatched before the task tracking was introduced have no task row.
         if (null !== $taskId) {
-            $this->taskManager->markProcessing($taskId);
+            // A failed claim means the task is gone, already processing or already
+            // finished: the message is a duplicate (e.g. redelivered after a reset).
+            if (!$this->taskManager->claimProcessing($taskId)) {
+                return;
+            }
         }
 
         $this->processYoutubeVideo->process($message->getUrl(), $message->getQuality(), $message->getTelegramUserId());

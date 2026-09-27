@@ -51,6 +51,22 @@ final class DownloadTaskRepository extends ServiceEntityRepository
     }
 
     /**
+     * Resets every processing task back to queued and returns their number.
+     * Intended for stuck tasks only — a task in processing may still be a live download.
+     */
+    public function resetProcessing(): int
+    {
+        return (int) $this->createQueryBuilder('t')
+            ->update()
+            ->set('t.status', ':queued')
+            ->where('t.status = :processing')
+            ->setParameter('queued', DownloadTask::STATUS_QUEUED)
+            ->setParameter('processing', DownloadTask::STATUS_PROCESSING)
+            ->getQuery()
+            ->execute();
+    }
+
+    /**
      * @return array<string, int>
      */
     public function getStatusCounts(): array

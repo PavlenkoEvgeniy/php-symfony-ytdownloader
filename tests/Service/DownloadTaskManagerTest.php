@@ -6,26 +6,42 @@ namespace App\Tests\Service;
 
 use App\Entity\DownloadTask;
 use App\Service\DownloadTaskManager;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 
 final class DownloadTaskManagerTest extends TestCase
 {
-    public function testMarkProcessingSetsStatus(): void
+    public function testClaimProcessingUpdatesQueuedTask(): void
     {
-        $task = new DownloadTask();
-        $task->setUrl('https://example.com')->setQuality('best');
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('executeStatement')
+            ->with(
+                'UPDATE download_task SET status = :processing WHERE id = :id AND status = :queued',
+                [
+                    'id'         => 1,
+                    'processing' => DownloadTask::STATUS_PROCESSING,
+                    'queued'     => DownloadTask::STATUS_QUEUED,
+                ],
+            )
+            ->willReturn(1);
 
         $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->once())
-            ->method('find')
-            ->with(DownloadTask::class, 1)
-            ->willReturn($task);
-        $em->expects($this->once())->method('flush');
+        $em->expects($this->once())->method('getConnection')->willReturn($connection);
 
-        (new DownloadTaskManager($em))->markProcessing(1);
+        $this->assertTrue((new DownloadTaskManager($em))->claimProcessing(1));
+    }
 
-        $this->assertSame(DownloadTask::STATUS_PROCESSING, $task->getStatus());
+    public function testClaimProcessingReturnsFalseWhenTaskIsNotQueued(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->method('executeStatement')->willReturn(0);
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('getConnection')->willReturn($connection);
+
+        $this->assertFalse((new DownloadTaskManager($em))->claimProcessing(1));
     }
 
     public function testMarkSuccessSetsStatus(): void
