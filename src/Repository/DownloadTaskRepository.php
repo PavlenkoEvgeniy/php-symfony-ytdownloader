@@ -38,6 +38,19 @@ final class DownloadTaskRepository extends ServiceEntityRepository
     }
 
     /**
+     * Bulk-deletes every task still waiting in the queue (queued status) and returns their number.
+     */
+    public function deleteQueued(): int
+    {
+        return (int) $this->createQueryBuilder('t')
+            ->delete()
+            ->where('t.status = :status')
+            ->setParameter('status', DownloadTask::STATUS_QUEUED)
+            ->getQuery()
+            ->execute();
+    }
+
+    /**
      * @return array<string, int>
      */
     public function getStatusCounts(): array
