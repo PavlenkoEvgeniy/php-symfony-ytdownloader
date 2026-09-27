@@ -53,4 +53,20 @@ final class DashboardControllerTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('div.alert-warning', 'Access denied.');
     }
+
+    /**
+     * Regression test: the admin menu is rendered on every CRUD page. A menu item
+     * configured with a wrong target (e.g. the pre-4.29 MenuItem::linkTo() argument
+     * order) throws during rendering of @EasyAdmin/menu.html.twig instead of
+     * returning a successful page.
+     */
+    public function testAdminCrudPageWithMenuRendersForAdminUser(): void
+    {
+        $user = $this->userRepository->findOneByEmail('admin@admin.local');
+        $this->client->loginUser($user);
+
+        $this->client->request('GET', '/admin/user');
+
+        $this->assertResponseIsSuccessful();
+    }
 }

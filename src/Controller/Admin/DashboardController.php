@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Entity\Log;
-use App\Entity\Source;
 use App\Entity\User;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -15,6 +13,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Config\UserMenu;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGeneratorInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -24,7 +23,12 @@ final class DashboardController extends AbstractDashboardController
     #[\Override]
     public function index(): RedirectResponse
     {
-        return $this->redirect('/admin/user');
+        return $this->redirect(
+            $this->container->get(AdminUrlGeneratorInterface::class)
+                ->setController(UserCrudController::class)
+                ->setAction(Action::INDEX)
+                ->generateUrl()
+        );
     }
 
     #[\Override]
@@ -53,9 +57,9 @@ final class DashboardController extends AbstractDashboardController
     #[\Override]
     public function configureMenuItems(): iterable
     {
-        yield MenuItem::linkTo('Users', 'fa fa-users', User::class);
-        yield MenuItem::linkTo('Sources', 'fa-regular fa-file-video', Source::class);
-        yield MenuItem::linkTo('Logs', 'fa-solid fa-book', Log::class);
+        yield MenuItem::linkTo(UserCrudController::class, 'Users', 'fa fa-users');
+        yield MenuItem::linkTo(SourceCrudController::class, 'Sources', 'fa-regular fa-file-video');
+        yield MenuItem::linkTo(LogCrudController::class, 'Logs', 'fa-solid fa-book');
         yield MenuItem::linkToUrl('Back to downloads', 'fa-solid fa-arrow-left', $this->generateUrl('ui_download_index'));
     }
 
