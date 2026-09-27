@@ -3,11 +3,21 @@
 {% block content_title 'Active Tasks' %}
 
 {% block main %}
-    <div class="mb-3 d-flex flex-wrap gap-2">
+    <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
         <span class="badge bg-secondary">Queued: {{ stats.queued }}</span>
         <span class="badge bg-primary">Processing: {{ stats.processing }}</span>
         <span class="badge bg-success">Success: {{ stats.success }}</span>
         <span class="badge bg-danger">Errors: {{ stats.error }}</span>
+
+        {% if stats.queued > 0 %}
+            <form method="post" action="{{ ea_url().setRoute('admin_purge_queue') }}"
+                  onsubmit="return confirm('Purge {{ stats.queued }} queued task(s) and all pending messages? This is irreversible.')">
+                <input type="hidden" name="_token" value="{{ csrf_token('purge_queue') }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete all queued tasks and pending messages">
+                    <i class="fa-solid fa-broom"></i> Purge Queue
+                </button>
+            </form>
+        {% endif %}
     </div>
 
     <div class="table-responsive">

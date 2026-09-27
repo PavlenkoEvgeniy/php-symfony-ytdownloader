@@ -36,6 +36,10 @@ _Avoid_: RabbitMQ, broker queue, exchange
 **Worker**:
 The supervisor-driven background process that consumes messages and performs downloads.
 
+**Purge**:
+Irreversible deletion of all `queued` tasks together with every pending message in the messenger transports. Purge never touches non-`queued` tasks; the transport cleanup is part of it, not a separate act.
+_Avoid_: reset, clear, requeue (requeue means "run again", purge means "delete")
+
 ### Users
 
 **Avatar**:

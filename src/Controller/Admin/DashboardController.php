@@ -6,6 +6,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\User;
 use App\Repository\DownloadTaskRepository;
+use App\Service\QueuePurgeService;
 use App\Service\QueueStatsService;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
@@ -18,6 +19,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\UserMenu;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGeneratorInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -47,6 +49,28 @@ final class DashboardController extends AbstractDashboardController
             'stats' => $queueStatsService->getStats(),
             'tasks' => $downloadTaskRepository->getRecentActiveTasks(),
         ]);
+    }
+
+    /**
+     * Purge the queue: delete every queued task together with all pending transport messages.
+     */
+    #[AdminRoute(path: '/purge-queue', name: 'purge_queue', options: ['methods' => ['POST']])]
+    public function purgeQueue(Request $request, QueuePurgeService $queuePurgeService): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('purge_queue', $request->getPayload()->getString('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+
+            return $this->redirectToRoute('admin_active_tasks');
+        }
+
+        $result = $queuePurgeService->purge();
+
+        $this->addFlash(
+            'success',
+            \sprintf('Purged %d task(s) and %d pending message(s).', $result['tasks'], $result['messages']),
+        );
+
+        return $this->redirectToRoute('admin_active_tasks');
     }
 
     #[\Override]
