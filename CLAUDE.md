@@ -12,7 +12,7 @@ All commands run **inside Docker containers** via `make` — never install depen
 
 ```bash
 make init          # Full setup: env files, containers, composer, JWT keys, DB, supervisor
-make restart       # Restart stack (down + up + supervisor + cache)
+make restart       # Restart stack (down + up + reset workers around cache:clear)
 make stop          # Stop all containers
 
 make test          # PHPUnit (recreates test DB: drop, create, migrate, load fixtures)
@@ -48,7 +48,7 @@ CI (`.github/workflows/lint-and-test.yml`) runs: php-cs-fixer, phpstan, psalm, p
 1. **Entry points** create a download request: web UI (`Controller/Ui/DownloadController`), REST API v1/v2 (`Controller/Api/V1|V2/DownloadController`), or Telegram bot (`Controller/Telegram/TelegramController` → `TelegramBotService`).
 2. `Service/DownloadDispatcher` **persists a `DownloadTask` entity first** (so it is visible as `queued`), then dispatches a `Message/DownloadMessage` on the Messenger bus — this ordering guarantees every dispatched message has a matching task row.
 3. Transport is **Doctrine (PostgreSQL)**, not a message broker: `config/packages/messenger.yaml` routes `DownloadMessage` to the `async` transport (`download_queue` table), with a `failed` transport for retries-exhausted messages. RabbitMQ was removed — do not reintroduce broker queues.
-4. A **supervisor-managed worker** inside the `ytdownloader-php-fpm` container consumes messages — supervisord is the container's main process (ADR-0003), so workers start with the container itself. If the worker dies mid-task, the task row stays `processing` until redone via "Reset Stuck" — `processing` means "picked up", not "guaranteed running".
+4. A **supervisor-managed worker** inside the `ytdownloader-php-fpm` container consumes messages — supervisord is the container's main process (ADR-0003), so workers start with the container itself. If the worker dies mid-task, the task row stays `processing` until redone via "Reset Stuck" — `processing` means "picked up", not "guaranteed running". A one-shot supervisord program (`queue-reset-once`) runs `app:task:reset-stuck` at container start, so a restart self-heals a wedged queue. `make restart` stops the workers around `cache:clear` — cache operations under live workers kill them (the compiled container files are deleted), and a message a dead worker already fetched is never redelivered, so its task stays `queued`/`processing` forever.
 5. `MessageHandler/DownloadMessageHandler` marks the task `processing` via `DownloadTaskManager`, calls `VideoDownloaderService` (implementation of `Service/VideoProcessorInterface`), then marks `success`. `EventSubscriber/DownloadTaskFailureListener` handles the `error` state.
 6. `VideoDownloaderService` resolves the format via `FormatResolver` (best|moderate|poor|audio), downloads via `YoutubeDlWrapper`, persists each result as a `Source` entity (`SourceManager`), logs progress rows via `LogManager` (shown in the admin UI), and notifies the requester through `TelegramNotifier` when a Telegram user id is attached.
 7. `QueueStatsService` reports queue counters derived from task statuses in the DB.
