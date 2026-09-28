@@ -39,7 +39,7 @@ php bin/phpunit --filter TestClassNameOrFilter
 
 The test DB is rebuilt (dropped, created, migrated, fixtures loaded) by `make test` before phpunit runs; when iterating on a single test, the DB setup steps can be skipped and only `php bin/phpunit --filter ...` re-run. Fixtures are grouped; `make test` loads group `all`.
 
-CI (`.github/workflows/lint-and-test.yml`) runs: php-cs-fixer, phpstan, psalm, peck (grammar), composer audit, and PHPUnit — each in the prebuilt php-fpm image pulled from GHCR. Deploy (`.github/workflows/deploy.yml`) auto-runs on successful lint-and-test of `master`: SSH to VPS, `git pull`, pull the prebuilt `ci-<sha>` php-fpm image from GHCR (ADR-0005) instead of building on the VPS, migrate, clear cache.
+CI (`.github/workflows/lint-and-test.yml`) runs: php-cs-fixer, phpstan, psalm, peck (grammar), composer audit, and PHPUnit — each in the prebuilt php-fpm image pulled from GHCR. Deploy (`.github/workflows/deploy.yml`) runs on a pushed `v*` tag (and manually via `workflow_dispatch` with a `tag` input to re-run a failed tag deploy): it runs lint-and-test first (which pushes the `ci-<sha>` php-fpm image to GHCR), then SSHes to the VPS, checks out the tag, pulls that image (ADR-0005) instead of building on the VPS, migrates, clears cache and restarts the stack. The deploy script is idempotent, so a failed deploy is fixed by re-running it for the same tag.
 
 ## Architecture
 
