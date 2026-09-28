@@ -3,6 +3,14 @@ name: Deploy
 on:
   push:
     tags: [ 'v*' ]
+  # Lets a failed deploy be re-run for the same tag (workflow_dispatch input)
+  # without creating a new version tag.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to deploy (defaults to github.ref_name)'
+        required: false
+        type: string
 
 concurrency:
   group: deploy
@@ -18,6 +26,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: checks
+    # appleboy/ssh-action `envs` only forwards variables that already exist in
+    # the runner env: GITHUB_SHA is built-in, but a secret must be mapped to an
+    # env var explicitly, otherwise the script sees it empty ("password is
+    # empty" from docker login).
+    env:
+      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
     steps:
       - name: Checkout code
@@ -35,17 +49,24 @@ jobs:
           # The image pull replaces the local build, so deploys take minutes,
           # not the 10m+ that used to trip the default command timeout.
           command_timeout: 20m
-          envs: GITHUB_SHA,GHCR_TOKEN
+          # GHCR_TOKEN is provided by the job-level env mapping above.
+          envs: GHCR_TOKEN
           script: |
             cd ${{ secrets.SSH_PROJECT_PATH }}
             export DOCKER_COMPOSE_FILES="docker/docker-compose.yml docker/docker-compose.prod.yml"
-            export PHP_FPM_IMAGE_TAG="ci-$GITHUB_SHA"
+            # On workflow_dispatch GITHUB_SHA is the sha of the branch the run
+            # was dispatched on, not of the deployed tag — resolve the tag and
+            # its commit explicitly.
+            export DEPLOY_TAG="${{ inputs.tag || github.ref_name }}"
             git stash
             git fetch origin --tags --force
             # Checkout runs before make stop: the new Makefile needs
             # docker/docker-compose.prod.yml, which the previous checkout may
             # not have (a stopped stack is not required for git operations).
-            git checkout --detach --force ${{ github.ref_name }}
+            git checkout --detach --force "$DEPLOY_TAG"
+            # The image tag must be the sha of the checked-out commit (the one
+            # lint-and-test built), never the triggering run's GITHUB_SHA.
+            export PHP_FPM_IMAGE_TAG="ci-$(git rev-parse HEAD)"
             echo "$GHCR_TOKEN" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             # Pull while the old stack is still running, so downtime is limited
             # to the stop -> restart window.
