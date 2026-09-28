@@ -39,7 +39,7 @@ php bin/phpunit --filter TestClassNameOrFilter
 
 The test DB is rebuilt (dropped, created, migrated, fixtures loaded) by `make test` before phpunit runs; when iterating on a single test, the DB setup steps can be skipped and only `php bin/phpunit --filter ...` re-run. Fixtures are grouped; `make test` loads group `all`.
 
-CI (`.github/workflows/lint-and-test.yml`) runs: php-cs-fixer, phpstan, psalm, peck (grammar), composer audit, and PHPUnit — each in the prebuilt php-fpm image pulled from GHCR. Deploy (`.github/workflows/deploy.yml`) auto-runs on successful lint-and-test of `master`: SSH to VPS, `git pull`, rebuild, migrate, clear cache.
+CI (`.github/workflows/lint-and-test.yml`) runs: php-cs-fixer, phpstan, psalm, peck (grammar), composer audit, and PHPUnit — each in the prebuilt php-fpm image pulled from GHCR. Deploy (`.github/workflows/deploy.yml`) auto-runs on successful lint-and-test of `master`: SSH to VPS, `git pull`, pull the prebuilt `ci-<sha>` php-fpm image from GHCR (ADR-0005) instead of building on the VPS, migrate, clear cache.
 
 ## Architecture
 

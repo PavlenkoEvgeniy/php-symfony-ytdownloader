@@ -8,9 +8,9 @@ help:
 	@echo "4. build ...................................... Build docker compose containers."
 	@echo "5. restart ......................... Restart application with existing database."
 	@echo "6. stop ............................ Stop application, make down all containers."
-	@echo "7. supervisor-status .................. Show supervisor programs status."
-	@echo "8. supervisor-restart ...... Reread worker config on the live container."
-	@echo "9. docker-compose-up ............................ Up docker compose containers."
+	@echo "7. supervisor-status .......................... Show supervisor programs status."
+	@echo "8. supervisor-restart .............. Reread worker config on the live container."
+	@echo "9. docker-compose-up ............................. Up docker compose containers."
 	@echo "10. docker-compose-down ........................ Down docker compose containers."
 	@echo "11. composer-install ............................ Install composer dependencies."
 	@echo "12. composer-update .............................. Update composer dependencies."
@@ -36,7 +36,8 @@ help:
 	@echo "32. generate-jwt-keypair ................................ Generate JWT key pair."
 	@echo "33. telegram-bot-hook ................................ Add Telegram bot webhook."
 	@echo "34. telegram-bot-unhook ........................... Remove Telegram bot webhook."
-	@echo "35. security-check ........... Check Composer packages for known security issues."
+	@echo "35. security-check .......... Check Composer packages for known security issues."
+	@echo "36. pull ............................ Pull prebuilt php-fpm image (prod deploy)."
 	@echo "+------------------------------------------------------------------------------+"
 
 env-setup:
@@ -48,6 +49,13 @@ ci-cd-init: composer-install generate-jwt-keypair db-setup cache-clear
 
 build:
 	docker compose -f docker/docker-compose.yml up -d --build
+
+# Pull the prebuilt php-fpm image instead of building it on the host — used by
+# the production deploy (see docs/adr/0005-prod-pulls-prebuilt-ci-image.md).
+# The compose files come from DOCKER_COMPOSE_FILES; prod additionally sets
+# PHP_FPM_IMAGE_TAG (the compose override refuses to run without it).
+pull:
+	docker compose $(foreach file,$(DOCKER_COMPOSE_FILES),-f $(file)) pull php-fpm
 
 # Workers start with the container (supervisord is PID 1, see ADR-0003),
 # so no manual supervisor start is needed anywhere. Cache operations replace
