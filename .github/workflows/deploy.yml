@@ -29,16 +29,26 @@ jobs:
           host: ${{ secrets.SSH_VPS_HOST }}
           username: ${{ secrets.SSH_VPS_USERNAME }}
           password: ${{ secrets.SSH_VPS_PASSWORD }}
+          # Fail fast: without it the script keeps running after a failed step
+          # and the action still reports success on a half-deployed stack.
+          script_stop: true
+          # The image pull replaces the local build, so deploys take minutes,
+          # not the 10m+ that used to trip the default command timeout.
+          command_timeout: 20m
+          envs: GITHUB_SHA,GHCR_TOKEN
           script: |
             cd ${{ secrets.SSH_PROJECT_PATH }}
+            export DOCKER_COMPOSE_FILES="docker/docker-compose.yml docker/docker-compose.prod.yml"
+            export PHP_FPM_IMAGE_TAG="ci-$GITHUB_SHA"
             make stop
             git stash
             git fetch origin --tags --force
             git checkout --detach --force ${{ github.ref_name }}
-            make build
+            # Only safe while the stack is stopped (see the Makefile cache-purge comment).
+            make cache-purge
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            make pull
             make restart
             make composer-install
             docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate --no-interaction
-            make cache-clear
-            make cache-purge
-            docker system prune --all --force
+            docker image prune -af --filter "until=168h"

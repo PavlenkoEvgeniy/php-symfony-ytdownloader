@@ -1,0 +1,8 @@
+# Production override: php-fpm is pulled from GHCR instead of being built on the
+# host (see docs/adr/0005-prod-pulls-prebuilt-ci-image.md). Use together with the
+# base compose file via DOCKER_COMPOSE_FILES (see the Makefile) and set
+# PHP_FPM_IMAGE_TAG to the ci-<sha> tag produced by the lint-and-test workflow.
+services:
+    php-fpm:
+        image: ghcr.io/pavlenkoevgeniy/php-symfony-ytdownloader/php-fpm:${PHP_FPM_IMAGE_TAG:?required}
+        pull_policy: always
