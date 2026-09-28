@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}YoutubeDownload :: Theme{% endblock %}
+
+{% block body %}
+    <div class="d-flex justify-content-between my-4">
+        <a class="btn btn-outline-success" href="{{ path('ui_profile_index') }}">Go back to profile</a>
+    </div>
+
+    <h1 class="mt-4">Theme:</h1>
+    <p class="mt-2 text-secondary">"Auto" follows the theme of your system.</p>
+    <div class="theme-toggle">
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="theme" id="theme-auto" value="auto" data-theme-option="auto">
+            <label class="form-check-label" for="theme-auto">Auto</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="theme" id="theme-dark" value="dark" data-theme-option="dark">
+            <label class="form-check-label" for="theme-dark">Dark</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="theme" id="theme-light" value="light" data-theme-option="light">
+            <label class="form-check-label" for="theme-light">Light</label>
+        </div>
+        <button type="button" id="theme-save" class="btn btn-primary mt-2">Save</button>
+    </div>
+{% endblock %}
