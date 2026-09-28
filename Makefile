@@ -50,8 +50,12 @@ build:
 	docker compose -f docker/docker-compose.yml up -d --build
 
 # Workers start with the container (supervisord is PID 1, see ADR-0003),
-# so no manual supervisor start is needed anywhere.
-restart: docker-compose-down docker-compose-up cache-clear cache-purge
+# so no manual supervisor start is needed anywhere. Cache operations replace
+# var/cache/ under the running workers and kill them mid-message (a delivered
+# message is never redelivered, so the task stays queued forever), which is why
+# restart stops the workers around cache:clear. A one-shot queue reset runs at
+# container start (see conf.d/queue-reset-once.conf).
+restart: docker-compose-down docker-compose-up worker-stop cache-clear worker-start
 
 stop: docker-compose-down
 
@@ -61,6 +65,15 @@ supervisor-status:
 supervisor-restart:
 	docker exec ytdownloader-php-fpm supervisorctl reread
 	docker exec ytdownloader-php-fpm supervisorctl update
+
+# Only safe while the stack is up; used by restart to keep workers away from
+# cache:clear (see the restart comment). The wait covers the gap between
+# "docker compose up -d" returning and supervisord creating its socket.
+worker-stop:
+	docker exec ytdownloader-php-fpm sh -c 'for i in $$(seq 1 30); do supervisorctl stop messenger-consume:* >/dev/null 2>&1 && exit 0; sleep 1; done; supervisorctl status'
+
+worker-start:
+	docker exec ytdownloader-php-fpm supervisorctl start messenger-consume:*
 
 DOCKER_COMPOSE_FILES ?= docker/docker-compose.yml
 DOCKER_COMPOSE_UP_ARGS ?=
@@ -124,6 +137,9 @@ docker-pgsql:
 cache-clear:
 	docker exec ytdownloader-php-fpm php bin/console cache:clear
 
+# Manual escape hatch: wipes the whole cache directory. Run it only while the
+# stack is stopped — deleting the compiled container under live workers kills
+# them mid-message (see the restart comment).
 cache-purge:
 	rm -rf ./var/cache/
 
