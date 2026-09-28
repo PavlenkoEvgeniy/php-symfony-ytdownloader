@@ -67,7 +67,8 @@
             "dirs",
             "supervisord",
             "middleware",
-            "acked"
+            "acked",
+            "prebuilt"
         ],
         "paths": [
             "vendor"

@@ -8,9 +8,9 @@ help:
 	@echo "4. build ...................................... Build docker compose containers."
 	@echo "5. restart ......................... Restart application with existing database."
 	@echo "6. stop ............................ Stop application, make down all containers."
-	@echo "7. supervisor-status .................. Show supervisor programs status."
-	@echo "8. supervisor-restart ...... Reread worker config on the live container."
-	@echo "9. docker-compose-up ............................ Up docker compose containers."
+	@echo "7. supervisor-status .......................... Show supervisor programs status."
+	@echo "8. supervisor-restart .............. Reread worker config on the live container."
+	@echo "9. docker-compose-up ............................. Up docker compose containers."
 	@echo "10. docker-compose-down ........................ Down docker compose containers."
 	@echo "11. composer-install ............................ Install composer dependencies."
 	@echo "12. composer-update .............................. Update composer dependencies."
@@ -36,8 +36,8 @@ help:
 	@echo "32. generate-jwt-keypair ................................ Generate JWT key pair."
 	@echo "33. telegram-bot-hook ................................ Add Telegram bot webhook."
 	@echo "34. telegram-bot-unhook ........................... Remove Telegram bot webhook."
-	@echo "35. security-check ........... Check Composer packages for known security issues."
-	@echo "36. pull ......................... Pull prebuilt php-fpm image (prod deploy)."
+	@echo "35. security-check .......... Check Composer packages for known security issues."
+	@echo "36. pull ............................ Pull prebuilt php-fpm image (prod deploy)."
 	@echo "+------------------------------------------------------------------------------+"
 
 env-setup:
