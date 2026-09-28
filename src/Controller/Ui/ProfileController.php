@@ -51,4 +51,11 @@ class ProfileController extends AbstractController
             'form' => $form->createView(),
         ]);
     }
+
+    #[Route('/ui/profile/theme', name: 'ui_profile_theme')]
+    #[IsGranted('ROLE_USER')]
+    public function theme(): Response
+    {
+        return $this->render('ui/profile/theme.html.twig');
+    }
 }

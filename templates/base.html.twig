@@ -3,16 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        // Theme switcher for the web UI: modes are auto / dark / light, the
+        // choice is persisted in localStorage. Runs before the stylesheets
+        // load to avoid a flash of the light theme on page load.
+        (function () {
+            const storageKey = 'ytdownloader-theme';
+            const modes = ['auto', 'dark', 'light'];
+
+            function readMode() {
+                try {
+                    const stored = localStorage.getItem(storageKey);
+                    return modes.includes(stored) ? stored : 'auto';
+                } catch (e) {
+                    return 'auto';
+                }
+            }
+
+            function apply(mode) {
+                const dark = mode === 'dark' || (mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                document.documentElement.dataset.bsTheme = dark ? 'dark' : 'light';
+                document.documentElement.dataset.themeMode = mode;
+            }
+
+            apply(readMode());
+
+            // Follow live system theme changes while in "auto" mode.
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+                if (readMode() === 'auto') {
+                    apply('auto');
+                }
+            });
+
+            document.addEventListener('DOMContentLoaded', function () {
+                // Reflect the current mode in the radio group of the theme page.
+                document.querySelectorAll('[data-theme-option]').forEach(function (input) {
+                    input.checked = input.dataset.themeOption === readMode();
+                });
+
+                // Apply only on save, like any other profile setting.
+                const saveButton = document.getElementById('theme-save');
+                if (!saveButton) {
+                    return;
+                }
+                saveButton.addEventListener('click', function () {
+                    const checked = document.querySelector('[name="theme"]:checked');
+                    const next = checked ? checked.value : readMode();
+                    try {
+                        localStorage.setItem(storageKey, next);
+                    } catch (e) {
+                        // Storage unavailable - still switch the theme for this page view.
+                    }
+                    apply(next);
+                });
+            });
+        })();
+    </script>
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
     <link rel="stylesheet" href="{{ asset('css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
     <title>{% block title %}{% endblock %}</title>
 </head>
 <body class="container">
     {% block body %}{% endblock %}
-</body>
+    </body>
     <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
     {% block javascript %}{% endblock %}
 </html>
