@@ -78,6 +78,6 @@ jobs:
             docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate --no-interaction
             make stop
             # Only safe while the stack is stopped (see the Makefile cache-purge comment).
-            make cache-purge
             make restart
+            make cache-purge
             docker image prune -af --filter "until=168h"
