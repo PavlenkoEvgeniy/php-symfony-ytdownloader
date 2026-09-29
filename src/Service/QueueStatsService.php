@@ -6,13 +6,12 @@ namespace App\Service;
 
 use App\Entity\DownloadTask;
 use App\Repository\DownloadTaskRepository;
-use App\Repository\SourceRepository;
 
 final readonly class QueueStatsService
 {
     public function __construct(
         private DownloadTaskRepository $downloadTaskRepository,
-        private SourceRepository $sourceRepository,
+        private DownloadMetricManager $downloadMetricManager,
     ) {
     }
 
@@ -34,7 +33,7 @@ final readonly class QueueStatsService
             'processing' => $counts[DownloadTask::STATUS_PROCESSING],
             'success'    => $counts[DownloadTask::STATUS_SUCCESS],
             'error'      => $counts[DownloadTask::STATUS_ERROR],
-            'totalSize'  => $this->sourceRepository->getTotalSize(),
+            'totalSize'  => (int) $this->downloadMetricManager->getTotal(),
         ];
     }
 }

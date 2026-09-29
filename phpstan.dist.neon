@@ -21,6 +21,9 @@ parameters:
         - identifier: method.unresolvableReturnType
           message: '#TestCase::createMock\(\)#'
           path: tests/Security/UserCheckerTest.php
+        - identifier: method.unresolvableReturnType
+          message: '#TestCase::createMock\(\)#'
+          path: tests/Service/SourceManagerTest.php
 
     level: 6
     paths:

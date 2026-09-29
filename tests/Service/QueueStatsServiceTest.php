@@ -6,6 +6,7 @@ namespace App\Tests\Service;
 
 use App\Entity\DownloadTask;
 use App\Service\QueueStatsService;
+use App\Service\SourceManager;
 use Doctrine\ORM\EntityManager;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -62,5 +63,25 @@ final class QueueStatsServiceTest extends KernelTestCase
         $this->assertSame($before['success'], $stats['success']);
         $this->assertSame($before['error'], $stats['error']);
         $this->assertSame($before['totalSize'], $stats['totalSize']);
+    }
+
+    public function testTotalSizeSurvivesSourceRemoval(): void
+    {
+        $beforeTotal = $this->queueStatsService->getStats()['totalSize'];
+
+        $sourceManager = self::getContainer()->get(SourceManager::class);
+
+        $source = $sourceManager->createFromDownloadedFile('issue-77-fixture.mp4', '/tmp', 1234.0);
+        $this->em->flush();
+
+        $statsAfterDownload = $this->queueStatsService->getStats();
+        $this->assertSame($beforeTotal + 1234, $statsAfterDownload['totalSize']);
+
+        $this->em->remove($source);
+        $this->em->flush();
+
+        // Deleting the source never reduces the lifetime counter (issue #77).
+        $stats = $this->queueStatsService->getStats();
+        $this->assertSame($statsAfterDownload['totalSize'], $stats['totalSize']);
     }
 }
