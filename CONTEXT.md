@@ -48,6 +48,12 @@ _Avoid_: reset, clear, requeue (requeue means "run again", purge means "delete")
 Moving a stuck task from `processing` back to `queued` and re-dispatching it for processing. The counterpart of Purge: purge deletes, reset resumes.
 _Avoid_: retry, purge
 
+### Statistics
+
+**Total Downloaded**:
+The lifetime sum of bytes downloaded into the library. Deleting sources never reduces it.
+_Avoid_: storage size, total size (the counter is not derived from the stored sources)
+
 ### Users
 
 **Avatar**:

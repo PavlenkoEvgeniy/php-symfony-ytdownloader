@@ -6,6 +6,7 @@ namespace App\Tests\Service;
 
 use App\Entity\Source;
 use App\Repository\SourceRepository;
+use App\Service\DownloadMetricManager;
 use App\Service\SourceManager;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
@@ -27,7 +28,7 @@ final class SourceManagerTest extends TestCase
 
         $em = $this->createMock(EntityManagerInterface::class);
 
-        $manager = new SourceManager($em, $repository);
+        $manager = new SourceManager($em, $repository, $this->createMock(DownloadMetricManager::class));
 
         $this->assertSame($source, $manager->findByFilename('foo.mp4'));
     }
@@ -48,7 +49,10 @@ final class SourceManagerTest extends TestCase
                     && 123.4 === $source->getSize();
             }));
 
-        $manager = new SourceManager($em, $repository);
+        $downloadMetricManager = $this->createMock(DownloadMetricManager::class);
+        $downloadMetricManager->expects($this->once())->method('increment')->with(123.4);
+
+        $manager = new SourceManager($em, $repository, $downloadMetricManager);
 
         $source = $manager->createFromDownloadedFile('bar.mp4', '/tmp', 123.4);
 
@@ -67,7 +71,7 @@ final class SourceManagerTest extends TestCase
 
         $em->expects($this->once())->method('flush');
 
-        $manager = new SourceManager($em, $repository);
+        $manager = new SourceManager($em, $repository, $this->createMock(DownloadMetricManager::class));
         $manager->flush();
     }
 }

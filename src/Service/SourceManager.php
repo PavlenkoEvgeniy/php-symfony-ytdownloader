@@ -13,6 +13,7 @@ final readonly class SourceManager
     public function __construct(
         private EntityManagerInterface $em,
         private SourceRepository $sourceRepository,
+        private DownloadMetricManager $downloadMetricManager,
     ) {
     }
 
@@ -30,6 +31,7 @@ final readonly class SourceManager
             ->setSize($size);
 
         $this->em->persist($source);
+        $this->downloadMetricManager->increment($size);
 
         return $source;
     }
