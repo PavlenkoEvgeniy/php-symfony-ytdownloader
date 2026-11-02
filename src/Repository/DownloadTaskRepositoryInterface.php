@@ -15,6 +15,11 @@ interface DownloadTaskRepositoryInterface
 
     public function deleteQueued(): int;
 
+    /**
+     * @return DownloadTask[]
+     */
+    public function findProcessingTasks(): array;
+
     public function resetProcessing(): int;
 
     /**

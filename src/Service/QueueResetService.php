@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Message\DownloadMessage;
 use App\Repository\DownloadTaskRepositoryInterface;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * Resets stuck work: processing tasks go back to queued, and in-flight transport
@@ -23,6 +25,7 @@ final readonly class QueueResetService implements QueueResetServiceInterface
     public function __construct(
         private EntityManagerInterface $entityManager,
         private DownloadTaskRepositoryInterface $downloadTaskRepository,
+        private MessageBusInterface $messageBus,
     ) {
     }
 
@@ -32,6 +35,7 @@ final readonly class QueueResetService implements QueueResetServiceInterface
      */
     public function reset(): array
     {
+        $tasks      = $this->downloadTaskRepository->findProcessingTasks();
         $connection = $this->entityManager->getConnection();
         $processing = 0;
         $messages   = 0;
@@ -46,6 +50,17 @@ final readonly class QueueResetService implements QueueResetServiceInterface
                 ['queueNames' => ArrayParameterType::STRING],
             );
         });
+
+        // A killed worker may have already acked the message, so redelivery alone
+        // cannot restart the task; the handler's claim guard skips duplicates.
+        foreach ($tasks as $task) {
+            $this->messageBus->dispatch(new DownloadMessage(
+                $task->getUrlOrFail(),
+                $task->getQualityOrFail(),
+                '',
+                $task->getIdOrFail(),
+            ));
+        }
 
         return ['processing' => $processing, 'messages' => $messages];
     }
