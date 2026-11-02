@@ -70,6 +70,7 @@ jobs:
             fi
             # Install/migrate in the old container so workers start with the new code.
             make composer-install
+            docker exec ytdownloader-php-fpm php bin/console asset-map:compile
             docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate --no-interaction
             make stop
             # Only safe while the stack is stopped (see the Makefile cache-purge comment).

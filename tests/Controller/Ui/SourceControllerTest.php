@@ -66,7 +66,7 @@ final class SourceControllerTest extends WebTestCase
 
         $this->client->request(Request::METHOD_GET, '/ui/source');
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorTextContains('a', '+ Add new download');
+        $this->assertSelectorTextContains('a.btn-gradient[href="/ui/download"]', '+ Add new download');
     }
 
     /**
