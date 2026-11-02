@@ -33,11 +33,10 @@
         <div class="col-sm-3 col-md-2 col-lg-1">
             <form method="get" action="{{ path('ui_source_index') }}">
                 <label for="sort_by_select" class="visually-hidden">{{ 'ui.source.sort'|trans }}</label>
-                <select id="sort_by_select" name="order" class="form-select form-select-sm">
+                <select id="sort_by_select" name="order" class="form-select form-select-sm" onchange="this.form.requestSubmit()">
                     <option value="asc" {{ order == 'asc' ? 'selected' : '' }}>{{ 'ui.source.date_asc'|trans }}</option>
                     <option value="desc" {{ order == 'desc' ? 'selected' : '' }}>{{ 'ui.source.date_desc'|trans }}</option>
                 </select>
-                <button type="submit" class="btn btn-sm btn-outline-secondary mt-1">{{ 'ui.source.apply'|trans }}</button>
             </form>
         </div>
     {% endif %}
@@ -59,7 +58,7 @@
                     <td class="text-center">{{ source.size|readable_filesize(2) }}</td>
                     <td class="d-grid gap-2 text-center">
                         <div>
-                            <a class="btn btn-outline-success" href="{{ path('ui_source_download', {'id': source.id}) }}">
+                            <a class="btn btn-outline-success" href="{{ path('ui_source_download', {'id': source.id}) }}" data-turbo="false">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5l5 5 5-5m-5 5V3"/>
                                 </svg>
