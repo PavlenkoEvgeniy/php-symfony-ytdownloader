@@ -10,7 +10,6 @@ use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -26,14 +25,9 @@ final class IndexController extends AbstractController
 
     public function __invoke(
         Request $request,
-        SessionInterface $session,
         #[MapQueryParameter]
         string $order = 'desc',
     ): Response {
-        if ($session->has('lastSelectedOrder')) {
-            $order = (string) $session->get('lastSelectedOrder');
-        }
-
         $files = $this->sourceRepository->findAllOrderedByCreatedAt($order);
 
         $perPage = 10;

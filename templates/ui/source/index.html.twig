@@ -31,14 +31,14 @@
     </div>
     {% if pagination is not empty %}
         <div class="col-sm-3 col-md-2 col-lg-1">
-            <div class="d-flex flex-column gap-1">
-                <a class="btn btn-sm btn-outline-secondary" href="{{ path('ui_source_index', {'order': 'asc'}) }}">
-                    {{ 'ui.source.date_asc'|trans }}
-                </a>
-                <a class="btn btn-sm btn-outline-secondary" href="{{ path('ui_source_index', {'order': 'desc'}) }}">
-                    {{ 'ui.source.date_desc'|trans }}
-                </a>
-            </div>
+            <form method="get" action="{{ path('ui_source_index') }}">
+                <label for="sort_by_select" class="visually-hidden">{{ 'ui.source.sort'|trans }}</label>
+                <select id="sort_by_select" name="order" class="form-select form-select-sm">
+                    <option value="asc" {{ order == 'asc' ? 'selected' : '' }}>{{ 'ui.source.date_asc'|trans }}</option>
+                    <option value="desc" {{ order == 'desc' ? 'selected' : '' }}>{{ 'ui.source.date_desc'|trans }}</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-secondary mt-1">{{ 'ui.source.apply'|trans }}</button>
+            </form>
         </div>
     {% endif %}
     <div class="table-responsive-lg">
