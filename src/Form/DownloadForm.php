@@ -59,7 +59,7 @@ final class DownloadForm extends AbstractType
             ->add('submit', SubmitType::class, [
                 'label' => $this->translator->trans('form.submit'),
                 'attr'  => [
-                    'class' => 'btn btn-outline-primary mt-2',
+                    'class' => 'btn btn-gradient w-100 mt-3',
                 ],
             ])
         ;

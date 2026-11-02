@@ -3,36 +3,43 @@
 {% block title %}{{ 'ui.source.show_title'|trans }}{% endblock %}
 
 {% block body %}
-    <h1>{{ 'ui.source.show_heading'|trans }}</h1>
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <h1 class="page-title">{{ 'ui.source.show_heading'|trans }}</h1>
+            <p class="page-subtitle">{{ source.filename }}</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-secondary" href="{{ path('ui_source_index') }}">{{ 'ui.source.back_to_list'|trans }}</a>
+            <a class="btn btn-gradient" href="{{ path('ui_source_download', {'id': source.id}) }}" data-turbo="false">{{ 'ui.source.download'|trans }}</a>
+        </div>
+    </div>
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>{{ 'ui.source.id'|trans }}</th>
-                <td>{{ source.id }}</td>
-            </tr>
-            <tr>
-                <th>{{ 'ui.source.filename'|trans }}</th>
-                <td>{{ source.filename }}</td>
-            </tr>
-            <tr>
-                <th>{{ 'ui.source.filepath'|trans }}</th>
-                <td>{{ source.filepath }}</td>
-            </tr>
-            <tr>
-                <th>{{ 'ui.source.size'|trans }}</th>
-                <td>{{ source.size|readable_filesize() }}</td>
-            </tr>
-            <tr>
-                <th>{{ 'ui.source.description'|trans }}</th>
-                <td>{{ source.description }}</td>
-            </tr>
-            <tr>
-                <th>{{ 'ui.source.created_at'|trans }}</th>
-                <td>{{ source.createdAt ? source.createdAt|date('Y-m-d H:i:s') : '' }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <a class="btn btn-secondary" href="{{ path('ui_source_index') }}">{{ 'ui.source.back_to_list'|trans }}</a>
+    <div class="app-card p-4 p-lg-5">
+        <dl class="row mb-0 gy-4">
+            <div class="col-sm-6 col-xl-3">
+                <dt class="form-label">{{ 'ui.source.id'|trans }}</dt>
+                <dd class="mb-0 fw-semibold">#{{ source.id }}</dd>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <dt class="form-label">{{ 'ui.source.filename'|trans }}</dt>
+                <dd class="mb-0 fw-semibold text-break">{{ source.filename }}</dd>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <dt class="form-label">{{ 'ui.source.size'|trans }}</dt>
+                <dd class="mb-0 fw-semibold">{{ source.size|readable_filesize() }}</dd>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <dt class="form-label">{{ 'ui.source.created_at'|trans }}</dt>
+                <dd class="mb-0 fw-semibold">{{ source.createdAt ? source.createdAt|date('Y-m-d H:i:s') : '—' }}</dd>
+            </div>
+            <div class="col-12">
+                <dt class="form-label">{{ 'ui.source.filepath'|trans }}</dt>
+                <dd class="mb-0 font-monospace small text-break">{{ source.filepath }}</dd>
+            </div>
+            <div class="col-12">
+                <dt class="form-label">{{ 'ui.source.description'|trans }}</dt>
+                <dd class="mb-0 text-muted-soft">{{ source.description ?: '—' }}</dd>
+            </div>
+        </dl>
+    </div>
 {% endblock %}

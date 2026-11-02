@@ -1,4 +1,9 @@
-<form method="post" action="{{ path('ui_source_delete_all')}}" onsubmit="return confirm({{ 'ui.source.delete_all_confirm'|trans|json_encode }})">
-	<input type="hidden" name="_token" value="{{ csrf_token('delete_all') }}">
-	<button class="btn btn-danger">{{ 'ui.source.delete_all'|trans }}</button>
+<form class="m-0" method="post" action="{{ path('ui_source_delete_all') }}" onsubmit="return confirm({{ 'ui.source.delete_all_confirm'|trans|json_encode }})">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete_all') }}">
+    <button class="btn btn-outline-danger" type="submit">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1" aria-hidden="true">
+            <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+        {{ 'ui.source.delete_all'|trans }}
+    </button>
 </form>

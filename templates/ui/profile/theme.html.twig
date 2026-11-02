@@ -3,25 +3,44 @@
 {% block title %}{{ 'ui.profile.theme_title'|trans }}{% endblock %}
 
 {% block body %}
-    <div class="d-flex justify-content-between my-4">
-        <a class="btn btn-outline-success" href="{{ path('ui_profile_index') }}">{{ 'ui.theme.back'|trans }}</a>
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <h1 class="page-title">{{ 'ui.theme.heading'|trans }}</h1>
+            <p class="page-subtitle">{{ 'ui.theme.hint'|trans }}</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="{{ path('ui_profile_index') }}">{{ 'ui.theme.back'|trans }}</a>
     </div>
 
-    <h1 class="mt-4">{{ 'ui.theme.heading'|trans }}</h1>
-    <p class="mt-2 text-secondary">{{ 'ui.theme.auto_description'|trans }}</p>
-    <div class="theme-toggle">
-        <div class="form-check">
-            <input class="form-check-input" type="radio" name="theme" id="theme-auto" value="auto" data-theme-option="auto">
-            <label class="form-check-label" for="theme-auto">{{ 'ui.theme.auto'|trans }}</label>
+    <div class="app-card p-4 p-lg-5">
+        <div class="theme-options">
+            <label class="theme-option">
+                <input class="form-check-input" type="radio" name="theme" id="theme-auto" value="auto" data-theme-option="auto">
+                <span class="theme-option-body">
+                    <span class="theme-swatch" aria-hidden="true"><span class="swatch-bg"></span><span class="swatch-accent"></span></span>
+                    <span>
+                        <strong>{{ 'ui.theme.auto'|trans }}</strong>
+                        <span class="d-block text-muted-soft small">{{ 'ui.theme.auto_description'|trans }}</span>
+                    </span>
+                </span>
+            </label>
+
+            <label class="theme-option">
+                <input class="form-check-input" type="radio" name="theme" id="theme-dark" value="dark" data-theme-option="dark">
+                <span class="theme-option-body">
+                    <span class="theme-swatch" aria-hidden="true"><span class="swatch-bg" style="background:#0f172a"></span><span class="swatch-accent"></span></span>
+                    <span><strong>{{ 'ui.theme.dark'|trans }}</strong></span>
+                </span>
+            </label>
+
+            <label class="theme-option">
+                <input class="form-check-input" type="radio" name="theme" id="theme-light" value="light" data-theme-option="light">
+                <span class="theme-option-body">
+                    <span class="theme-swatch" aria-hidden="true"><span class="swatch-bg" style="background:#f8fafc"></span><span class="swatch-accent"></span></span>
+                    <span><strong>{{ 'ui.theme.light'|trans }}</strong></span>
+                </span>
+            </label>
         </div>
-        <div class="form-check">
-            <input class="form-check-input" type="radio" name="theme" id="theme-dark" value="dark" data-theme-option="dark">
-            <label class="form-check-label" for="theme-dark">{{ 'ui.theme.dark'|trans }}</label>
-        </div>
-        <div class="form-check">
-            <input class="form-check-input" type="radio" name="theme" id="theme-light" value="light" data-theme-option="light">
-            <label class="form-check-label" for="theme-light">{{ 'ui.theme.light'|trans }}</label>
-        </div>
-        <button type="button" id="theme-save" class="btn btn-primary mt-2">{{ 'ui.theme.save'|trans }}</button>
+
+        <button type="button" id="theme-save" class="btn btn-gradient mt-4">{{ 'ui.theme.save'|trans }}</button>
     </div>
 {% endblock %}

@@ -102,6 +102,9 @@ db-setup:
 db-purge:
 	rm -rf ./database/*
 
+asset-compile:
+	docker exec ytdownloader-php-fpm php bin/console asset-map:compile
+
 cs-check:
 	docker exec ytdownloader-php-fpm vendor/bin/php-cs-fixer fix --dry-run --diff --allow-risky=yes
 

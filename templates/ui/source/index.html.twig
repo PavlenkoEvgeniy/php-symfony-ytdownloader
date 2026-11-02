@@ -3,98 +3,141 @@
 {% block title %}{{ 'ui.source.index_title'|trans }}{% endblock %}
 
 {% block body %}
-    {% for message in app.flashes('success') %}
-        <div class="alert alert-success mt-1" role="alert">
-            {{ message }}
+    <header class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <h1 class="page-title">{{ 'ui.source.heading'|trans }}</h1>
+            <p class="page-subtitle">{{ 'ui.source.files_count'|trans({'%count%': pagination.totalItemCount}) }}</p>
         </div>
-    {% endfor %}
-    {% for message in app.flashes('error') %}
-        <div class="alert alert-danger mt-1" role="alert">
-            {{ message }}
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-gradient" href="{{ path('ui_download_index') }}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="me-1" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                {{ 'ui.source.add_download'|trans }}
+            </a>
+            {% if pagination is not empty %}
+                {{ include('ui/source/_delete_all_form.html.twig') }}
+            {% endif %}
         </div>
-    {% endfor %}
-    {% for message in app.flashes('warning') %}
-        <div class="alert alert-warning mt-1" role="alert">
-            {{ message }}
+    </header>
+
+    <div class="row row-cols-1 row-cols-sm-3 g-3 mb-4" id="queue-stats" data-stats-url="{{ path('ui_source_queue_stats') }}">
+        <div class="col">
+            <div class="stat-card">
+                <span class="stat-icon is-warning">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                </span>
+                <span>
+                    <span class="stat-value" data-counter="queued">{{ stats.queued }}</span>
+                    <span class="stat-label">{{ 'ui.source.in_queue'|trans }}</span>
+                </span>
+            </div>
         </div>
-    {% endfor %}
-    <div class="d-flex justify-content-between mt-4 mb-2">
-        <a class="btn btn-outline-success" href="{{ path('ui_download_index') }}">{{ 'ui.source.add_download'|trans }}</a>
-        {% if pagination is not empty %}
-            {{ include('ui/source/_delete_all_form.html.twig') }}
-        {% endif %}
+        <div class="col">
+            <div class="stat-card">
+                <span class="stat-icon is-info">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+                </span>
+                <span>
+                    <span class="stat-value" data-counter="processing">{{ stats.processing }}</span>
+                    <span class="stat-label">{{ 'ui.source.in_progress'|trans }}</span>
+                </span>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <span class="stat-icon is-success">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+                </span>
+                <span>
+                    <span class="stat-value">{{ stats.success }}</span>
+                    <span class="stat-label">{{ 'ui.download.completed'|trans }}</span>
+                </span>
+            </div>
+        </div>
     </div>
-    <div class="text-center mt-4" id="queue-stats" data-stats-url="{{ path('ui_source_queue_stats') }}">
-        <span class="fw-bold">{{ 'ui.source.in_queue'|trans }} <span data-counter="queued">{{ stats.queued }}</span></span> |
-        <span class="fw-bold">{{ 'ui.source.in_progress'|trans }} <span data-counter="processing">{{ stats.processing }}</span></span> |
-        <span class="fw-bold">{{ 'ui.source.errors'|trans }} <span data-counter="error">{{ stats.error }}</span></span>
-    </div>
+
     {% if pagination is not empty %}
-        <div class="col-sm-3 col-md-2 col-lg-1">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <span class="text-muted-soft small">{{ 'ui.source.sort'|trans }}</span>
             <form method="get" action="{{ path('ui_source_index') }}">
                 <label for="sort_by_select" class="visually-hidden">{{ 'ui.source.sort'|trans }}</label>
                 <select id="sort_by_select" name="order" class="form-select form-select-sm" onchange="this.form.requestSubmit()">
-                    <option value="asc" {{ order == 'asc' ? 'selected' : '' }}>{{ 'ui.source.date_asc'|trans }}</option>
                     <option value="desc" {{ order == 'desc' ? 'selected' : '' }}>{{ 'ui.source.date_desc'|trans }}</option>
+                    <option value="asc" {{ order == 'asc' ? 'selected' : '' }}>{{ 'ui.source.date_asc'|trans }}</option>
                 </select>
             </form>
         </div>
+
+        <div class="app-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="table app-table align-middle">
+                    <thead>
+                    <tr>
+                        <th class="ps-3">{{ 'ui.source.no'|trans }}</th>
+                        <th>{{ 'ui.source.filename'|trans }}</th>
+                        <th class="text-end">{{ 'ui.source.size'|trans }}</th>
+                        <th class="text-end">{{ 'ui.source.created_at'|trans }}</th>
+                        <th class="text-end pe-3">{{ 'ui.source.actions'|trans }}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for source in pagination %}
+                        {% set extension = source.filename|split('.')|last|lower %}
+                        {% set isAudio = extension in ['mp3', 'm4a', 'aac', 'opus', 'ogg', 'wav', 'flac'] %}
+                        <tr>
+                            <td class="ps-3 text-muted-soft">{{ startingNumber + loop.index0 }}</td>
+                            <td>
+                                <div class="file-cell">
+                                    <span class="file-icon {{ isAudio ? 'is-audio' : 'is-video' }}">
+                                        {% if isAudio %}
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>
+                                        {% else %}
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m10 9 5 3-5 3V9Z"/></svg>
+                                        {% endif %}
+                                    </span>
+                                    <span>
+                                        <span class="file-name" title="{{ source.filename }}">{{ source.filename }}</span>
+                                        <span class="file-meta">{{ extension|upper }}{% if source.description %} · {{ source.description }}{% endif %}</span>
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="text-end text-nowrap">{{ source.size|readable_filesize(2) }}</td>
+                            <td class="text-end text-nowrap text-muted-soft small">{{ source.createdAt ? source.createdAt|date('Y-m-d H:i') : '—' }}</td>
+                            <td class="text-end pe-3">
+                                <div class="actions">
+                                    <a class="btn btn-outline-success btn-icon" href="{{ path('ui_source_download', {'id': source.id}) }}" data-turbo="false" title="{{ 'ui.source.download'|trans }}" aria-label="{{ 'ui.source.download'|trans }}">
+                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
+                                    </a>
+                                    <a class="btn btn-outline-secondary btn-icon" href="{{ path('ui_source_show', {'id': source.id}) }}" title="{{ 'ui.source.show'|trans }}" aria-label="{{ 'ui.source.show'|trans }}">
+                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </a>
+                                    {% if is_granted('ROLE_ADMIN') %}
+                                        <a class="btn btn-outline-warning btn-icon" href="{{ path('ui_source_edit', {'id': source.id}) }}" title="{{ 'ui.source.edit'|trans }}" aria-label="{{ 'ui.source.edit'|trans }}">
+                                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                        </a>
+                                    {% endif %}
+                                    {{ include('ui/source/_delete_form.html.twig') }}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            {{ knp_pagination_render(pagination) }}
+        </div>
+    {% else %}
+        <div class="app-card empty-state">
+            <span class="empty-state-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2Z"/><path d="M4 6v12c0 1.1 3.6 2 8 2s8-.9 8-2V6"/><path d="M4 12c0 1.1 3.6 2 8 2s8-.9 8-2"/></svg>
+            </span>
+            <h2>{{ 'ui.source.no_records'|trans }}</h2>
+            <p>{{ 'ui.source.empty_hint'|trans }}</p>
+            <a class="btn btn-gradient mt-2" href="{{ path('ui_download_index') }}">{{ 'ui.source.add_download'|trans }}</a>
+        </div>
     {% endif %}
-    <div class="table-responsive-lg">
-        <table class="table table-sm">
-            <thead class="text-center">
-            <tr>
-                <th>{{ 'ui.source.no'|trans }}</th>
-                <th>{{ 'ui.source.filename'|trans }}</th>
-                <th>{{ 'ui.source.size'|trans }}</th>
-                <th>{{ 'ui.source.actions'|trans }}</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for source in pagination %}
-                <tr>
-                    <td>{{ startingNumber + loop.index0 }}</td>
-                    <td>{{ source.filename }}</td>
-                    <td class="text-center">{{ source.size|readable_filesize(2) }}</td>
-                    <td class="d-grid gap-2 text-center">
-                        <div>
-                            <a class="btn btn-outline-success" href="{{ path('ui_source_download', {'id': source.id}) }}" data-turbo="false">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5l5 5 5-5m-5 5V3"/>
-                                </svg>
-                            </a>
-                        </div>
-                        <div>
-                            <a class="btn btn-outline-secondary" href="{{ path('ui_source_show', {'id': source.id}) }}">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                    <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                            </a>
-                        </div>
-                        {% if is_granted('ROLE_ADMIN') %}
-                            <div>
-                                <a class="btn btn-outline-warning" href="{{ path('ui_source_edit', {'id': source.id}) }}">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                                    </svg>
-                                </a>
-                            </div>
-                        {% endif %}
-                        {{ include('ui/source/_delete_form.html.twig') }}
-                    </td>
-                </tr>
-            {% else %}
-                <tr>
-                    <td class="text-center" colspan="4">{{ 'ui.source.no_records'|trans }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <div>
-        {{ knp_pagination_render(pagination) }}
-    </div>
+
     {% include 'ui/source/_queue_stats_script.html.twig' %}
 {% endblock %}
