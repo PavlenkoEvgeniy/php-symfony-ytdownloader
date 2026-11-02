@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Controller\Api\V1\Source;
 
 use App\Entity\Source;
+use App\Enum\AuditAction;
+use App\Enum\AuditChannel;
 use App\RateLimiter\RateLimitAttribute;
+use App\Service\AuditLoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,18 +32,31 @@ final class DeleteController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
+        private readonly AuditLoggerInterface $auditLogger,
     ) {
     }
 
     public function __invoke(Source $source): JsonResponse
     {
-        $filePath = \sprintf('%s/%s', $source->getFilepath(), $source->getFilename());
+        $filePath    = \sprintf('%s/%s', $source->getFilepath(), $source->getFilename());
+        $sourceId    = $source->getId();
+        $sourceLabel = $source->getFilename();
 
         if (!\file_exists($filePath)) {
             $this->logger->alert('File not found for API delete', [
                 'message'  => \sprintf('File not found, not possible to delete file: %s', $filePath),
                 'sourceId' => $source->getId(),
             ]);
+
+            $this->auditLogger->log(
+                action: AuditAction::SOURCE_DELETE,
+                channel: AuditChannel::API_V1,
+                targetType: 'source',
+                targetId: $sourceId,
+                targetLabel: $sourceLabel,
+                success: false,
+                metadata: ['reason' => 'file_not_found'],
+            );
 
             return $this->json(['message' => $this->translator->trans('api.source.file_not_found')], Response::HTTP_NOT_FOUND);
         }
@@ -54,11 +70,29 @@ final class DeleteController extends AbstractController
                 'filepath' => $filePath,
             ]);
 
+            $this->auditLogger->log(
+                action: AuditAction::SOURCE_DELETE,
+                channel: AuditChannel::API_V1,
+                targetType: 'source',
+                targetId: $sourceId,
+                targetLabel: $sourceLabel,
+                success: false,
+                metadata: ['reason' => 'delete_failed', 'error' => $e->getMessage()],
+            );
+
             return $this->json(['message' => $this->translator->trans('api.source.delete_failed')], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
         $this->entityManager->remove($source);
         $this->entityManager->flush();
+
+        $this->auditLogger->log(
+            action: AuditAction::SOURCE_DELETE,
+            channel: AuditChannel::API_V1,
+            targetType: 'source',
+            targetId: $sourceId,
+            targetLabel: $sourceLabel,
+        );
 
         return $this->json(['message' => $this->translator->trans('api.source.deleted')], Response::HTTP_OK);
     }

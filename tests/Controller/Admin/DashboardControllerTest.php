@@ -7,6 +7,7 @@ namespace App\Tests\Controller\Admin;
 use App\Controller\Admin\DashboardController;
 use App\Entity\DownloadTask;
 use App\Repository\UserRepository;
+use App\Service\AuditLoggerInterface;
 use App\Service\OrphanFilePrunerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use OskarStark\Twig\ReadableFilesizeExtension;
@@ -252,7 +253,7 @@ final class DashboardControllerTest extends WebTestCase
         $translator = $this->createStub(TranslatorInterface::class);
         $translator->method('trans')->willReturn('Deleted 1 orphan file(s), failed to delete 1 file(s).');
 
-        $controller = new DashboardController($translator);
+        $controller = new DashboardController($translator, $this->createStub(AuditLoggerInterface::class));
 
         $request = new Request();
         $session = new Session(new MockArraySessionStorage());
@@ -283,7 +284,7 @@ final class DashboardControllerTest extends WebTestCase
      */
     public function testConfigureUserMenuRejectsForeignUser(): void
     {
-        $controller = new DashboardController($this->createStub(TranslatorInterface::class));
+        $controller = new DashboardController($this->createStub(TranslatorInterface::class), $this->createStub(AuditLoggerInterface::class));
 
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage('Wrong user class');

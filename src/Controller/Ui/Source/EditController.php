@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Controller\Ui\Source;
 
 use App\Entity\Source;
+use App\Enum\AuditAction;
+use App\Enum\AuditChannel;
 use App\Form\SourceForm;
+use App\Service\AuditLoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -31,13 +34,16 @@ final class EditController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
+        private readonly AuditLoggerInterface $auditLogger,
     ) {
     }
 
     #[IsGranted('ROLE_ADMIN')]
     public function __invoke(Request $request, Source $source): Response
     {
-        $oldFilename = \sprintf('%s/%s', $this->downloadsDir, $source->getFilename());
+        $sourceId    = $source->getId();
+        $sourceLabel = $source->getFilename();
+        $oldFilename = \sprintf('%s/%s', $this->downloadsDir, $sourceLabel);
 
         $form = $this->createForm(SourceForm::class, $source);
         $form->handleRequest($request);
@@ -50,6 +56,16 @@ final class EditController extends AbstractController
                     'message' => \sprintf('File not found, not possible to edit file: %s', $oldFilename),
                 ]);
                 $this->addFlash('error', $this->translator->trans('ui.source.error_edit'));
+
+                $this->auditLogger->log(
+                    action: AuditAction::SOURCE_UPDATE,
+                    channel: AuditChannel::UI,
+                    targetType: 'source',
+                    targetId: $sourceId,
+                    targetLabel: $sourceLabel,
+                    success: false,
+                    metadata: ['reason' => 'file_not_found'],
+                );
 
                 return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
             }
@@ -67,11 +83,30 @@ final class EditController extends AbstractController
 
                     $this->addFlash('error', $this->translator->trans('ui.source.error_rename'));
 
+                    $this->auditLogger->log(
+                        action: AuditAction::SOURCE_UPDATE,
+                        channel: AuditChannel::UI,
+                        targetType: 'source',
+                        targetId: $sourceId,
+                        targetLabel: $sourceLabel,
+                        success: false,
+                        metadata: ['reason' => 'rename_failed', 'error' => $e->getMessage(), 'newFilename' => $newFileName],
+                    );
+
                     return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
                 }
             }
 
             $this->entityManager->flush();
+
+            $this->auditLogger->log(
+                action: AuditAction::SOURCE_UPDATE,
+                channel: AuditChannel::UI,
+                targetType: 'source',
+                targetId: $sourceId,
+                targetLabel: $sourceLabel,
+                metadata: ['newFilename' => (string) $form->get('filename')->getData(), 'renamed' => $newFileName !== $oldFilename],
+            );
 
             return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
         }

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Controller\Ui\Source;
 
 use App\Entity\Source;
+use App\Enum\AuditAction;
+use App\Enum\AuditChannel;
+use App\Service\AuditLoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,16 +29,30 @@ final class DeleteController extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
+        private readonly AuditLoggerInterface $auditLogger,
     ) {
     }
 
     public function __invoke(Request $request, Source $source): Response
     {
-        if (!$this->isCsrfTokenValid(\sprintf('delete%s', $source->getId()), $request->getPayload()->getString('_token'))) {
+        $sourceId    = $source->getId();
+        $sourceLabel = $source->getFilename();
+
+        if (!$this->isCsrfTokenValid(\sprintf('delete%s', $sourceId), $request->getPayload()->getString('_token'))) {
+            $this->auditLogger->log(
+                action: AuditAction::SOURCE_DELETE,
+                channel: AuditChannel::UI,
+                targetType: 'source',
+                targetId: $sourceId,
+                targetLabel: $sourceLabel,
+                success: false,
+                metadata: ['reason' => 'invalid_csrf'],
+            );
+
             return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
         }
 
-        $filePath = \sprintf('%s/%s', $source->getFilepath(), $source->getFilename());
+        $filePath = \sprintf('%s/%s', $source->getFilepath(), $sourceLabel);
 
         if (!\file_exists($filePath)) {
             $this->logger->alert('An error occurred while deleting the file', [
@@ -43,12 +60,30 @@ final class DeleteController extends AbstractController
             ]);
             $this->addFlash('error', $this->translator->trans('ui.source.error_delete'));
 
+            $this->auditLogger->log(
+                action: AuditAction::SOURCE_DELETE,
+                channel: AuditChannel::UI,
+                targetType: 'source',
+                targetId: $sourceId,
+                targetLabel: $sourceLabel,
+                success: false,
+                metadata: ['reason' => 'file_not_found'],
+            );
+
             return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
         }
 
         try {
             \unlink($filePath);
             $this->addFlash('success', $this->translator->trans('ui.source.deleted'));
+
+            $this->auditLogger->log(
+                action: AuditAction::SOURCE_DELETE,
+                channel: AuditChannel::UI,
+                targetType: 'source',
+                targetId: $sourceId,
+                targetLabel: $sourceLabel,
+            );
         } catch (\Throwable $e) {
             $this->addFlash('error', $this->translator->trans('ui.source.error_delete'));
             $this->logger->alert('An error occurred while deleting the file', [
@@ -56,6 +91,16 @@ final class DeleteController extends AbstractController
                 'source'   => $source,
                 'filepath' => $filePath,
             ]);
+
+            $this->auditLogger->log(
+                action: AuditAction::SOURCE_DELETE,
+                channel: AuditChannel::UI,
+                targetType: 'source',
+                targetId: $sourceId,
+                targetLabel: $sourceLabel,
+                success: false,
+                metadata: ['reason' => 'delete_failed', 'error' => $e->getMessage()],
+            );
 
             return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
         }

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Controller\Ui\Source;
 
 use App\Entity\Source;
+use App\Enum\AuditAction;
+use App\Enum\AuditChannel;
+use App\Service\AuditLoggerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -27,6 +30,7 @@ final class DownloadController extends AbstractController
     public function __construct(
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
+        private readonly AuditLoggerInterface $auditLogger,
     ) {
     }
 
@@ -40,8 +44,26 @@ final class DownloadController extends AbstractController
                 'message' => \sprintf('File not found, not possible to download file: %s', $filePath),
             ]);
 
+            $this->auditLogger->log(
+                action: AuditAction::SOURCE_DOWNLOAD,
+                channel: AuditChannel::UI,
+                targetType: 'source',
+                targetId: $source->getId(),
+                targetLabel: $source->getFilename(),
+                success: false,
+                metadata: ['reason' => 'file_not_found'],
+            );
+
             return $this->redirectToRoute('ui_source_index', [], Response::HTTP_SEE_OTHER);
         }
+
+        $this->auditLogger->log(
+            action: AuditAction::SOURCE_DOWNLOAD,
+            channel: AuditChannel::UI,
+            targetType: 'source',
+            targetId: $source->getId(),
+            targetLabel: $source->getFilename(),
+        );
 
         return new BinaryFileResponse($filePath)->setContentDisposition(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,

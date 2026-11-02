@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Controller\Api\V2\Source;
 
 use App\Entity\Source;
+use App\Enum\AuditAction;
+use App\Enum\AuditChannel;
 use App\RateLimiter\RateLimitAttribute;
+use App\Service\AuditLoggerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -28,6 +31,7 @@ final class DownloadController extends AbstractController
     public function __construct(
         private readonly LoggerInterface $logger,
         private readonly TranslatorInterface $translator,
+        private readonly AuditLoggerInterface $auditLogger,
     ) {
     }
 
@@ -41,8 +45,26 @@ final class DownloadController extends AbstractController
                 'sourceId' => $source->getId(),
             ]);
 
+            $this->auditLogger->log(
+                action: AuditAction::SOURCE_DOWNLOAD,
+                channel: AuditChannel::API_V2,
+                targetType: 'source',
+                targetId: $source->getId(),
+                targetLabel: $source->getFilename(),
+                success: false,
+                metadata: ['reason' => 'file_not_found'],
+            );
+
             return $this->json(['message' => $this->translator->trans('api.source.file_not_found')], Response::HTTP_NOT_FOUND);
         }
+
+        $this->auditLogger->log(
+            action: AuditAction::SOURCE_DOWNLOAD,
+            channel: AuditChannel::API_V2,
+            targetType: 'source',
+            targetId: $source->getId(),
+            targetLabel: $source->getFilename(),
+        );
 
         return new BinaryFileResponse($filePath)->setContentDisposition(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,
