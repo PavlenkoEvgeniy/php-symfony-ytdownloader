@@ -71,6 +71,14 @@ jobs:
             # Pull while the old stack is still running, so downtime is limited
             # to the stop -> restart window.
             make pull
+            # Composer and migrations run in the old container, but it may have
+            # been stopped manually (or removed by a failed deploy). Start the
+            # stack first so those steps always have a container, and wait for
+            # a cold Postgres before migrating.
+            if ! docker inspect -f '{{.State.Running}}' ytdownloader-php-fpm 2>/dev/null | grep -q true; then
+              make docker-compose-up
+              docker exec ytdownloader-pgsql sh -c 'for i in $(seq 1 30); do pg_isready -U "$POSTGRES_USER" >/dev/null 2>&1 && exit 0; sleep 1; done; exit 1'
+            fi
             # The app code is bind-mounted into php-fpm, so install/migrate can
             # run in the still-running old container: workers then start last,
             # already with the new code, vendor and schema.
