@@ -11,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: DownloadMetricRepository::class)]
 #[ORM\Table(name: 'download_metric')]
-final class DownloadMetric
+class DownloadMetric
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

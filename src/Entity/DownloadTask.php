@@ -13,7 +13,7 @@ use Gedmo\Timestampable\Traits\TimestampableEntity;
 #[ORM\Entity(repositoryClass: DownloadTaskRepository::class)]
 #[ORM\Table(name: 'download_task')]
 #[ORM\Index(name: 'idx_download_task_status', columns: ['status'])]
-final class DownloadTask
+class DownloadTask
 {
     use TimestampableEntity;
     public const string STATUS_QUEUED     = 'queued';

@@ -13,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'refresh_token')]
 #[ORM\UniqueConstraint(name: 'UNIQ_REFRESH_TOKEN_TOKEN', columns: ['token'])]
 #[ORM\Index(name: 'IDX_REFRESH_TOKEN_USER', columns: ['user_id'])]
-final class RefreshToken
+class RefreshToken
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

@@ -12,7 +12,7 @@ use Gedmo\Timestampable\Traits\TimestampableEntity;
 
 #[ORM\Entity(repositoryClass: SourceRepository::class)]
 #[ORM\Table(name: 'source')]
-final class Source
+class Source
 {
     use TimestampableEntity;
 

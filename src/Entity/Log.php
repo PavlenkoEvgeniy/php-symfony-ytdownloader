@@ -11,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: LogRepository::class)]
 #[ORM\Table(name: 'log')]
-final class Log
+class Log
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
