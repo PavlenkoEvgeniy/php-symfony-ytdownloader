@@ -119,6 +119,27 @@ final class SourceControllerTest extends WebTestCase
     }
 
     /**
+     * Verifies sorting submits on selection and downloads bypass Turbo.
+     */
+    public function testSortSelectAutoSubmitsAndDownloadsBypassTurbo(): void
+    {
+        $source = $this->createSourceWithFile('ui-markup.mp4');
+        $this->loginAsAdmin();
+
+        $crawler = $this->client->request(Request::METHOD_GET, '/ui/source');
+        $this->assertResponseIsSuccessful();
+
+        $select = $crawler->filter('select[name="order"]');
+        $this->assertCount(1, $select);
+        $this->assertSame('this.form.requestSubmit()', $select->attr('onchange'));
+        $this->assertCount(0, $crawler->filter('select[name="order"] ~ button'));
+
+        $download = $crawler->filter(\sprintf('a[href="/ui/source/download/%d"]', $source->getId()));
+        $this->assertCount(1, $download);
+        $this->assertSame('false', $download->attr('data-turbo'));
+    }
+
+    /**
      * Verifies the source details page renders the stored source.
      */
     public function testShowPageRendersSource(): void
