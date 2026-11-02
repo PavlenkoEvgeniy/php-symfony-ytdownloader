@@ -6,6 +6,7 @@ namespace App\Tests\Service;
 
 use App\Entity\DownloadTask;
 use App\Message\DownloadMessage;
+use App\Service\AuditLoggerInterface;
 use App\Service\DownloadDispatcher;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
@@ -36,7 +37,7 @@ final class DownloadDispatcherTest extends TestCase
                 return new Envelope($message);
             });
 
-        $dispatcher = new DownloadDispatcher($em, $bus);
+        $dispatcher = new DownloadDispatcher($em, $bus, $this->createStub(AuditLoggerInterface::class));
         $task       = $dispatcher->dispatch('https://youtube.com/watch?v=test', 'best', '42');
 
         $this->assertSame('https://youtube.com/watch?v=test', $task->getUrl());

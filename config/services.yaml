@@ -69,6 +69,8 @@ services:
         alias: App\Repository\DownloadMetricRepository
     App\Repository\RefreshTokenRepositoryInterface:
         alias: App\Repository\RefreshTokenRepository
+    App\Repository\AuditEventRepositoryInterface:
+        alias: App\Repository\AuditEventRepository
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

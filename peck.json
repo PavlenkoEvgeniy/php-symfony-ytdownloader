@@ -76,7 +76,8 @@
             "opendir",
             "readdir",
             "rewinddir",
-            "closedir"
+            "closedir",
+            "json"
         ],
         "paths": [
             "vendor"
