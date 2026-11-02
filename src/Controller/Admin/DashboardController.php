@@ -6,6 +6,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\User;
 use App\Repository\DownloadTaskRepository;
+use App\Service\OrphanFilePruner;
 use App\Service\QueuePurgeService;
 use App\Service\QueueResetService;
 use App\Service\QueueStatsService;
@@ -18,7 +19,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Config\UserMenu;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
-use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGeneratorInterface;
+use OskarStark\Twig\ReadableFilesizeExtension;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,12 +31,7 @@ final class DashboardController extends AbstractDashboardController
     #[\Override]
     public function index(): RedirectResponse
     {
-        return $this->redirect(
-            $this->container->get(AdminUrlGeneratorInterface::class)
-                ->setController(UserCrudController::class)
-                ->setAction(Action::INDEX)
-                ->generateUrl()
-        );
+        return $this->redirectToRoute('admin_active_tasks');
     }
 
     /**
@@ -45,10 +41,12 @@ final class DashboardController extends AbstractDashboardController
     public function activeTasks(
         QueueStatsService $queueStatsService,
         DownloadTaskRepository $downloadTaskRepository,
+        OrphanFilePruner $orphanFilePruner,
     ): Response {
         return $this->render('admin/active_tasks.html.twig', [
-            'stats' => $queueStatsService->getStats(),
-            'tasks' => $downloadTaskRepository->getRecentActiveTasks(),
+            'stats'   => $queueStatsService->getStats(),
+            'tasks'   => $downloadTaskRepository->getRecentActiveTasks(),
+            'orphans' => $orphanFilePruner->findOrphans(),
         ]);
     }
 
@@ -93,6 +91,40 @@ final class DashboardController extends AbstractDashboardController
             'success',
             \sprintf('Reset %d processing task(s) and %d stuck message(s).', $result['processing'], $result['messages']),
         );
+
+        return $this->redirectToRoute('admin_active_tasks');
+    }
+
+    /**
+     * Delete orphan files: files in the downloads directory that no Source references.
+     */
+    #[AdminRoute(path: '/prune-orphans', name: 'prune_orphans', options: ['methods' => ['POST']])]
+    public function pruneOrphans(
+        Request $request,
+        OrphanFilePruner $orphanFilePruner,
+        ReadableFilesizeExtension $filesizeExtension,
+    ): RedirectResponse {
+        if (!$this->isCsrfTokenValid('prune_orphans', $request->getPayload()->getString('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+
+            return $this->redirectToRoute('admin_active_tasks');
+        }
+
+        $result = $orphanFilePruner->prune();
+
+        if ($result['failed'] > 0) {
+            $this->addFlash('error', \sprintf(
+                'Deleted %d orphan file(s), failed to delete %d file(s).',
+                $result['deleted'],
+                $result['failed'],
+            ));
+        } else {
+            $this->addFlash('success', \sprintf(
+                'Pruned %d orphan file(s), %s freed.',
+                $result['deleted'],
+                $filesizeExtension->readableFilesize($result['bytes']),
+            ));
+        }
 
         return $this->redirectToRoute('admin_active_tasks');
     }

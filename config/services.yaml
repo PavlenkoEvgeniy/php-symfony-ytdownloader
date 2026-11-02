@@ -4,6 +4,9 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    # Files younger than this may still be written by a worker and are never pruned.
+    # Keep it above the yt-dlp process timeout (yt_dlp.timeout, 300 s by default).
+    app.downloads.orphan_ttl_seconds: 3600
 
 services:
     # default configuration for services in *this* file
@@ -17,6 +20,7 @@ services:
             string $telegramHostUrl: '%env(TELEGRAM_HOST_URL)%'
             bool $telegramBotEnabled: '%env(bool:TELEGRAM_BOT_ENABLED)%'
             int $refreshTokenTtlSeconds: '%env(int:JWT_REFRESH_TOKEN_TTL)%'
+            int $orphanTtlSeconds: '%app.downloads.orphan_ttl_seconds%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

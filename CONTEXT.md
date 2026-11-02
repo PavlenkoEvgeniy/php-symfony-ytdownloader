@@ -21,6 +21,16 @@ _Avoid_: running, in progress
 The status meaning "the worker has picked this task up". It is not a guarantee that the download is still running: if the worker dies mid-task, the task stays `processing` until it is redone.
 _Avoid_: running, in progress
 
+### Downloads
+
+**Orphan File**:
+A file in the downloads directory that is no longer being written by any download and that no Source references. Failed or interrupted downloads leave them behind.
+_Avoid_: temp file, garbage, junk (not every orphan is temporary, and not every leftover is an orphan until no download is writing it)
+
+**Prune**:
+Deleting orphan files. Purge deletes tasks, Prune deletes files; Reset resumes tasks.
+_Avoid_: clean, clear (prune is deletion of files, not a general cleanup)
+
 ### Admin Panel
 
 **Admin Panel**:

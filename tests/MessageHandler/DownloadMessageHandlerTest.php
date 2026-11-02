@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\MessageHandler;
 
 use App\Entity\DownloadTask;
+use App\Enum\DownloadOutcome;
 use App\Message\DownloadMessage;
 use App\MessageHandler\DownloadMessageHandler;
 use App\Service\DownloadTaskManager;
@@ -36,13 +37,43 @@ final class DownloadMessageHandlerTest extends TestCase
         $videoProcessor = $this->createMock(VideoProcessorInterface::class);
         $videoProcessor->expects($this->once())
             ->method('process')
-            ->with('https://example.com', 'best', '12345');
+            ->with('https://example.com', 'best', '12345')
+            ->willReturn(DownloadOutcome::SUCCESS);
 
         $handler = new DownloadMessageHandler($videoProcessor, $taskManager);
 
         $handler->__invoke(new DownloadMessage('https://example.com', 'best', '12345', 7));
 
         $this->assertSame(DownloadTask::STATUS_SUCCESS, $task->getStatus());
+    }
+
+    public function testInvokeMarksTaskErrorWhenProcessingFails(): void
+    {
+        $task = new DownloadTask();
+        $task->setUrl('https://example.com')->setQuality('best');
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())->method('executeStatement')->willReturn(1);
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->method('getConnection')->willReturn($connection);
+        $em->expects($this->once())
+            ->method('find')
+            ->with(DownloadTask::class, 7)
+            ->willReturn($task);
+        $em->expects($this->once())->method('flush');
+
+        $videoProcessor = $this->createMock(VideoProcessorInterface::class);
+        $videoProcessor->expects($this->once())
+            ->method('process')
+            ->with('https://example.com', 'best', '12345')
+            ->willReturn(DownloadOutcome::ERROR);
+
+        $handler = new DownloadMessageHandler($videoProcessor, new DownloadTaskManager($em));
+
+        $handler->__invoke(new DownloadMessage('https://example.com', 'best', '12345', 7));
+
+        $this->assertSame(DownloadTask::STATUS_ERROR, $task->getStatus());
     }
 
     public function testInvokeSkipsMessageWhenClaimFails(): void
@@ -72,7 +103,8 @@ final class DownloadMessageHandlerTest extends TestCase
         $videoProcessor = $this->createMock(VideoProcessorInterface::class);
         $videoProcessor->expects($this->once())
             ->method('process')
-            ->with('https://example.com/2', 'audio', '');
+            ->with('https://example.com/2', 'audio', '')
+            ->willReturn(DownloadOutcome::SUCCESS);
 
         $handler = new DownloadMessageHandler($videoProcessor, new DownloadTaskManager($em));
 

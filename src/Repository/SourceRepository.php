@@ -19,4 +19,20 @@ final class SourceRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Source::class);
     }
+
+    /**
+     * Filenames of every stored source, used to tell kept files from orphans.
+     *
+     * @return list<string>
+     */
+    public function findAllFilenames(): array
+    {
+        /** @var list<mixed> $filenames */
+        $filenames = $this->createQueryBuilder('s')
+            ->select('s.filename')
+            ->getQuery()
+            ->getSingleColumnResult();
+
+        return \array_map(static fn (mixed $filename): string => (string) $filename, $filenames);
+    }
 }
