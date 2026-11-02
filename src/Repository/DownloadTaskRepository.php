@@ -62,6 +62,24 @@ final class DownloadTaskRepository extends ServiceEntityRepository implements Do
 
     #[\Override]
     /**
+     * @return DownloadTask[]
+     */
+    public function findProcessingTasks(): array
+    {
+        /** @var DownloadTask[] $tasks */
+        $tasks = $this->createQueryBuilder('t')
+            ->where('t.status = :processing')
+            ->setParameter('processing', DownloadTask::STATUS_PROCESSING)
+            ->orderBy('t.id')
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $tasks;
+    }
+
+    #[\Override]
+    /**
      * Resets every processing task back to queued and returns their number.
      * Intended for stuck tasks only — a task in processing may still be a live download.
      */

@@ -5,26 +5,29 @@ declare(strict_types=1);
 namespace App\Tests\Service;
 
 use App\Entity\DownloadTask;
-use App\Service\QueueResetService;
+use App\Repository\DownloadTaskRepositoryInterface;
+use App\Service\QueueResetServiceInterface;
 use Doctrine\DBAL\Connection;
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class QueueResetServiceTest extends KernelTestCase
 {
-    private EntityManager $em;
+    private EntityManagerInterface $entityManager;
     private Connection $connection;
-    private QueueResetService $queueResetService;
+    private DownloadTaskRepositoryInterface $downloadTaskRepository;
+    private QueueResetServiceInterface $queueResetService;
 
     public function setUp(): void
     {
         self::bootKernel();
 
-        /** @var EntityManager $em */
-        $em                      = self::getContainer()->get('doctrine')->getManager();
-        $this->em                = $em;
-        $this->connection        = $em->getConnection();
-        $this->queueResetService = self::getContainer()->get(QueueResetService::class);
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager                = self::getContainer()->get('doctrine')->getManager();
+        $this->entityManager          = $entityManager;
+        $this->connection             = $entityManager->getConnection();
+        $this->downloadTaskRepository = self::getContainer()->get(DownloadTaskRepositoryInterface::class);
+        $this->queueResetService      = self::getContainer()->get(QueueResetServiceInterface::class);
 
         $this->connection->beginTransaction();
     }
@@ -33,7 +36,7 @@ final class QueueResetServiceTest extends KernelTestCase
     {
         if ($this->connection->isTransactionActive()) {
             $this->connection->rollback();
-            $this->em->clear();
+            $this->entityManager->clear();
         }
 
         parent::tearDown();
@@ -43,7 +46,7 @@ final class QueueResetServiceTest extends KernelTestCase
     {
         $task = new DownloadTask();
         $task->setUrl('https://youtube.com/watch?v=test')->setQuality('best')->setStatus($status);
-        $this->em->persist($task);
+        $this->entityManager->persist($task);
 
         return $task;
     }
@@ -63,27 +66,36 @@ final class QueueResetServiceTest extends KernelTestCase
     }
 
     /**
-     * Verifies reset moves processing tasks back to queued and leaves others untouched.
+     * Verifies reset moves processing tasks to queued and dispatches a fresh message for each.
      */
     public function testResetReturnsOnlyProcessingTasksToQueued(): void
     {
-        $before = $this->em->getRepository(DownloadTask::class)->getStatusCounts();
+        $before         = $this->downloadTaskRepository->getStatusCounts();
+        $beforeMessages = (int) $this->connection->executeQuery(
+            "SELECT COUNT(*) FROM messenger_messages WHERE queue_name = 'download_queue'",
+        )->fetchOne();
 
         $this->createTask(DownloadTask::STATUS_PROCESSING);
         $this->createTask(DownloadTask::STATUS_PROCESSING);
         $this->createTask(DownloadTask::STATUS_QUEUED);
         $this->createTask(DownloadTask::STATUS_ERROR);
         $this->createTask(DownloadTask::STATUS_SUCCESS);
-        $this->em->flush();
+        $this->entityManager->flush();
 
         $result = $this->queueResetService->reset();
 
-        $counts = $this->em->getRepository(DownloadTask::class)->getStatusCounts();
+        $counts = $this->downloadTaskRepository->getStatusCounts();
         $this->assertSame($before[DownloadTask::STATUS_PROCESSING] + 2, $result['processing']);
         $this->assertSame(0, $counts[DownloadTask::STATUS_PROCESSING]);
         $this->assertSame($before[DownloadTask::STATUS_QUEUED] + 3, $counts[DownloadTask::STATUS_QUEUED]);
         $this->assertSame($before[DownloadTask::STATUS_ERROR] + 1, $counts[DownloadTask::STATUS_ERROR]);
         $this->assertSame($before[DownloadTask::STATUS_SUCCESS] + 1, $counts[DownloadTask::STATUS_SUCCESS]);
+
+        // Each reset task gets a fresh message, even if the old one was already acked.
+        $afterMessages = (int) $this->connection->executeQuery(
+            "SELECT COUNT(*) FROM messenger_messages WHERE queue_name = 'download_queue'",
+        )->fetchOne();
+        $this->assertSame($beforeMessages + 2, $afterMessages);
     }
 
     /**
