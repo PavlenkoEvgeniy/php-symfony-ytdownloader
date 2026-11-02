@@ -29,7 +29,7 @@ final readonly class DownloadTaskFailureListener
             $message = $event->getEnvelope()->getMessage();
 
             if ($message instanceof DownloadMessage && null !== $message->taskId) {
-                $this->downloadTaskManager->markError($message->taskId);
+                $this->downloadTaskManager->markError($message->taskId, $event->getThrowable()->getMessage());
             }
         } catch (\Throwable $exception) {
             // Never break the worker itself: the failed message still reaches the failed transport.

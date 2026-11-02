@@ -25,7 +25,8 @@ final readonly class DownloadTaskManager implements DownloadTaskManagerInterface
     public function claimProcessing(int $taskId): bool
     {
         $affected = (int) $this->entityManager->getConnection()->executeStatement(
-            'UPDATE download_task SET status = :processing WHERE id = :id AND status = :queued',
+            'UPDATE download_task SET status = :processing, started_at = NOW(), attempts = attempts + 1
+             WHERE id = :id AND status = :queued',
             [
                 'id'         => $taskId,
                 'processing' => DownloadTask::STATUS_PROCESSING,
@@ -43,12 +44,12 @@ final readonly class DownloadTaskManager implements DownloadTaskManagerInterface
     }
 
     #[\Override]
-    public function markError(int $taskId): void
+    public function markError(int $taskId, ?string $errorMessage = null): void
     {
-        $this->markStatus($taskId, DownloadTask::STATUS_ERROR);
+        $this->markStatus($taskId, DownloadTask::STATUS_ERROR, $errorMessage);
     }
 
-    private function markStatus(int $taskId, string $status): void
+    private function markStatus(int $taskId, string $status, ?string $errorMessage = null): void
     {
         /** @var DownloadTask|null $task */
         $task = $this->entityManager->find(DownloadTask::class, $taskId);
@@ -57,7 +58,11 @@ final readonly class DownloadTaskManager implements DownloadTaskManagerInterface
             return;
         }
 
-        $task->setStatus($status);
+        $task->setStatus($status)
+            ->setFinishedAt(new \DateTimeImmutable())
+            ->setErrorMessage($errorMessage)
+        ;
+
         $this->entityManager->flush();
     }
 }

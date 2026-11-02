@@ -12,7 +12,9 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\NotEqualTo;
 use Symfony\Component\Validator\Constraints\NotNull;
+use Symfony\Component\Validator\Constraints\Regex;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class SourceForm extends AbstractType
@@ -35,6 +37,12 @@ final class SourceForm extends AbstractType
                     'normalizer' => 'trim',
                 ]),
                 new NotNull(),
+                new Regex(
+                    pattern: '/^[^\/\\\\]+$/',
+                    message: 'form.filename.invalid',
+                ),
+                new NotEqualTo(value: '.', message: 'form.filename.invalid'),
+                new NotEqualTo(value: '..', message: 'form.filename.invalid'),
             ],
         ])
             ->add('filepath', TextType::class, [
