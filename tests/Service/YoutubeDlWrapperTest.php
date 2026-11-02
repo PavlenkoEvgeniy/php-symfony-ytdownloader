@@ -192,6 +192,51 @@ final class YoutubeDlWrapperTest extends TestCase
     }
 
     /**
+     * Verifies a successful video exposes file metadata to the caller.
+     */
+    public function testSuccessfulVideoExposesFileMetadata(): void
+    {
+        $testFile = \tempnam(\sys_get_temp_dir(), 'test_video_meta_');
+        $this->assertIsString($testFile);
+        \file_put_contents($testFile, 'video-content');
+
+        try {
+            $processResult = $this->createMockProcessResult(true, \sprintf("%s\n", $testFile), '');
+
+            /** @phpstan-ignore-next-line */
+            $this->ytDlp->expects($this->once())
+                ->method('download')
+                ->willReturn($processResult);
+
+            $videos = $this->wrapper->download('https://youtube.com/watch?v=test', 'format', true)->getVideos();
+            $file   = $videos[0]->getFile();
+
+            $this->assertSame(\basename($testFile), $file->getBasename());
+            $this->assertSame(\dirname($testFile), $file->getPath());
+            $this->assertSame((float) \filesize($testFile), $file->getSize());
+        } finally {
+            @\unlink($testFile);
+        }
+    }
+
+    /**
+     * Verifies an errored video does not expose a file.
+     */
+    public function testErroredVideoHasNoFile(): void
+    {
+        $processResult = $this->createMockProcessResult(false, '', 'download failed');
+
+        /** @phpstan-ignore-next-line */
+        $this->ytDlp->expects($this->once())
+            ->method('download')
+            ->willReturn($processResult);
+
+        $videos = $this->wrapper->download('https://youtube.com/watch?v=test', 'format', true)->getVideos();
+
+        $this->assertNull($videos[0]->getFile());
+    }
+
+    /**
      * Verifies multiple reported files produce multiple video entries.
      */
     public function testDownloadHandlesMultipleFiles(): void

@@ -8,8 +8,10 @@ use App\Entity\DownloadTask;
 use App\EventSubscriber\DownloadTaskFailureListener;
 use App\Message\DownloadMessage;
 use App\Service\DownloadTaskManager;
+use App\Service\DownloadTaskManagerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 
@@ -21,13 +23,14 @@ final class DownloadTaskFailureListenerTest extends TestCase
     public function testMarksTaskAsErroredWhenNoRetryIsPlanned(): void
     {
         $task = new DownloadTask();
+
         $task->setUrl('https://test.local')->setQuality('best');
 
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->method('find')->willReturn($task);
-        $em->expects($this->once())->method('flush');
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('find')->willReturn($task);
+        $entityManager->expects($this->once())->method('flush');
 
-        $listener = new DownloadTaskFailureListener(new DownloadTaskManager($em), $this->createStub(\Psr\Log\LoggerInterface::class));
+        $listener = new DownloadTaskFailureListener(new DownloadTaskManager($entityManager), $this->createStub(LoggerInterface::class));
 
         $event = new WorkerMessageFailedEvent(
             new Envelope(new DownloadMessage('https://test.local', 'best', '', 5)),
@@ -45,11 +48,11 @@ final class DownloadTaskFailureListenerTest extends TestCase
      */
     public function testDoesNothingWhileRetriesArePlanned(): void
     {
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->never())->method('find');
-        $em->expects($this->never())->method('flush');
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->never())->method('find');
+        $entityManager->expects($this->never())->method('flush');
 
-        $listener = new DownloadTaskFailureListener(new DownloadTaskManager($em), $this->createStub(\Psr\Log\LoggerInterface::class));
+        $listener = new DownloadTaskFailureListener(new DownloadTaskManager($entityManager), $this->createStub(LoggerInterface::class));
 
         $event = new WorkerMessageFailedEvent(
             new Envelope(new DownloadMessage('https://test.local', 'best', '', 5)),
@@ -62,14 +65,43 @@ final class DownloadTaskFailureListenerTest extends TestCase
     }
 
     /**
+     * Verifies a database failure while marking the task is logged and does not escape.
+     */
+    public function testLogsWhenMarkingTaskFails(): void
+    {
+        $manager = $this->createMock(DownloadTaskManagerInterface::class);
+        $manager->expects($this->once())
+            ->method('markError')
+            ->with(5)
+            ->willThrowException(new \RuntimeException('database is down'))
+        ;
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('error')
+            ->with('Failed to mark download task as errored', ['error' => 'database is down'])
+        ;
+
+        $listener = new DownloadTaskFailureListener($manager, $logger);
+
+        $event = new WorkerMessageFailedEvent(
+            new Envelope(new DownloadMessage('https://test.local', 'best', '', 5)),
+            'async',
+            new \RuntimeException('download failed')
+        );
+
+        ($listener)($event);
+    }
+
+    /**
      * Verifies a failed message without a task id is ignored.
      */
     public function testIgnoresMessagesWithoutTaskId(): void
     {
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->never())->method('find');
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->never())->method('find');
 
-        $listener = new DownloadTaskFailureListener(new DownloadTaskManager($em), $this->createStub(\Psr\Log\LoggerInterface::class));
+        $listener = new DownloadTaskFailureListener(new DownloadTaskManager($entityManager), $this->createStub(LoggerInterface::class));
 
         $event = new WorkerMessageFailedEvent(
             new Envelope(new DownloadMessage('https://test.local', 'best')),

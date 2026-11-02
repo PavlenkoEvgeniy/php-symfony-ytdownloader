@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller\Security;
 
+use App\Controller\Security\LogoutController;
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -111,6 +112,33 @@ final class SecurityControllerTest extends WebTestCase
         $this->client->followRedirect();
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('div.alert', 'Invalid credentials.');
+    }
+
+    /**
+     * Verifies an authenticated user visiting the login page is redirected to downloads.
+     */
+    public function testLoginPageRedirectsAuthenticatedUser(): void
+    {
+        $user = $this->userRepository->findOneByEmail('admin@admin.local');
+        $this->client->loginUser($user);
+
+        $this->client->request(Request::METHOD_GET, '/login');
+
+        $this->assertResponseRedirects('/ui/download');
+    }
+
+    /**
+     * Verifies the logout controller redirects to the login page.
+     */
+    public function testLogoutControllerRedirectsToLogin(): void
+    {
+        $controller = new LogoutController();
+        $controller->setContainer(static::getContainer());
+
+        $response = $controller();
+
+        $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+        $this->assertSame('/login', $response->headers->get('location'));
     }
 
     /**

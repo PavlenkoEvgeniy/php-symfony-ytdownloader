@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Entity;
 
 use App\Entity\Log;
+use App\Exception\PropertyIsNotSetException;
 use PHPUnit\Framework\TestCase;
 
 final class LogTest extends TestCase
@@ -122,5 +123,34 @@ final class LogTest extends TestCase
         $log->setSize($largeSize);
 
         $this->assertSame($largeSize, $log->getSize());
+    }
+
+    /**
+     * Verifies the "or fail" getters return assigned values.
+     */
+    public function testOrFailGettersReturnAssignedValues(): void
+    {
+        $now = new \DateTimeImmutable();
+
+        $log = new Log();
+
+        $log->setType('success')
+            ->setMessage('Download completed')
+            ->setCreatedAt($now)
+        ;
+
+        $this->assertSame('success', $log->getTypeOrFail());
+        $this->assertSame('Download completed', $log->getMessageOrFail());
+        $this->assertSame($now, $log->getCreatedAtOrFail());
+    }
+
+    /**
+     * Verifies the identifier "or fail" getter throws before persistence.
+     */
+    public function testIdOrFailThrowsForUnsavedLog(): void
+    {
+        $this->expectException(PropertyIsNotSetException::class);
+
+        new Log()->getIdOrFail();
     }
 }

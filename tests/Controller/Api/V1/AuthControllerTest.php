@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller\Api\V1;
 
+use App\Controller\Api\V1\Auth\LoginController;
+use App\Controller\Api\V1\Auth\LogoutController;
+use App\Controller\Api\V1\Auth\MeController;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AuthControllerTest extends WebTestCase
 {
@@ -78,6 +82,54 @@ final class AuthControllerTest extends WebTestCase
         ]);
 
         $this->assertResponseStatusCodeSame(Response::HTTP_OK);
+    }
+
+    /**
+     * Verifies the login controller itself answers with a translated message.
+     */
+    public function testLoginControllerReturnsMessage(): void
+    {
+        $controller = new LoginController($this->createTranslator('login handled'));
+        $controller->setContainer(static::getContainer());
+
+        $response = $controller();
+
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame('{"message":"login handled"}', (string) $response->getContent());
+    }
+
+    /**
+     * Verifies the logout controller rejects anonymous callers.
+     */
+    public function testLogoutControllerRejectsAnonymousUser(): void
+    {
+        $controller = new LogoutController($this->createTranslator('unauthorized'));
+        $controller->setContainer(static::getContainer());
+
+        $response = $controller(null);
+
+        $this->assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
+    }
+
+    /**
+     * Verifies the profile controller rejects anonymous callers.
+     */
+    public function testMeControllerRejectsAnonymousUser(): void
+    {
+        $controller = new MeController($this->createTranslator('unauthorized'));
+        $controller->setContainer(static::getContainer());
+
+        $response = $controller(null);
+
+        $this->assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
+    }
+
+    private function createTranslator(string $message): TranslatorInterface
+    {
+        $translator = $this->createStub(TranslatorInterface::class);
+        $translator->method('trans')->willReturn($message);
+
+        return $translator;
     }
 
     private function loginAndGetToken(string $email, string $password): string

@@ -150,6 +150,30 @@ final class UserCrudControllerTest extends TestCase
     }
 
     /**
+     * Verifies the hash closure ignores a valid form whose data is not a user.
+     */
+    public function testHashPasswordClosureIgnoresNonUserData(): void
+    {
+        $hasher = $this->createMock(UserPasswordHasherInterface::class);
+        $hasher->expects($this->never())->method('hashPassword');
+
+        $controller = new UserCrudController($hasher);
+
+        $closure = $this->getHashPasswordClosure($controller);
+
+        $form = $this->createStub(FormInterface::class);
+        $form->method('isValid')->willReturn(true);
+        $form->method('getData')->willReturn(new \stdClass());
+
+        $passwordForm = $this->createStub(FormInterface::class);
+        $passwordForm->method('getData')->willReturn('plain');
+
+        $form->method('get')->willReturn($passwordForm);
+
+        $closure(new FormEvent($form, null));
+    }
+
+    /**
      * Verifies the hash closure stores the hashed value on the form entity.
      */
     public function testHashPasswordClosureHashesAndSetsPasswordWhenProvided(): void
