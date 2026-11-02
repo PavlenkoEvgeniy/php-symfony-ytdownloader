@@ -69,7 +69,9 @@ final class DownloadTaskTest extends TestCase
      */
     public function testOrFailGettersReturnAssignedValues(): void
     {
-        $now = new \DateTime();
+        $now        = new \DateTime();
+        $startedAt  = new \DateTimeImmutable();
+        $finishedAt = new \DateTimeImmutable();
 
         $task = new DownloadTask();
 
@@ -78,6 +80,9 @@ final class DownloadTaskTest extends TestCase
             ->setStatus(DownloadTask::STATUS_ERROR)
             ->setCreatedAt($now)
             ->setUpdatedAt($now)
+            ->setErrorMessage('download failed')
+            ->setStartedAt($startedAt)
+            ->setFinishedAt($finishedAt)
         ;
 
         $this->assertSame('https://test.local', $task->getUrlOrFail());
@@ -85,6 +90,9 @@ final class DownloadTaskTest extends TestCase
         $this->assertSame(DownloadTask::STATUS_ERROR, $task->getStatusOrFail());
         $this->assertSame($now, $task->getCreatedAtOrFail());
         $this->assertSame($now, $task->getUpdatedAtOrFail());
+        $this->assertSame('download failed', $task->getErrorMessageOrFail());
+        $this->assertSame($startedAt, $task->getStartedAtOrFail());
+        $this->assertSame($finishedAt, $task->getFinishedAtOrFail());
     }
 
     /**

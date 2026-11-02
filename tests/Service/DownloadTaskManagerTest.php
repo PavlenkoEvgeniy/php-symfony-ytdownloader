@@ -31,10 +31,10 @@ final class DownloadTaskManagerTest extends TestCase
             )
             ->willReturn(1);
 
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->once())->method('getConnection')->willReturn($connection);
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->once())->method('getConnection')->willReturn($connection);
 
-        $this->assertTrue(new DownloadTaskManager($em)->claimProcessing(1));
+        $this->assertTrue(new DownloadTaskManager($entityManager)->claimProcessing(1));
     }
 
     /**
@@ -45,10 +45,10 @@ final class DownloadTaskManagerTest extends TestCase
         $connection = $this->createStub(Connection::class);
         $connection->method('executeStatement')->willReturn(0);
 
-        $em = $this->createStub(EntityManagerInterface::class);
-        $em->method('getConnection')->willReturn($connection);
+        $entityManager = $this->createStub(EntityManagerInterface::class);
+        $entityManager->method('getConnection')->willReturn($connection);
 
-        $this->assertFalse(new DownloadTaskManager($em)->claimProcessing(1));
+        $this->assertFalse(new DownloadTaskManager($entityManager)->claimProcessing(1));
     }
 
     /**
@@ -58,10 +58,10 @@ final class DownloadTaskManagerTest extends TestCase
     {
         $task = new DownloadTask();
 
-        $em = $this->createStub(EntityManagerInterface::class);
-        $em->method('find')->willReturn($task);
+        $entityManager = $this->createStub(EntityManagerInterface::class);
+        $entityManager->method('find')->willReturn($task);
 
-        new DownloadTaskManager($em)->markSuccess(1);
+        new DownloadTaskManager($entityManager)->markSuccess(1);
 
         $this->assertSame(DownloadTask::STATUS_SUCCESS, $task->getStatus());
     }
@@ -74,10 +74,10 @@ final class DownloadTaskManagerTest extends TestCase
         $task = new DownloadTask();
         $task->setUrl('https://test.local')->setQuality('best');
 
-        $em = $this->createStub(EntityManagerInterface::class);
-        $em->method('find')->willReturn($task);
+        $entityManager = $this->createStub(EntityManagerInterface::class);
+        $entityManager->method('find')->willReturn($task);
 
-        new DownloadTaskManager($em)->markError(1, 'download failed');
+        new DownloadTaskManager($entityManager)->markError(1, 'download failed');
 
         $this->assertSame(DownloadTask::STATUS_ERROR, $task->getStatus());
         $this->assertSame('download failed', $task->getErrorMessage());
@@ -89,11 +89,11 @@ final class DownloadTaskManagerTest extends TestCase
      */
     public function testMarkStatusIgnoresMissingTask(): void
     {
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->once())->method('find')->willReturn(null);
-        $em->expects($this->never())->method('flush');
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->once())->method('find')->willReturn(null);
+        $entityManager->expects($this->never())->method('flush');
 
-        new DownloadTaskManager($em)->markError(99);
+        new DownloadTaskManager($entityManager)->markError(99);
 
         $this->assertSame(DownloadTask::STATUS_QUEUED, new DownloadTask()->getStatus());
     }
