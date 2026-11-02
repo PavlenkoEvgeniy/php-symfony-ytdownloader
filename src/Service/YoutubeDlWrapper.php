@@ -7,18 +7,18 @@ namespace App\Service;
 use App\Enum\VideoDownloaderOption;
 use P3s\YtDlp\ProcessResult;
 use P3s\YtDlp\YtDlpClientInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
-final readonly class YoutubeDlWrapper
+final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
 {
     public function __construct(
-        private YtDlpClientInterface $ytDlp,
+        private YtDlpClientInterface $ytDlpClient,
+        #[Autowire(env: 'string:resolve:APP_DOWNLOADS_DIR')]
         private string $downloadsDir,
     ) {
     }
 
-    /**
-     * @return object collection with getVideos() method
-     */
+    #[\Override]
     public function download(string $videoUrl, string $downloadFormat, bool $mergeAsVideo): object
     {
         $options = [
@@ -28,7 +28,7 @@ final readonly class YoutubeDlWrapper
         ];
 
         if ($mergeAsVideo) {
-            $result = $this->ytDlp->download($videoUrl, $options + [
+            $result = $this->ytDlpClient->download($videoUrl, $options + [
                 'cookies-from-browser' => 'chromium+gnomekeyring:/tmp/chromium_data',
                 'format'               => $downloadFormat,
                 'merge-output-format'  => VideoDownloaderOption::MERGE_OUTPUT_FORMAT_VIDEO->value,
@@ -38,7 +38,7 @@ final readonly class YoutubeDlWrapper
             return $this->toCollection($result);
         }
 
-        $result = $this->ytDlp->download($videoUrl, $options + [
+        $result = $this->ytDlpClient->download($videoUrl, $options + [
             'extract-audio' => true,
             'audio-format'  => VideoDownloaderOption::FORMAT_AUDIO->value,
             'output'        => VideoDownloaderOption::OUTPUT_FILE_FORMAT_AUDIO->value,
@@ -79,7 +79,7 @@ final readonly class YoutubeDlWrapper
     }
 
     /**
-     * @return list<string>
+     * @return string[]
      */
     private function extractDownloadedPaths(string $stdout): array
     {
@@ -100,20 +100,21 @@ final readonly class YoutubeDlWrapper
     }
 
     /**
-     * @param list<object> $videos
+     * @param object[] $videos
      */
     private function createCollection(array $videos): object
     {
         return new readonly class($videos) {
             /**
-             * @param list<object> $videos
+             * @param object[] $videos
              */
-            public function __construct(private array $videos)
-            {
+            public function __construct(
+                private array $videos,
+            ) {
             }
 
             /**
-             * @return list<object>
+             * @return object[]
              */
             public function getVideos(): array
             {
@@ -125,8 +126,9 @@ final readonly class YoutubeDlWrapper
     private function createErroredVideo(string $error): object
     {
         return new readonly class($error) {
-            public function __construct(private string $error)
-            {
+            public function __construct(
+                private string $error,
+            ) {
             }
 
             public function getError(): string
@@ -145,10 +147,13 @@ final readonly class YoutubeDlWrapper
     {
         $fileInfo = new \SplFileInfo($downloadedPath);
         $size     = $fileInfo->getSize();
+        $size     = (float) (false === $size ? 0 : $size);
 
-        return new readonly class($fileInfo, false === $size ? 0.0 : (float) $size) {
-            public function __construct(private \SplFileInfo $fileInfo, private float $size)
-            {
+        return new readonly class($fileInfo, $size) {
+            public function __construct(
+                private \SplFileInfo $fileInfo,
+                private float $size,
+            ) {
             }
 
             public function getError(): null
@@ -159,8 +164,10 @@ final readonly class YoutubeDlWrapper
             public function getFile(): object
             {
                 return new readonly class($this->fileInfo, $this->size) {
-                    public function __construct(private \SplFileInfo $fileInfo, private float $size)
-                    {
+                    public function __construct(
+                        private \SplFileInfo $fileInfo,
+                        private float $size,
+                    ) {
                     }
 
                     public function getBasename(): string

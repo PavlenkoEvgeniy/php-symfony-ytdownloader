@@ -15,11 +15,17 @@ use PHPUnit\Framework\TestCase;
 
 final class SourceCrudControllerTest extends TestCase
 {
+    /**
+     * Verifies the CRUD controller is bound to the Source entity.
+     */
     public function testGetEntityFqcn(): void
     {
         $this->assertSame(Source::class, SourceCrudController::getEntityFqcn());
     }
 
+    /**
+     * Verifies new, edit, delete and batch delete actions are disabled.
+     */
     public function testConfigureActionsDisablesNewEditAndDelete(): void
     {
         $controller = new SourceCrudController();
@@ -37,6 +43,9 @@ final class SourceCrudControllerTest extends TestCase
         $this->assertContains(Action::BATCH_DELETE, $disabled);
     }
 
+    /**
+     * Verifies the CRUD fields expose id, filename, size and createdAt.
+     */
     public function testConfigureFields(): void
     {
         $controller = new SourceCrudController();
@@ -45,11 +54,9 @@ final class SourceCrudControllerTest extends TestCase
 
         $this->assertCount(4, $fields);
 
-        // id
         $idField = $fields[0];
         $this->assertSame('id', $this->getFieldProperty($idField));
 
-        // filename
         $filenameField = $fields[1];
         $this->assertSame('filename', $this->getFieldProperty($filenameField));
 
@@ -63,7 +70,6 @@ final class SourceCrudControllerTest extends TestCase
         $this->assertSame('-', $formatCallable(null));
         $this->assertSame(Helper::formatBytes(1024), $formatCallable(1024));
 
-        // createdAt
         $createdAtField = $fields[3];
         $this->assertSame('createdAt', $this->getFieldProperty($createdAtField));
     }
@@ -72,8 +78,7 @@ final class SourceCrudControllerTest extends TestCase
     {
         $ref  = new \ReflectionObject($field);
         $prop = $ref->getProperty('dto');
-        $prop->setAccessible(true);
-        $dto = $prop->getValue($field);
+        $dto  = $prop->getValue($field);
 
         return $dto->getProperty();
     }
@@ -82,8 +87,7 @@ final class SourceCrudControllerTest extends TestCase
     {
         $ref  = new \ReflectionObject($field);
         $prop = $ref->getProperty('dto');
-        $prop->setAccessible(true);
-        $dto = $prop->getValue($field);
+        $dto  = $prop->getValue($field);
 
         return $dto->getFormatValueCallable();
     }

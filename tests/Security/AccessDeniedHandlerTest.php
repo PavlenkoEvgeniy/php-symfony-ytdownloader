@@ -16,6 +16,9 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 final class AccessDeniedHandlerTest extends TestCase
 {
+    /**
+     * Verifies access denial adds a warning flash and redirects to downloads.
+     */
     public function testHandleAddsFlashAndRedirects(): void
     {
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
@@ -31,7 +34,6 @@ final class AccessDeniedHandlerTest extends TestCase
         $handler  = new AccessDeniedHandler($urlGenerator);
         $response = $handler->handle($request, new AccessDeniedException());
 
-        $this->assertNotNull($response);
         $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode());
         $this->assertSame('/ui/download', $response->headers->get('location'));
 
@@ -43,6 +45,9 @@ final class AccessDeniedHandlerTest extends TestCase
         $this->assertSame(['Access denied.'], $flashBag->get('warning'));
     }
 
+    /**
+     * Verifies access denial redirects even when no session is available.
+     */
     public function testHandleWithoutSessionStillRedirects(): void
     {
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
@@ -57,7 +62,6 @@ final class AccessDeniedHandlerTest extends TestCase
         $handler  = new AccessDeniedHandler($urlGenerator);
         $response = $handler->handle($request, new AccessDeniedException());
 
-        $this->assertNotNull($response);
         $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode());
         $this->assertSame('/ui/download', $response->headers->get('location'));
     }

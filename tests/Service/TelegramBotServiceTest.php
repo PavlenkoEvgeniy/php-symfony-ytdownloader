@@ -10,6 +10,9 @@ use PHPUnit\Framework\TestCase;
 
 final class TelegramBotServiceTest extends TestCase
 {
+    /**
+     * Verifies the service exposes a BotMan instance using the Telegram driver.
+     */
     public function testGetBotReturnsBotManInstance(): void
     {
         $service = new TelegramBotService('dummy-token');

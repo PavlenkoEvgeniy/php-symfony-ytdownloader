@@ -17,16 +17,6 @@ final class QueueStatsServiceTest extends KernelTestCase
 
     public function setUp(): void
     {
-        // Skip functional DB tests if the database host is not resolvable in this environment
-        $dbUrl = $_ENV['DATABASE_URL'] ?? $_SERVER['DATABASE_URL'] ?? \getenv('DATABASE_URL') ?: '';
-        $parts = \parse_url($dbUrl);
-        if (false !== $parts && isset($parts['host'])) {
-            $host = $parts['host'];
-            if (\gethostbyname($host) === $host) {
-                $this->markTestSkipped('Database host not resolvable - skipping QueueStatsService tests.');
-            }
-        }
-
         self::bootKernel();
 
         /** @var EntityManager $em */
@@ -47,6 +37,9 @@ final class QueueStatsServiceTest extends KernelTestCase
         parent::tearDown();
     }
 
+    /**
+     * Verifies stats count a newly persisted task as queued without changing other counters.
+     */
     public function testGetStatsCountsPersistedTasks(): void
     {
         $before = $this->queueStatsService->getStats();
@@ -65,6 +58,9 @@ final class QueueStatsServiceTest extends KernelTestCase
         $this->assertSame($before['totalSize'], $stats['totalSize']);
     }
 
+    /**
+     * Verifies the lifetime total size does not shrink when a source is removed.
+     */
     public function testTotalSizeSurvivesSourceRemoval(): void
     {
         $beforeTotal = $this->queueStatsService->getStats()['totalSize'];

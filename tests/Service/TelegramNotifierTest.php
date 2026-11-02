@@ -11,6 +11,9 @@ use PHPUnit\Framework\TestCase;
 
 final class TelegramNotifierTest extends TestCase
 {
+    /**
+     * Verifies error notifications are sent to the given user.
+     */
     public function testNotifyErrorSendsMessage(): void
     {
         $bot = $this->createMock(BotMan::class);
@@ -28,6 +31,9 @@ final class TelegramNotifierTest extends TestCase
         $notifier->notifyError('user-id', 'error occurred');
     }
 
+    /**
+     * Verifies completion notifications are sent to the given user.
+     */
     public function testNotifyFinishedSendsMessage(): void
     {
         $bot = $this->createMock(BotMan::class);

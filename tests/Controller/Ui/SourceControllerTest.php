@@ -7,6 +7,7 @@ namespace App\Tests\Controller\Ui;
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\Request;
 
 final class SourceControllerTest extends WebTestCase
 {
@@ -20,28 +21,37 @@ final class SourceControllerTest extends WebTestCase
         $this->userRepository = $this->getContainer()->get(UserRepository::class);
     }
 
+    /**
+     * Verifies the sources page opens for an authenticated admin.
+     */
     public function testSourcePageIsOpeningOk(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
         $this->client->loginUser($user);
 
-        $this->client->request('GET', '/ui/source');
+        $this->client->request(Request::METHOD_GET, '/ui/source');
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('a', '+ Add new download');
     }
 
+    /**
+     * Verifies the queue stats endpoint redirects anonymous visitors to login.
+     */
     public function testQueueStatsRequiresAuthentication(): void
     {
-        $this->client->request('GET', '/ui/source/queue-stats');
+        $this->client->request(Request::METHOD_GET, '/ui/source/queue-stats');
         $this->assertResponseRedirects();
     }
 
+    /**
+     * Verifies the queue stats endpoint returns status counters in the response body.
+     */
     public function testQueueStatsReturnsCounters(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
         $this->client->loginUser($user);
 
-        $this->client->request('GET', '/ui/source/queue-stats');
+        $this->client->request(Request::METHOD_GET, '/ui/source/queue-stats');
 
         $this->assertResponseIsSuccessful();
         $this->assertResponseFormatSame('json');
@@ -66,7 +76,7 @@ final class SourceControllerTest extends WebTestCase
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
         $this->client->loginUser($user);
 
-        $this->client->request('GET', '/ui/source');
+        $this->client->request(Request::METHOD_GET, '/ui/source');
 
         $this->assertResponseIsSuccessful();
         $this->assertSelectorNotExists('[data-tasks-body]');

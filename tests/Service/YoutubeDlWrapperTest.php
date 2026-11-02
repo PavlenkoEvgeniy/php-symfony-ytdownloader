@@ -24,6 +24,9 @@ final class YoutubeDlWrapperTest extends TestCase
         $this->wrapper = new YoutubeDlWrapper($this->ytDlp, $this->downloadsDir);
     }
 
+    /**
+     * Verifies video downloads pass the video merge format to yt-dlp.
+     */
     public function testDownloadVideoCallsYtDlpWithVideoOptions(): void
     {
         $processResult = $this->createMockProcessResult(true, '', '');
@@ -33,10 +36,8 @@ final class YoutubeDlWrapperTest extends TestCase
             ->method('download')
             ->with(
                 'https://youtube.com/watch?v=test',
-                $this->callback(function (array $options) {
-                    return isset($options['merge-output-format'])
-                        && $options['merge-output-format'] === VideoDownloaderOption::MERGE_OUTPUT_FORMAT_VIDEO->value;
-                })
+                $this->callback(static fn (array $options) => isset($options['merge-output-format'])
+                    && $options['merge-output-format'] === VideoDownloaderOption::MERGE_OUTPUT_FORMAT_VIDEO->value)
             )
             ->willReturn($processResult);
 
@@ -45,6 +46,9 @@ final class YoutubeDlWrapperTest extends TestCase
         $this->assertTrue(\method_exists($result, 'getVideos'));
     }
 
+    /**
+     * Verifies audio downloads request audio extraction from yt-dlp.
+     */
     public function testDownloadAudioCallsYtDlpWithAudioOptions(): void
     {
         $processResult = $this->createMockProcessResult(true, '', '');
@@ -53,10 +57,8 @@ final class YoutubeDlWrapperTest extends TestCase
                     ->method('download')
                     ->with(
                         'https://youtube.com/watch?v=test',
-                        $this->callback(function (array $options) {
-                            return isset($options['extract-audio'])
-                                && true === $options['extract-audio'];
-                        })
+                        $this->callback(static fn (array $options) => isset($options['extract-audio'])
+                            && true === $options['extract-audio'])
                     )
                     ->willReturn($processResult);
 
@@ -65,6 +67,9 @@ final class YoutubeDlWrapperTest extends TestCase
         $this->assertTrue(\method_exists($result, 'getVideos'));
     }
 
+    /**
+     * Verifies download returns a collection with a videos array.
+     */
     public function testDownloadReturnsCollectionObject(): void
     {
         $processResult = $this->createMockProcessResult(true, '', '');
@@ -80,9 +85,11 @@ final class YoutubeDlWrapperTest extends TestCase
         $this->assertIsArray($result->getVideos());
     }
 
+    /**
+     * Verifies a successful process reports the downloaded file without error.
+     */
     public function testDownloadHandlesSuccessfulProcessWithFile(): void
     {
-        // Create a temporary test file
         $testFile = \tempnam(\sys_get_temp_dir(), 'test_video_');
         $this->assertIsString($testFile);
 
@@ -106,6 +113,9 @@ final class YoutubeDlWrapperTest extends TestCase
         }
     }
 
+    /**
+     * Verifies a failed process exposes the stderr message as the error.
+     */
     public function testDownloadHandlesProcessFailureWithStderr(): void
     {
         $processResult = $this->createMockProcessResult(false, '', 'Download failed: video not found');
@@ -123,6 +133,9 @@ final class YoutubeDlWrapperTest extends TestCase
         $this->assertStringContainsString('Download failed', $videos[0]->getError());
     }
 
+    /**
+     * Verifies a failed process falls back to the stdout message as the error.
+     */
     public function testDownloadHandlesProcessFailureWithStdout(): void
     {
         $processResult = $this->createMockProcessResult(false, 'Some error message', '');
@@ -139,6 +152,9 @@ final class YoutubeDlWrapperTest extends TestCase
         $this->assertStringContainsString('Some error message', $videos[0]->getError());
     }
 
+    /**
+     * Verifies a failed process without output returns a generic error.
+     */
     public function testDownloadHandlesProcessFailureWithoutOutput(): void
     {
         $processResult = $this->createMockProcessResult(false, '', '');
@@ -155,6 +171,9 @@ final class YoutubeDlWrapperTest extends TestCase
         $this->assertSame('yt-dlp process failed.', $videos[0]->getError());
     }
 
+    /**
+     * Verifies a successful process without files reports a missing file error.
+     */
     public function testDownloadHandlesSuccessfulProcessWithoutFiles(): void
     {
         $processResult = $this->createMockProcessResult(true, '', '');
@@ -172,6 +191,9 @@ final class YoutubeDlWrapperTest extends TestCase
         $this->assertStringContainsString('no downloaded file was reported', $videos[0]->getError());
     }
 
+    /**
+     * Verifies multiple reported files produce multiple video entries.
+     */
     public function testDownloadHandlesMultipleFiles(): void
     {
         $testFile1 = \tempnam(\sys_get_temp_dir(), 'test_video_1_');
@@ -198,6 +220,9 @@ final class YoutubeDlWrapperTest extends TestCase
         }
     }
 
+    /**
+     * Verifies repeated paths produce a single video entry.
+     */
     public function testDownloadDeduplicatesPaths(): void
     {
         $testFile = \tempnam(\sys_get_temp_dir(), 'test_video_');
@@ -219,13 +244,16 @@ final class YoutubeDlWrapperTest extends TestCase
         }
     }
 
+    /**
+     * Verifies a reported path that does not exist reports an error.
+     */
     public function testDownloadIgnoresNonExistentFiles(): void
     {
         $testFile = \tempnam(\sys_get_temp_dir(), 'test_video_');
         $this->assertIsString($testFile);
         @\unlink($testFile);
 
-        $nonExistentFile = $testFile . '_nonexistent';
+        $nonExistentFile = \sprintf('%s_nonexistent', $testFile);
         $stdout          = $nonExistentFile . "\n";
         $processResult   = $this->createMockProcessResult(true, $stdout, '');
         /** @phpstan-ignore-next-line */
@@ -240,6 +268,9 @@ final class YoutubeDlWrapperTest extends TestCase
         $this->assertNotNull($videos[0]->getError());
     }
 
+    /**
+     * Verifies surrounding whitespace is stripped from reported paths.
+     */
     public function testDownloadTrimsWhitespaceFromPaths(): void
     {
         $testFile = \tempnam(\sys_get_temp_dir(), 'test_video_');
@@ -261,6 +292,9 @@ final class YoutubeDlWrapperTest extends TestCase
         }
     }
 
+    /**
+     * Verifies a successful video exposes file name, path and size.
+     */
     public function testSuccessfulVideoReturnsFileInfo(): void
     {
         $testFile = \tempnam(\sys_get_temp_dir(), 'test_video_');

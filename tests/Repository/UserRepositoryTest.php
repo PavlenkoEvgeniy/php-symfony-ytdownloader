@@ -18,16 +18,6 @@ final class UserRepositoryTest extends KernelTestCase
 
     public function setUp(): void
     {
-        // Skip functional DB tests if the database host is not resolvable in this environment
-        $dbUrl = $_ENV['DATABASE_URL'] ?? $_SERVER['DATABASE_URL'] ?? \getenv('DATABASE_URL') ?: '';
-        $parts = \parse_url($dbUrl);
-        if (false !== $parts && isset($parts['host'])) {
-            $host = $parts['host'];
-            if (\gethostbyname($host) === $host) {
-                $this->markTestSkipped('Database host not resolvable - skipping UserRepository tests.');
-            }
-        }
-
         self::bootKernel();
 
         /** @var EntityManager $em */
@@ -48,16 +38,19 @@ final class UserRepositoryTest extends KernelTestCase
         parent::tearDown();
     }
 
+    /**
+     * Verifies the total user count grows by the number of inserted users.
+     */
     public function testGetTotalCountReflectsInsertedUsers(): void
     {
         $initial = $this->userRepository->getTotalCount();
 
         $u1 = new User();
-        $u1->setEmail('a1@example.test');
+        $u1->setEmail('a1@test.local');
         $u1->setPassword('pass');
 
         $u2 = new User();
-        $u2->setEmail('a2@example.test');
+        $u2->setEmail('a2@test.local');
         $u2->setPassword('pass');
 
         $this->em->persist($u1);
@@ -67,9 +60,12 @@ final class UserRepositoryTest extends KernelTestCase
         $this->assertSame($initial + 2, $this->userRepository->getTotalCount());
     }
 
+    /**
+     * Verifies email lookup is case-insensitive and returns null for unknown users.
+     */
     public function testFindOneByEmailReturnsUserOrNull(): void
     {
-        $email = 'FindMe@example.test';
+        $email = 'FindMe@test.local';
 
         $user = new User();
         $user->setEmail($email);
@@ -82,14 +78,17 @@ final class UserRepositoryTest extends KernelTestCase
         $this->assertInstanceOf(User::class, $found);
         $this->assertSame(\mb_strtolower($email), $found->getEmail());
 
-        $notFound = $this->userRepository->findOneByEmail('no-such-user@example.test');
+        $notFound = $this->userRepository->findOneByEmail('no-such-user@test.local');
         $this->assertNull($notFound);
     }
 
+    /**
+     * Verifies upgrading a password persists the new hash.
+     */
     public function testUpgradePasswordPersistsNewHash(): void
     {
         $user = new User();
-        $user->setEmail('upgrade@example.test');
+        $user->setEmail('upgrade@test.local');
         $user->setPassword('oldhash');
 
         $this->em->persist($user);
@@ -99,12 +98,15 @@ final class UserRepositoryTest extends KernelTestCase
 
         // clear and fetch again to ensure flush happened
         $this->em->clear();
-        $reloaded = $this->userRepository->findOneByEmail('upgrade@example.test');
+        $reloaded = $this->userRepository->findOneByEmail('upgrade@test.local');
 
         $this->assertInstanceOf(User::class, $reloaded);
         $this->assertSame('newHash123', $reloaded->getPassword());
     }
 
+    /**
+     * Verifies upgrading a password rejects users not managed by the repository.
+     */
     public function testUpgradePasswordThrowsOnUnsupportedUser(): void
     {
         $this->expectException(UnsupportedUserException::class);

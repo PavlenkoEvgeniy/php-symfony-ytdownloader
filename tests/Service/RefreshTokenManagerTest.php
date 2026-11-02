@@ -35,6 +35,9 @@ final class RefreshTokenManagerTest extends TestCase
         );
     }
 
+    /**
+     * Verifies issuing tokens persists a refresh token and returns the JWT.
+     */
     public function testIssueTokensCreatesRefreshToken(): void
     {
         $user = $this->createUser();
@@ -57,6 +60,9 @@ final class RefreshTokenManagerTest extends TestCase
         $this->assertSame('jwt-token-value', $result['token']);
     }
 
+    /**
+     * Verifies the refresh token expiry matches the configured TTL.
+     */
     public function testIssueTokensRefreshTokenExpiresAtCorrectTime(): void
     {
         $user = $this->createUser();
@@ -83,6 +89,9 @@ final class RefreshTokenManagerTest extends TestCase
         $this->assertLessThanOrEqual(1, \abs($expiresAt->getTimestamp() - $expectedExpiry->getTimestamp()));
     }
 
+    /**
+     * Verifies refreshing an unknown token returns null.
+     */
     public function testRefreshReturnsNullIfTokenNotFound(): void
     {
         /** @phpstan-ignore-next-line */
@@ -96,6 +105,9 @@ final class RefreshTokenManagerTest extends TestCase
         $this->assertNull($result);
     }
 
+    /**
+     * Verifies refreshing a revoked token returns null.
+     */
     public function testRefreshReturnsNullIfTokenIsRevoked(): void
     {
         $token = $this->createMockToken();
@@ -113,6 +125,9 @@ final class RefreshTokenManagerTest extends TestCase
         $this->assertNull($result);
     }
 
+    /**
+     * Verifies refreshing an expired token returns null.
+     */
     public function testRefreshReturnsNullIfTokenIsExpired(): void
     {
         $token = $this->createMockToken();
@@ -134,6 +149,9 @@ final class RefreshTokenManagerTest extends TestCase
         $this->assertNull($result);
     }
 
+    /**
+     * Verifies refreshing a token without a user returns null.
+     */
     public function testRefreshReturnsNullIfUserNotFound(): void
     {
         $token = $this->createMockToken();
@@ -157,6 +175,9 @@ final class RefreshTokenManagerTest extends TestCase
         $this->assertNull($result);
     }
 
+    /**
+     * Verifies refresh revokes the old token and issues a new pair.
+     */
     public function testRefreshRevokesOldTokenAndCreatesNew(): void
     {
         $user     = $this->createUser();
@@ -192,6 +213,9 @@ final class RefreshTokenManagerTest extends TestCase
         $this->assertTrue($oldToken->isRevoked());
     }
 
+    /**
+     * Verifies refresh returns a token payload with the expected keys.
+     */
     public function testRefreshReturnsValidTokenStructure(): void
     {
         $user     = $this->createUser();
@@ -219,22 +243,28 @@ final class RefreshTokenManagerTest extends TestCase
             ->method('flush');
 
         $result = $this->manager->refresh('old-token');
+
+        $this->assertIsArray($result);
+        $this->assertSame('jwt-token', $result['token']);
+        $this->assertNotSame('', $result['refresh_token']);
+        $this->assertNotSame('', $result['refresh_token_expires_at']);
     }
 
     private function createUser(): User
     {
         $user = new User();
-        $user->setEmail('test@example.com');
+        $user->setEmail('test@test.local');
         $user->setPassword('hashed-password');
 
         return $user;
     }
 
     /**
-     * @return \PHPUnit\Framework\MockObject\MockObject&RefreshToken
+     * @return \PHPUnit\Framework\MockObject\MockObject
      */
     private function createMockToken(): mixed
     {
+        /** @phpstan-ignore-next-line */
         return $this->createMock(RefreshToken::class);
     }
 }

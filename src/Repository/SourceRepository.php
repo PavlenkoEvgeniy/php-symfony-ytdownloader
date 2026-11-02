@@ -10,24 +10,68 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<Source>
- *
- * @method findOneByFilename(string $filename)
  */
-final class SourceRepository extends ServiceEntityRepository
+final class SourceRepository extends ServiceEntityRepository implements SourceRepositoryInterface
 {
-    public function __construct(ManagerRegistry $registry)
-    {
+    public function __construct(
+        ManagerRegistry $registry,
+    ) {
         parent::__construct($registry, Source::class);
     }
 
+    #[\Override]
+    public function findOneByFilename(string $filename): ?Source
+    {
+        $source = $this->createQueryBuilder('s')
+            ->where('s.filename = :filename')
+            ->setParameter('filename', $filename)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+
+        return $source instanceof Source ? $source : null;
+    }
+
+    #[\Override]
+    /**
+     * @return Source[]
+     */
+    public function findAllSources(): array
+    {
+        /** @var Source[] $sources */
+        $sources = $this->createQueryBuilder('s')
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $sources;
+    }
+
+    #[\Override]
+    /**
+     * @return Source[]
+     */
+    public function findAllOrderedByCreatedAt(string $order): array
+    {
+        /** @var Source[] $sources */
+        $sources = $this->createQueryBuilder('s')
+            ->orderBy('s.createdAt', $order)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $sources;
+    }
+
+    #[\Override]
     /**
      * Filenames of every stored source, used to tell kept files from orphans.
      *
-     * @return list<string>
+     * @return string[]
      */
     public function findAllFilenames(): array
     {
-        /** @var list<mixed> $filenames */
+        /** @var mixed[] $filenames */
         $filenames = $this->createQueryBuilder('s')
             ->select('s.filename')
             ->getQuery()

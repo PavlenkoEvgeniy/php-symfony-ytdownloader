@@ -21,6 +21,9 @@ final class UserFixturesTest extends KernelTestCase
         $this->fixtures       = new UserFixtures($this->passwordHasher);
     }
 
+    /**
+     * Verifies the fixtures expose the user and all groups.
+     */
     public function testFixturesHasCorrectGroups(): void
     {
         $groups = UserFixtures::getGroups();
@@ -30,96 +33,92 @@ final class UserFixturesTest extends KernelTestCase
         $this->assertCount(2, $groups);
     }
 
-    public function testFixturesCanBeInstantiated(): void
-    {
-        // Fixture is instantiated in setUp()
-        $this->addToAssertionCount(1);
-    }
-
+    /**
+     * Verifies the fixtures implement the fixture group interface.
+     */
     public function testFixturesImplementsCorrectInterface(): void
     {
-        // Verify it implements the required interfaces
         $interfaces = \class_implements(\get_class($this->fixtures));
         $this->assertArrayHasKey('Doctrine\\Bundle\\FixturesBundle\\FixtureGroupInterface', (array) $interfaces);
     }
 
+    /**
+     * Verifies loading the fixtures creates at least four users.
+     */
     public function testFixturesCanLoadData(): void
     {
         $em             = self::getContainer()->get('doctrine.orm.entity_manager');
         $userRepository = self::getContainer()->get('doctrine.orm.entity_manager')
             ->getRepository(User::class);
 
-        // Clear existing fixtures
         foreach ($userRepository->findAll() as $user) {
             $em->remove($user);
         }
         $em->flush();
 
-        // Load fixtures
         $this->fixtures->load($em);
 
-        // Verify users were created
         $allUsers = $userRepository->findAll();
         $this->assertGreaterThanOrEqual(4, \count($allUsers));
     }
 
+    /**
+     * Verifies the fixtures create an enabled admin user with the admin role.
+     */
     public function testFixturesCreateAdminUser(): void
     {
         $em             = self::getContainer()->get('doctrine.orm.entity_manager');
         $userRepository = $em->getRepository(User::class);
 
-        // Clear existing fixtures
         foreach ($userRepository->findAll() as $user) {
             $em->remove($user);
         }
         $em->flush();
 
-        // Load fixtures
         $this->fixtures->load($em);
 
-        // Find admin user
         $adminUser = $userRepository->findOneByEmail('admin@admin.local');
         $this->assertInstanceOf(User::class, $adminUser);
         $this->assertContains('ROLE_ADMIN', $adminUser->getRoles());
         $this->assertTrue($adminUser->getIsEnabled() ?? false);
     }
 
+    /**
+     * Verifies the fixtures create an enabled regular user.
+     */
     public function testFixturesCreateRegularUser(): void
     {
         $em             = self::getContainer()->get('doctrine.orm.entity_manager');
         $userRepository = $em->getRepository(User::class);
 
-        // Clear existing fixtures
         foreach ($userRepository->findAll() as $user) {
             $em->remove($user);
         }
         $em->flush();
 
-        // Load fixtures
         $this->fixtures->load($em);
 
-        // Find regular user
         $user = $userRepository->findOneByEmail('user@test.local');
         $this->assertInstanceOf(User::class, $user);
         $this->assertContains('ROLE_USER', $user->getRoles());
         $this->assertTrue($user->getIsEnabled() ?? false);
     }
 
+    /**
+     * Verifies the fixtures create disabled admin and regular users.
+     */
     public function testFixturesCreateDisabledUsers(): void
     {
         $em             = self::getContainer()->get('doctrine.orm.entity_manager');
         $userRepository = $em->getRepository(User::class);
 
-        // Clear existing fixtures
         foreach ($userRepository->findAll() as $user) {
             $em->remove($user);
         }
         $em->flush();
 
-        // Load fixtures
         $this->fixtures->load($em);
 
-        // Find disabled users
         $disabledAdmin = $userRepository->findOneByEmail('admin.disabled@admin.local');
         $disabledUser  = $userRepository->findOneByEmail('user.disabled@test.local');
 
@@ -129,21 +128,21 @@ final class UserFixturesTest extends KernelTestCase
         $this->assertFalse($disabledUser->getIsEnabled() ?? false);
     }
 
+    /**
+     * Verifies fixture passwords are stored hashed rather than in plain text.
+     */
     public function testFixturesPasswordsAreHashed(): void
     {
         $em             = self::getContainer()->get('doctrine.orm.entity_manager');
         $userRepository = $em->getRepository(User::class);
 
-        // Clear existing fixtures
         foreach ($userRepository->findAll() as $user) {
             $em->remove($user);
         }
         $em->flush();
 
-        // Load fixtures
         $this->fixtures->load($em);
 
-        // Get a user and verify password is hashed
         $adminUser = $userRepository->findOneByEmail('admin@admin.local');
         $this->assertNotSame('admin123456', $adminUser?->getPassword());
     }

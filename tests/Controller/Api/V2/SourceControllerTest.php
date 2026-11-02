@@ -18,9 +18,9 @@ final class SourceControllerTest extends WebTestCase
     private EntityManagerInterface $em;
     private SourceRepository $sourceRepository;
     private string $downloadsDir;
-    /** @var list<int> */
+    /** @var int[] */
     private array $createdSourceIds = [];
-    /** @var list<string> */
+    /** @var string[] */
     private array $createdFiles     = [];
 
     public function setUp(): void
@@ -39,10 +39,10 @@ final class SourceControllerTest extends WebTestCase
             }
         }
 
-        if (!empty($this->createdSourceIds)) {
+        if ([] !== $this->createdSourceIds) {
             foreach ($this->createdSourceIds as $id) {
                 $source = $this->sourceRepository->find($id);
-                if ($source) {
+                if ($source instanceof Source) {
                     $this->em->remove($source);
                 }
             }
@@ -52,12 +52,15 @@ final class SourceControllerTest extends WebTestCase
         parent::tearDown();
     }
 
+    /**
+     * Verifies the source index returns items and a count for an authenticated user.
+     */
     public function testIndexReturnsItems(): void
     {
         $token = $this->loginAndGetToken('admin@admin.local', 'admin123456');
 
         $this->client->request(Request::METHOD_GET, '/api/v2/source', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+            'HTTP_AUTHORIZATION' => \sprintf('Bearer %s', $token),
         ]);
 
         $this->assertResponseIsSuccessful();
@@ -69,13 +72,16 @@ final class SourceControllerTest extends WebTestCase
         $this->assertArrayHasKey('count', $data);
     }
 
+    /**
+     * Verifies downloading a source returns the file as an attachment.
+     */
     public function testDownloadReturnsFile(): void
     {
         $source = $this->createSourceWithFile('test-download-v2.mp4');
         $token  = $this->loginAndGetToken('admin@admin.local', 'admin123456');
 
-        $this->client->request(Request::METHOD_GET, '/api/v2/source/' . $source->getId() . '/download', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+        $this->client->request(Request::METHOD_GET, \sprintf('/api/v2/source/%s/download', $source->getId()), server: [
+            'HTTP_AUTHORIZATION' => \sprintf('Bearer %s', $token),
         ]);
 
         $this->assertResponseIsSuccessful();
@@ -83,19 +89,22 @@ final class SourceControllerTest extends WebTestCase
         $this->assertStringContainsString('test-download-v2.mp4', (string) $this->client->getResponse()->headers->get('content-disposition'));
     }
 
+    /**
+     * Verifies deleting a source removes both the entity and the file.
+     */
     public function testDeleteRemovesFileAndEntity(): void
     {
         $source = $this->createSourceWithFile('test-delete-v2.mp4');
         $token  = $this->loginAndGetToken('admin@admin.local', 'admin123456');
 
-        $this->client->request(Request::METHOD_DELETE, '/api/v2/source/' . $source->getId(), server: [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+        $this->client->request(Request::METHOD_DELETE, \sprintf('/api/v2/source/%s', $source->getId()), server: [
+            'HTTP_AUTHORIZATION' => \sprintf('Bearer %s', $token),
         ]);
 
         $this->assertResponseStatusCodeSame(Response::HTTP_OK);
 
         $this->assertNull($this->sourceRepository->find($source->getId()));
-        $this->assertFileDoesNotExist($source->getFilepath() . '/' . $source->getFilename());
+        $this->assertFileDoesNotExist(\sprintf('%s/%s', $source->getFilepath(), $source->getFilename()));
     }
 
     private function createSourceWithFile(string $filename): Source
@@ -104,7 +113,7 @@ final class SourceControllerTest extends WebTestCase
             \mkdir($this->downloadsDir, 0775, true);
         }
 
-        $filePath = $this->downloadsDir . '/' . $filename;
+        $filePath = \sprintf('%s/%s', $this->downloadsDir, $filename);
         \file_put_contents($filePath, 'test');
 
         $source = new Source();

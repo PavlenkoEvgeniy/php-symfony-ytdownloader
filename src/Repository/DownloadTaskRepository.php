@@ -6,18 +6,21 @@ namespace App\Repository;
 
 use App\Entity\DownloadTask;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<DownloadTask>
  */
-final class DownloadTaskRepository extends ServiceEntityRepository
+final class DownloadTaskRepository extends ServiceEntityRepository implements DownloadTaskRepositoryInterface
 {
-    public function __construct(ManagerRegistry $registry)
-    {
+    public function __construct(
+        ManagerRegistry $registry,
+    ) {
         parent::__construct($registry, DownloadTask::class);
     }
 
+    #[\Override]
     /**
      * Active tasks are the ones not yet finished (queued, processing, error).
      * The limit is a display-only guard: error tasks stay active until re-downloaded successfully.
@@ -26,17 +29,24 @@ final class DownloadTaskRepository extends ServiceEntityRepository
      */
     public function getRecentActiveTasks(int $limit = 50): array
     {
-        return $this->findBy(
-            ['status' => [
+        /** @var DownloadTask[] $tasks */
+        $tasks = $this->createQueryBuilder('t')
+            ->where('t.status IN (:statuses)')
+            ->setParameter('statuses', [
                 DownloadTask::STATUS_QUEUED,
                 DownloadTask::STATUS_PROCESSING,
                 DownloadTask::STATUS_ERROR,
-            ]],
-            ['createdAt' => 'DESC'],
-            $limit
-        );
+            ], ArrayParameterType::STRING)
+            ->orderBy('t.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $tasks;
     }
 
+    #[\Override]
     /**
      * Bulk-deletes every task still waiting in the queue (queued status) and returns their number.
      */
@@ -50,6 +60,7 @@ final class DownloadTaskRepository extends ServiceEntityRepository
             ->execute();
     }
 
+    #[\Override]
     /**
      * Resets every processing task back to queued and returns their number.
      * Intended for stuck tasks only — a task in processing may still be a live download.
@@ -66,6 +77,7 @@ final class DownloadTaskRepository extends ServiceEntityRepository
             ->execute();
     }
 
+    #[\Override]
     /**
      * @return array<string, int>
      */

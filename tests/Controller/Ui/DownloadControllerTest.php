@@ -21,12 +21,18 @@ final class DownloadControllerTest extends WebTestCase
         $this->userRepository = $this->getContainer()->get(UserRepository::class);
     }
 
+    /**
+     * Verifies the download page redirects anonymous visitors to login.
+     */
     public function testIndexRequiresAuthentication(): void
     {
         $this->client->request(Request::METHOD_GET, '/ui/download');
         $this->assertResponseRedirects();
     }
 
+    /**
+     * Verifies the download page renders the link and quality form.
+     */
     public function testIndexPageDisplaysForm(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
@@ -40,6 +46,9 @@ final class DownloadControllerTest extends WebTestCase
         $this->assertSelectorExists('select[name="download_form[quality]"]');
     }
 
+    /**
+     * Verifies the page remembers the previously selected quality.
+     */
     public function testIndexPageShowsPreviousQualitySelection(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
@@ -59,6 +68,9 @@ final class DownloadControllerTest extends WebTestCase
         $this->assertStringContainsString('best', $selectedOption->attr('value') ?: '');
     }
 
+    /**
+     * Verifies an empty link is rejected with HTTP 422.
+     */
     public function testDownloadFormValidatesRequiredFields(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
@@ -74,6 +86,9 @@ final class DownloadControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
+    /**
+     * Verifies a malformed URL is rejected with HTTP 422.
+     */
     public function testDownloadFormValidatesUrlFormat(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
@@ -89,6 +104,9 @@ final class DownloadControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
+    /**
+     * Verifies a URL longer than the limit is rejected with HTTP 422.
+     */
     public function testDownloadFormValidatesUrlLength(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
@@ -96,7 +114,7 @@ final class DownloadControllerTest extends WebTestCase
 
         $crawler = $this->client->request(Request::METHOD_GET, '/ui/download');
         // Test with a very long URL exceeding 255 characters
-        $longUrl = 'https://' . \str_repeat('a', 300) . '.com';
+        $longUrl = \sprintf('https://%s.com', \str_repeat('a', 300));
         $form    = $crawler->filter('form')->form([
             'download_form[link]'    => $longUrl,
             'download_form[quality]' => 'best',
@@ -106,6 +124,9 @@ final class DownloadControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
+    /**
+     * Verifies a valid YouTube link is queued and the user is redirected.
+     */
     public function testDownloadFormAcceptsValidSubmission(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
@@ -124,6 +145,9 @@ final class DownloadControllerTest extends WebTestCase
         $this->assertStringContainsString('Video was added to queue', $this->client->getResponse()->getContent() ?: '');
     }
 
+    /**
+     * Verifies every quality option is accepted and redirects to sources.
+     */
     public function testDownloadFormAcceptsAllQualityOptions(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
@@ -144,6 +168,9 @@ final class DownloadControllerTest extends WebTestCase
         }
     }
 
+    /**
+     * Verifies the download page renders queue statistics.
+     */
     public function testIndexPageDisplaysQueueStatistics(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
@@ -152,7 +179,6 @@ final class DownloadControllerTest extends WebTestCase
         $this->client->request(Request::METHOD_GET, '/ui/download');
 
         $this->assertResponseIsSuccessful();
-        // Check that statistics are displayed in the page
         $content = $this->client->getResponse()->getContent() ?: '';
         $this->assertStringContainsString('Statistics', $content);
     }

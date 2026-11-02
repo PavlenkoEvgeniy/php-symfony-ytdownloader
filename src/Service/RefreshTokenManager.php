@@ -6,20 +6,23 @@ namespace App\Service;
 
 use App\Entity\RefreshToken;
 use App\Entity\User;
-use App\Repository\RefreshTokenRepository;
+use App\Repository\RefreshTokenRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
-final class RefreshTokenManager
+final readonly class RefreshTokenManager implements RefreshTokenManagerInterface
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly RefreshTokenRepository $refreshTokenRepository,
-        private readonly JWTTokenManagerInterface $jwtTokenManager,
-        private readonly int $refreshTokenTtlSeconds,
+        private EntityManagerInterface $entityManager,
+        private RefreshTokenRepositoryInterface $refreshTokenRepository,
+        private JWTTokenManagerInterface $jwtTokenManager,
+        #[Autowire(env: 'int:JWT_REFRESH_TOKEN_TTL')]
+        private int $refreshTokenTtlSeconds,
     ) {
     }
 
+    #[\Override]
     /**
      * @return array{token: string, refresh_token: string, refresh_token_expires_at: string}
      */
@@ -38,6 +41,7 @@ final class RefreshTokenManager
         ];
     }
 
+    #[\Override]
     /**
      * @return array{token: string, refresh_token: string, refresh_token_expires_at: string}|null
      */
@@ -46,7 +50,7 @@ final class RefreshTokenManager
         $refreshToken = $this->refreshTokenRepository->findOneByToken($tokenValue);
         $now          = new \DateTimeImmutable();
 
-        if (null === $refreshToken || $refreshToken->isRevoked() || $refreshToken->isExpired($now)) {
+        if (!$refreshToken instanceof RefreshToken || $refreshToken->isRevoked() || $refreshToken->isExpired($now)) {
             return null;
         }
 
@@ -74,16 +78,13 @@ final class RefreshTokenManager
     private function createRefreshToken(User $user): RefreshToken
     {
         $now       = new \DateTimeImmutable();
-        $expiresAt = $now->modify('+' . $this->refreshTokenTtlSeconds . ' seconds');
+        $expiresAt = $now->modify(\sprintf('+%d seconds', $this->refreshTokenTtlSeconds));
 
-        $refreshToken = new RefreshToken();
-        $refreshToken
-            ->setUser($user)
+        return new RefreshToken()->setUser($user)
             ->setToken($this->generateTokenValue())
             ->setCreatedAt($now)
-            ->setExpiresAt($expiresAt);
-
-        return $refreshToken;
+            ->setExpiresAt($expiresAt)
+        ;
     }
 
     private function generateTokenValue(): string

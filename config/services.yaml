@@ -13,14 +13,6 @@ services:
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
-        bind:
-            string $appVersion: '%env(APP_VERSION)%'
-            string $downloadsDir: '%env(resolve:APP_DOWNLOADS_DIR)%'
-            string $telegramBotToken: '%env(TELEGRAM_BOT_TOKEN)%'
-            string $telegramHostUrl: '%env(TELEGRAM_HOST_URL)%'
-            bool $telegramBotEnabled: '%env(bool:TELEGRAM_BOT_ENABLED)%'
-            int $refreshTokenTtlSeconds: '%env(int:JWT_REFRESH_TOKEN_TTL)%'
-            int $orphanTtlSeconds: '%app.downloads.orphan_ttl_seconds%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
@@ -30,6 +22,53 @@ services:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
+
+    App\DataFixtures\:
+        resource: '../fixtures/'
+
+    # Service and repository interfaces are the seams the application depends on.
+    App\Service\VideoProcessorInterface:
+        alias: App\Service\VideoDownloaderService
+    App\Service\DownloadDispatcherInterface:
+        alias: App\Service\DownloadDispatcher
+    App\Service\QueueStatsServiceInterface:
+        alias: App\Service\QueueStatsService
+    App\Service\OrphanFilePrunerInterface:
+        alias: App\Service\OrphanFilePruner
+    App\Service\QueuePurgeServiceInterface:
+        alias: App\Service\QueuePurgeService
+    App\Service\QueueResetServiceInterface:
+        alias: App\Service\QueueResetService
+    App\Service\DownloadTaskManagerInterface:
+        alias: App\Service\DownloadTaskManager
+    App\Service\SourceManagerInterface:
+        alias: App\Service\SourceManager
+    App\Service\LogManagerInterface:
+        alias: App\Service\LogManager
+    App\Service\DownloadMetricManagerInterface:
+        alias: App\Service\DownloadMetricManager
+    App\Service\TelegramBotServiceInterface:
+        alias: App\Service\TelegramBotService
+    App\Service\TelegramNotifierInterface:
+        alias: App\Service\TelegramNotifier
+    App\Service\TelegramMessageHandlerInterface:
+        alias: App\Service\TelegramMessageHandler
+    App\Service\RefreshTokenManagerInterface:
+        alias: App\Service\RefreshTokenManager
+    App\Service\FormatResolverInterface:
+        alias: App\Service\FormatResolver
+    App\Service\YoutubeDlWrapperInterface:
+        alias: App\Service\YoutubeDlWrapper
+    App\Repository\SourceRepositoryInterface:
+        alias: App\Repository\SourceRepository
+    App\Repository\UserRepositoryInterface:
+        alias: App\Repository\UserRepository
+    App\Repository\DownloadTaskRepositoryInterface:
+        alias: App\Repository\DownloadTaskRepository
+    App\Repository\DownloadMetricRepositoryInterface:
+        alias: App\Repository\DownloadMetricRepository
+    App\Repository\RefreshTokenRepositoryInterface:
+        alias: App\Repository\RefreshTokenRepository
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
@@ -58,16 +97,10 @@ services:
             - [ setAnnotationReader, [ "@gedmo.mapping.driver.attribute" ] ]
             - [ setClock, [ '@clock' ] ]
 
-    # File size human view extension
-    OskarStark\Twig\ReadableFilesizeExtension:
-        tags: [ 'twig.extension' ]
-
     # Redis for sessions (database 1)
     redis.session:
         class: Redis
-        factory: ['Symfony\Component\Cache\Adapter\RedisAdapter', 'createConnection']
-        arguments:
-            - '%env(REDIS)%'
+        factory: ['@App\Redis\RedisConnectionFactory', 'create']
         calls:
             - select: [1]
 
@@ -76,8 +109,3 @@ services:
         class: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
         arguments:
             - '@redis.session'
-
-    # Rate Limiter Event Listener
-    App\RateLimiter\RateLimitEventListener:
-        arguments:
-            $factory: '@limiter.api'

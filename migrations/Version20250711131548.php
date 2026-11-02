@@ -16,18 +16,15 @@ final class Version20250711131548 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('
-            ALTER TABLE "user" 
-            ADD avatar VARCHAR(255) 
+        $this->addSql(<<<'SQL'
+            ALTER TABLE "user"
+            ADD avatar VARCHAR(255)
             DEFAULT NULL
-        ');
+        SQL);
     }
 
     public function down(Schema $schema): void
     {
-        // this down() migration is auto-generated, please modify it to your needs
-        $this->addSql('CREATE SCHEMA public');
         $this->addSql('ALTER TABLE "user" DROP avatar');
     }
 }

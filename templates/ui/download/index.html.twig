@@ -1,7 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Download :: Index
-{% endblock %}
+{% block title %}{{ 'ui.download.title'|trans }}{% endblock %}
 
 {% block body %}
     {% for message in app.flashes('success') %}
@@ -20,29 +19,29 @@
         </div>
     {% endfor %}
     <div class="d-flex justify-content-between my-4">
-        <a class="btn btn-outline-success" href="{{ path('ui_source_index') }}">Downloads</a>
+        <a class="btn btn-outline-success" href="{{ path('ui_source_index') }}">{{ 'ui.nav.downloads'|trans }}</a>
         {% if is_granted('ROLE_ADMIN') %}
-            <a class="btn btn-outline-info" href="{{ path('admin') }}">Admin</a>
+            <a class="btn btn-outline-info" href="{{ path('admin') }}">{{ 'ui.nav.admin'|trans }}</a>
         {% endif %}
         {% if is_granted('ROLE_USER') %}
-            <a class="btn btn-outline-secondary" href="{{ path('ui_profile_index') }}">Profile</a>
+            <a class="btn btn-outline-secondary" href="{{ path('ui_profile_index') }}">{{ 'ui.nav.profile'|trans }}</a>
         {% endif %}
-        <a class="btn btn-outline-warning" href="{{ path('security_logout') }}" onclick="return confirm('Do you want to logout?');">Logout</a>
+        <a class="btn btn-outline-warning" href="{{ path('security_logout') }}" onclick="return confirm({{ 'ui.download.logout_confirm'|trans|json_encode }})">{{ 'ui.nav.logout'|trans }}</a>
     </div>
-    <h3>Please paste YouTube link into the form bellow:</h3><br>
+    <h3>{{ 'ui.download.paste_link'|trans }}</h3><br>
     {{ form(form) }}
 
-    <h3 class="mt-5">Disk Space Available:</h3>
-    <p>Total: {{ diskSpace.total }}</p>
-    <p>Used: {{ diskSpace.used }} ({{ diskSpace.usedPercentage }}%)</p>
-    <p>Free: {{ diskSpace.free }} ({{ diskSpace.freePercentage }}%)</p>
+    <h3 class="mt-5">{{ 'ui.download.disk_space'|trans }}</h3>
+    <p>{{ 'ui.download.total'|trans }} {{ diskSpace.total }}</p>
+    <p>{{ 'ui.download.used'|trans }} {{ diskSpace.used }} ({{ diskSpace.usedPercentage }}%)</p>
+    <p>{{ 'ui.download.free'|trans }} {{ diskSpace.free }} ({{ diskSpace.freePercentage }}%)</p>
 
-    <h3 class="mt-5">Statistics:</h3>
+    <h3 class="mt-5">{{ 'ui.download.statistics'|trans }}</h3>
     <div id="queue-stats" data-stats-url="{{ path('ui_source_queue_stats') }}">
-        <p>In Queue: <span data-counter="queued">{{ totalPendingDownloads }}</span></p>
-        <p>In Progress: <span data-counter="processing">{{ totalInProgressDownloads }}</span></p>
-        <p>Completed: <span data-counter="success">{{ totalSuccessDownloads }}</span></p>
-        <p>Total downloaded: <span data-counter="totalSize">{{ totalDownloaded }}</span></p>
+        <p>{{ 'ui.download.in_queue'|trans }} <span data-counter="queued">{{ totalPendingDownloads }}</span></p>
+        <p>{{ 'ui.download.in_progress'|trans }} <span data-counter="processing">{{ totalInProgressDownloads }}</span></p>
+        <p>{{ 'ui.download.completed'|trans }} <span data-counter="success">{{ totalSuccessDownloads }}</span></p>
+        <p>{{ 'ui.download.total_downloaded'|trans }} <span data-counter="totalSize">{{ totalDownloaded }}</span></p>
     </div>
     {% include 'ui/source/_queue_stats_script.html.twig' %}
 {% endblock %}

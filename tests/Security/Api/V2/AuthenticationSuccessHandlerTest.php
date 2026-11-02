@@ -13,6 +13,9 @@ use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 
 final class AuthenticationSuccessHandlerTest extends TestCase
 {
+    /**
+     * Verifies the handler returns 401 when the token has no user.
+     */
     public function testReturnsUnauthorizedWhenUserIsInvalid(): void
     {
         $refreshTokenManager = $this->createMock(RefreshTokenManager::class);
@@ -37,6 +40,9 @@ final class AuthenticationSuccessHandlerTest extends TestCase
         $this->assertSame('Unauthorized.', $data['message'] ?? null);
     }
 
+    /**
+     * Verifies the handler returns the issued token payload for a valid user.
+     */
     public function testReturnsTokensForValidUser(): void
     {
         $user = new User();

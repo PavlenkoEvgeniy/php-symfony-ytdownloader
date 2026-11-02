@@ -16,10 +16,13 @@ use PHPUnit\Framework\TestCase;
 
 final class DownloadMessageHandlerTest extends TestCase
 {
+    /**
+     * Verifies the handler claims the task, processes it and marks it successful.
+     */
     public function testInvokeClaimsTaskAndMarksSuccess(): void
     {
         $task = new DownloadTask();
-        $task->setUrl('https://example.com')->setQuality('best');
+        $task->setUrl('https://test.local')->setQuality('best');
 
         $connection = $this->createMock(Connection::class);
         $connection->expects($this->once())->method('executeStatement')->willReturn(1);
@@ -37,20 +40,23 @@ final class DownloadMessageHandlerTest extends TestCase
         $videoProcessor = $this->createMock(VideoProcessorInterface::class);
         $videoProcessor->expects($this->once())
             ->method('process')
-            ->with('https://example.com', 'best', '12345')
+            ->with('https://test.local', 'best', '12345')
             ->willReturn(DownloadOutcome::SUCCESS);
 
         $handler = new DownloadMessageHandler($videoProcessor, $taskManager);
 
-        $handler->__invoke(new DownloadMessage('https://example.com', 'best', '12345', 7));
+        $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
 
         $this->assertSame(DownloadTask::STATUS_SUCCESS, $task->getStatus());
     }
 
+    /**
+     * Verifies a failed download marks the claimed task as errored.
+     */
     public function testInvokeMarksTaskErrorWhenProcessingFails(): void
     {
         $task = new DownloadTask();
-        $task->setUrl('https://example.com')->setQuality('best');
+        $task->setUrl('https://test.local')->setQuality('best');
 
         $connection = $this->createMock(Connection::class);
         $connection->expects($this->once())->method('executeStatement')->willReturn(1);
@@ -66,16 +72,19 @@ final class DownloadMessageHandlerTest extends TestCase
         $videoProcessor = $this->createMock(VideoProcessorInterface::class);
         $videoProcessor->expects($this->once())
             ->method('process')
-            ->with('https://example.com', 'best', '12345')
+            ->with('https://test.local', 'best', '12345')
             ->willReturn(DownloadOutcome::ERROR);
 
         $handler = new DownloadMessageHandler($videoProcessor, new DownloadTaskManager($em));
 
-        $handler->__invoke(new DownloadMessage('https://example.com', 'best', '12345', 7));
+        $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
 
         $this->assertSame(DownloadTask::STATUS_ERROR, $task->getStatus());
     }
 
+    /**
+     * Verifies the handler skips processing when the task cannot be claimed.
+     */
     public function testInvokeSkipsMessageWhenClaimFails(): void
     {
         $connection = $this->createMock(Connection::class);
@@ -90,9 +99,12 @@ final class DownloadMessageHandlerTest extends TestCase
 
         $handler = new DownloadMessageHandler($videoProcessor, new DownloadTaskManager($em));
 
-        $handler->__invoke(new DownloadMessage('https://example.com', 'best', '12345', 7));
+        $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
     }
 
+    /**
+     * Verifies a message without a task id is processed without touching tasks.
+     */
     public function testInvokeLeavesTasksUntouchedWithoutTaskId(): void
     {
         $em = $this->createMock(EntityManagerInterface::class);
@@ -103,11 +115,11 @@ final class DownloadMessageHandlerTest extends TestCase
         $videoProcessor = $this->createMock(VideoProcessorInterface::class);
         $videoProcessor->expects($this->once())
             ->method('process')
-            ->with('https://example.com/2', 'audio', '')
+            ->with('https://test.local/2', 'audio', '')
             ->willReturn(DownloadOutcome::SUCCESS);
 
         $handler = new DownloadMessageHandler($videoProcessor, new DownloadTaskManager($em));
 
-        $handler->__invoke(new DownloadMessage('https://example.com/2', 'audio'));
+        $handler->__invoke(new DownloadMessage('https://test.local/2', 'audio'));
     }
 }

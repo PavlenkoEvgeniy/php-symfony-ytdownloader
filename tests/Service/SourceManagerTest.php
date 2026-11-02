@@ -13,46 +13,50 @@ use PHPUnit\Framework\TestCase;
 
 final class SourceManagerTest extends TestCase
 {
+    /**
+     * Verifies filename lookup delegates to the repository.
+     */
     public function testFindByFilenameDelegatesToRepository(): void
     {
         $source = new Source();
 
-        $repository = $this->getMockBuilder(SourceRepository::class)
-            ->disableOriginalConstructor()
-            ->addMethods(['findOneByFilename'])
-            ->getMock(); /** @phpstan-ignore-line */
+        $repository = $this->createMock(SourceRepository::class);
         $repository->expects($this->once())
             ->method('findOneByFilename')
             ->with('foo.mp4')
             ->willReturn($source);
 
-        $em = $this->createMock(EntityManagerInterface::class);
-
-        $manager = new SourceManager($em, $repository, $this->createMock(DownloadMetricManager::class));
+        $manager = new SourceManager(
+            $this->createStub(EntityManagerInterface::class),
+            $repository,
+            /** @phpstan-ignore-next-line */
+            $this->createStub(DownloadMetricManager::class),
+        );
 
         $this->assertSame($source, $manager->findByFilename('foo.mp4'));
     }
 
+    /**
+     * Verifies a downloaded file is persisted as a source and counted in metrics.
+     */
     public function testCreateFromDownloadedFilePersistsAndReturnsSource(): void
     {
-        $repository = $this->getMockBuilder(SourceRepository::class)
-            ->disableOriginalConstructor()
-            ->addMethods(['findOneByFilename'])
-            ->getMock(); /** @phpstan-ignore-line */
-        $em         = $this->createMock(EntityManagerInterface::class);
-
-        $em->expects($this->once())
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->once())
             ->method('persist')
-            ->with($this->callback(function (Source $source): bool {
-                return 'bar.mp4' === $source->getFilename()
-                    && '/tmp' === $source->getFilepath()
-                    && 123.4 === $source->getSize();
-            }));
+            ->with($this->callback(static fn (Source $source): bool => 'bar.mp4' === $source->getFilename()
+                && '/tmp' === $source->getFilepath()
+                && 123.4 === $source->getSize()));
 
         $downloadMetricManager = $this->createMock(DownloadMetricManager::class);
         $downloadMetricManager->expects($this->once())->method('increment')->with(123.4);
 
-        $manager = new SourceManager($em, $repository, $downloadMetricManager);
+        $manager = new SourceManager(
+            $entityManager,
+            /** @phpstan-ignore-next-line */
+            $this->createStub(SourceRepository::class),
+            $downloadMetricManager,
+        );
 
         $source = $manager->createFromDownloadedFile('bar.mp4', '/tmp', 123.4);
 
@@ -61,17 +65,22 @@ final class SourceManagerTest extends TestCase
         $this->assertSame(123.4, $source->getSize());
     }
 
+    /**
+     * Verifies flush delegates to the entity manager.
+     */
     public function testFlushDelegatesToEntityManager(): void
     {
-        $repository = $this->getMockBuilder(SourceRepository::class)
-            ->disableOriginalConstructor()
-            ->addMethods(['findOneByFilename'])
-            ->getMock(); /** @phpstan-ignore-line */
-        $em         = $this->createMock(EntityManagerInterface::class);
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->once())->method('flush');
 
-        $em->expects($this->once())->method('flush');
+        $manager = new SourceManager(
+            $entityManager,
+            /** @phpstan-ignore-next-line */
+            $this->createStub(SourceRepository::class),
+            /** @phpstan-ignore-next-line */
+            $this->createStub(DownloadMetricManager::class),
+        );
 
-        $manager = new SourceManager($em, $repository, $this->createMock(DownloadMetricManager::class));
         $manager->flush();
     }
 }

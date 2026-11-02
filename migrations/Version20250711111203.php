@@ -16,20 +16,17 @@ final class Version20250711111203 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('
-            ALTER TABLE "user" 
-            ADD created_at 
-            TIMESTAMP(0) WITHOUT TIME ZONE 
+        $this->addSql(<<<'SQL'
+            ALTER TABLE "user"
+            ADD created_at
+            TIMESTAMP(0) WITHOUT TIME ZONE
             DEFAULT NULL
-        ');
+        SQL);
         $this->addSql('COMMENT ON COLUMN "user".created_at IS \'(DC2Type:datetime_immutable)\'');
     }
 
     public function down(Schema $schema): void
     {
-        // this down() migration is auto-generated, please modify it to your needs
-        $this->addSql('CREATE SCHEMA public');
         $this->addSql('ALTER TABLE "user" DROP created_at');
     }
 }

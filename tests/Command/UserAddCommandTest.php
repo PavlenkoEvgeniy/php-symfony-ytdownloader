@@ -9,7 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
-class UserAddCommandTest extends KernelTestCase
+final class UserAddCommandTest extends KernelTestCase
 {
     private CommandTester $commandTester;
     private UserRepository $userRepository;
@@ -25,6 +25,9 @@ class UserAddCommandTest extends KernelTestCase
         $this->userRepository = $this->getContainer()->get(UserRepository::class);
     }
 
+    /**
+     * Verifies the command creates a user with the given email and password.
+     */
     public function testUserAddExecute(): void
     {
         $this->commandTester->execute([

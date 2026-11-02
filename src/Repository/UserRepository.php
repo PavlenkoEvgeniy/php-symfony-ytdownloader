@@ -14,13 +14,15 @@ use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 /**
  * @extends ServiceEntityRepository<User>
  */
-final class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
+final class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface, UserRepositoryInterface
 {
-    public function __construct(ManagerRegistry $registry)
-    {
+    public function __construct(
+        ManagerRegistry $registry,
+    ) {
         parent::__construct($registry, User::class);
     }
 
+    #[\Override]
     public function getTotalCount(): int
     {
         return (int) $this->createQueryBuilder('u')
@@ -29,6 +31,7 @@ final class UserRepository extends ServiceEntityRepository implements PasswordUp
             ->getSingleScalarResult();
     }
 
+    #[\Override]
     /**
      * Used to upgrade (rehash) the user's password automatically over time.
      */
@@ -43,8 +46,16 @@ final class UserRepository extends ServiceEntityRepository implements PasswordUp
         $this->getEntityManager()->flush();
     }
 
+    #[\Override]
     public function findOneByEmail(string $email): ?User
     {
-        return $this->findOneBy(['email' => $email]);
+        $user = $this->createQueryBuilder('u')
+            ->where('u.email = :email')
+            ->setParameter('email', $email)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+
+        return $user instanceof User ? $user : null;
     }
 }

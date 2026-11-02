@@ -30,16 +30,6 @@ set_env_value() {
     fi
 }
 
-encode_rabbit_vhost() {
-    local vhost="${1:-/}"
-
-    if [ "${vhost}" = "/" ]; then
-        echo "%2f"
-    else
-        echo "${vhost//\//%2f}"
-    fi
-}
-
 ensure_docker_env() {
     if [ ! -f "${DOCKER_ENV_EXAMPLE}" ]; then
         log "Missing docker/.env.example; cannot generate docker/.env automatically."
@@ -96,7 +86,6 @@ APP_ENV=dev
 APP_SECRET=${APP_SECRET_VALUE}
 DATABASE_URL="postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_INTERNAL_PORT}/${DB_DATABASE}?serverVersion=16&charset=utf8"
 REDIS="redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_INTERNAL_PORT}"
-RABBITMQ_DSN="amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST}:${RABBITMQ_INTERNAL_PORT}/${RABBITMQ_VHOST_ENCODED}"
 TELEGRAM_BOT_ENABLED=false
 TELEGRAM_BOT_TOKEN=change_me_please
 TELEGRAM_HOST_URL=https://change_me_please.tld
@@ -122,7 +111,6 @@ PANTHER_APP_ENV=panther
 PANTHER_ERROR_SCREENSHOT_DIR=./var/error-screenshots
 DATABASE_URL="postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_INTERNAL_PORT}/${DB_DATABASE}?serverVersion=16&charset=utf8"
 REDIS="redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_INTERNAL_PORT}"
-RABBITMQ_DSN="amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST}:${RABBITMQ_INTERNAL_PORT}/${RABBITMQ_VHOST_ENCODED}"
 JWT_PASSPHRASE=${JWT_PASSPHRASE_VALUE}
 EOF
 
@@ -142,13 +130,6 @@ main() {
     REDIS_HOST="${REDIS_HOST:-redis}"
     REDIS_PASSWORD="${REDIS_PASSWORD:-123456}"
     REDIS_INTERNAL_PORT=6379
-
-    RABBITMQ_HOST="${RABBITMQ_HOST:-rabbitmq}"
-    RABBITMQ_USER="${RABBITMQ_USER:-guest}"
-    RABBITMQ_PASSWORD="${RABBITMQ_PASSWORD:-guest}"
-    RABBITMQ_VHOST="${RABBITMQ_VHOST:-/}"
-    RABBITMQ_VHOST_ENCODED="$(encode_rabbit_vhost "${RABBITMQ_VHOST}")"
-    RABBITMQ_INTERNAL_PORT=5672
 
     APP_SECRET_VALUE="${APP_SECRET:-$(generate_secret)}"
     APP_SECRET_TEST_VALUE="${APP_SECRET_TEST:-$(generate_secret)}"

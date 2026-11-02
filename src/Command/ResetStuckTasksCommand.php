@@ -4,36 +4,32 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\Service\QueueResetService;
+use App\Service\QueueResetServiceInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[AsCommand(
-    name: 'app:task:reset-stuck',
     description: 'Reset processing tasks to queued and redeliver stuck transport messages',
+    name: 'app:task:reset-stuck',
 )]
-final class ResetStuckTasksCommand extends Command
+final readonly class ResetStuckTasksCommand
 {
     public function __construct(
-        private readonly QueueResetService $queueResetService,
+        private QueueResetServiceInterface $queueResetService,
+        private TranslatorInterface $translator,
     ) {
-        parent::__construct();
     }
 
-    #[\Override]
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    public function __invoke(SymfonyStyle $io): int
     {
-        $io     = new SymfonyStyle($input, $output);
         $result = $this->queueResetService->reset();
 
-        $io->success(\sprintf(
-            'Reset %d processing task(s) to queued and made %d stuck message(s) deliverable again.',
-            $result['processing'],
-            $result['messages'],
-        ));
+        $io->success($this->translator->trans('command.reset_stuck.success', [
+            '%count%'    => $result['processing'],
+            '%messages%' => $result['messages'],
+        ]));
 
         return Command::SUCCESS;
     }

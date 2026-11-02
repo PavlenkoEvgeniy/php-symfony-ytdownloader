@@ -10,6 +10,9 @@ use PHPUnit\Framework\TestCase;
 
 final class RefreshTokenTest extends TestCase
 {
+    /**
+     * Verifies a token without a revocation time is not revoked.
+     */
     public function testIsRevokedReturnsFalseWhenNotRevoked(): void
     {
         $token = new RefreshToken();
@@ -18,6 +21,9 @@ final class RefreshTokenTest extends TestCase
         $this->assertFalse($token->isRevoked());
     }
 
+    /**
+     * Verifies a token with a revocation time is revoked.
+     */
     public function testIsRevokedReturnsTrueWhenRevoked(): void
     {
         $token = new RefreshToken();
@@ -26,6 +32,9 @@ final class RefreshTokenTest extends TestCase
         $this->assertTrue($token->isRevoked());
     }
 
+    /**
+     * Verifies a token with a future expiry is not expired.
+     */
     public function testIsExpiredReturnsFalseWhenNotExpired(): void
     {
         $token        = new RefreshToken();
@@ -36,6 +45,9 @@ final class RefreshTokenTest extends TestCase
         $this->assertFalse($token->isExpired($now));
     }
 
+    /**
+     * Verifies a token with a past expiry is expired.
+     */
     public function testIsExpiredReturnsTrueWhenExpired(): void
     {
         $token      = new RefreshToken();
@@ -46,6 +58,9 @@ final class RefreshTokenTest extends TestCase
         $this->assertTrue($token->isExpired($now));
     }
 
+    /**
+     * Verifies a token is expired exactly at its expiry time.
+     */
     public function testIsExpiredReturnsTrueWhenExpiryIsEqualToNow(): void
     {
         $token = new RefreshToken();
@@ -55,15 +70,20 @@ final class RefreshTokenTest extends TestCase
         $this->assertTrue($token->isExpired($now));
     }
 
+    /**
+     * Verifies a token without an expiry never expires.
+     */
     public function testIsExpiredReturnsFalseWhenExpiryIsNull(): void
     {
         $token = new RefreshToken();
         $now   = new \DateTimeImmutable();
-        // Don't set expiresAt, leave it null
 
         $this->assertFalse($token->isExpired($now));
     }
 
+    /**
+     * Verifies revoking a token stores the given time and returns the token.
+     */
     public function testRevokeSetRevokedAtTime(): void
     {
         $token = new RefreshToken();
@@ -75,6 +95,9 @@ final class RefreshTokenTest extends TestCase
         $this->assertSame($token, $result);
     }
 
+    /**
+     * Verifies revoking a token returns the same instance.
+     */
     public function testRevokeReturnsTokenInstance(): void
     {
         $token = new RefreshToken();
@@ -85,6 +108,9 @@ final class RefreshTokenTest extends TestCase
         $this->assertSame($token, $result);
     }
 
+    /**
+     * Verifies every refresh token setter returns the same instance.
+     */
     public function testTokenSettersReturnInstance(): void
     {
         $token = new RefreshToken();
@@ -104,6 +130,9 @@ final class RefreshTokenTest extends TestCase
         $this->assertSame($token, $result5);
     }
 
+    /**
+     * Verifies refresh token getters return the assigned values.
+     */
     public function testTokenGettersReturnSetValues(): void
     {
         $token      = new RefreshToken();
@@ -126,6 +155,9 @@ final class RefreshTokenTest extends TestCase
         $this->assertSame($revokedAt, $token->getRevokedAt());
     }
 
+    /**
+     * Verifies a new refresh token has no identifier before persistence.
+     */
     public function testTokenIdIsNullByDefault(): void
     {
         $token = new RefreshToken();
@@ -133,6 +165,9 @@ final class RefreshTokenTest extends TestCase
         $this->assertNull($token->getId());
     }
 
+    /**
+     * Verifies all refresh token values are null before being set.
+     */
     public function testTokenValuesAreNullByDefault(): void
     {
         $token = new RefreshToken();

@@ -8,14 +8,17 @@ use BotMan\BotMan\BotMan;
 use BotMan\BotMan\BotManFactory;
 use BotMan\BotMan\Drivers\DriverManager;
 use BotMan\Drivers\Telegram\TelegramDriver;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
-final readonly class TelegramBotService
+final readonly class TelegramBotService implements TelegramBotServiceInterface
 {
     public function __construct(
+        #[Autowire(env: 'string:TELEGRAM_BOT_TOKEN')]
         private string $telegramBotToken,
     ) {
     }
 
+    #[\Override]
     public function getBot(): BotMan
     {
         $config = [

@@ -75,6 +75,7 @@
     },
     "autoload-dev": {
         "psr-4": {
+            "App\\DataFixtures\\": "fixtures/",
             "App\\Tests\\": "tests/"
         }
     },

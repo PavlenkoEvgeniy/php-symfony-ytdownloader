@@ -1,38 +1,38 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Source{% endblock %}
+{% block title %}{{ 'ui.source.show_title'|trans }}{% endblock %}
 
 {% block body %}
-    <h1>Source</h1>
+    <h1>{{ 'ui.source.show_heading'|trans }}</h1>
 
     <table class="table">
         <tbody>
             <tr>
-                <th>Id</th>
+                <th>{{ 'ui.source.id'|trans }}</th>
                 <td>{{ source.id }}</td>
             </tr>
             <tr>
-                <th>Filename</th>
+                <th>{{ 'ui.source.filename'|trans }}</th>
                 <td>{{ source.filename }}</td>
             </tr>
             <tr>
-                <th>Filepath</th>
+                <th>{{ 'ui.source.filepath'|trans }}</th>
                 <td>{{ source.filepath }}</td>
             </tr>
             <tr>
-                <th>Size</th>
+                <th>{{ 'ui.source.size'|trans }}</th>
                 <td>{{ source.size|readable_filesize() }}</td>
             </tr>
             <tr>
-                <th>Description</th>
+                <th>{{ 'ui.source.description'|trans }}</th>
                 <td>{{ source.description }}</td>
             </tr>
             <tr>
-                <th>CreatedAt</th>
+                <th>{{ 'ui.source.created_at'|trans }}</th>
                 <td>{{ source.createdAt ? source.createdAt|date('Y-m-d H:i:s') : '' }}</td>
             </tr>
         </tbody>
     </table>
 
-    <a class="btn btn-secondary" href="{{ path('ui_source_index') }}">Back to list</a>
+    <a class="btn btn-secondary" href="{{ path('ui_source_index') }}">{{ 'ui.source.back_to_list'|trans }}</a>
 {% endblock %}

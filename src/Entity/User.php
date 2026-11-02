@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Exception\PropertyIsNotSetException;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -13,38 +14,35 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[ORM\Table(name: '"user"')]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+final class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-    public const ROLE_ADMIN              = 'ROLE_ADMIN';
-    public const DEFAULT_PASSWORD_LENGTH = 16;
+    public const string ROLE_ADMIN              = 'ROLE_ADMIN';
+    public const int    DEFAULT_PASSWORD_LENGTH = 16;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(name: 'id', type: Types::INTEGER)]
+    public private(set) ?int $id = null;
 
-    #[ORM\Column(length: 180)]
+    #[ORM\Column(name: 'email', type: Types::STRING, length: 180)]
     private ?string $email = null;
 
     /**
-     * @var list<string> The user roles
+     * @var string[]
      */
-    #[ORM\Column]
+    #[ORM\Column(name: 'roles', type: Types::JSON)]
     private array $roles = [];
 
-    /**
-     * @var string|null The hashed password
-     */
-    #[ORM\Column]
+    #[ORM\Column(name: 'password', type: Types::STRING)]
     private ?string $password = null;
 
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => true])]
+    #[ORM\Column(name: 'is_enabled', type: Types::BOOLEAN, options: ['default' => true])]
     private ?bool $isEnabled = true;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(name: 'avatar', type: Types::STRING, length: 255, nullable: true)]
     private ?string $avatar = null;
 
     public function __construct()
@@ -59,7 +57,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getEmail(): ?string
     {
-        return $this->email ? \mb_strtolower($this->email) : null;
+        return null === $this->email ? null : \mb_strtolower($this->email);
     }
 
     public function setEmail(string $email): static
@@ -69,23 +67,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * A visual identifier that represents this user.
-     *
-     * @see UserInterface
-     */
     #[\Override]
     public function getUserIdentifier(): string
     {
         return (string) $this->email;
     }
 
-    /**
-     * @see UserInterface
-     *
-     * @return list<string>
-     */
     #[\Override]
+    /**
+     * @return string[]
+     */
     public function getRoles(): array
     {
         $roles = $this->roles;
@@ -96,7 +87,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * @param list<string> $roles
+     * @param string[] $roles
      */
     public function setRoles(array $roles): static
     {
@@ -105,9 +96,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @see PasswordAuthenticatedUserInterface
-     */
     #[\Override]
     public function getPassword(): ?string
     {
@@ -121,14 +109,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @see UserInterface
-     */
     #[\Override]
     public function eraseCredentials(): void
     {
-        // If you store any temporary, sensitive data on the user, clear it here
-        // $this->plainPassword = null;
     }
 
     public static function generatePassword(int $length = self::DEFAULT_PASSWORD_LENGTH): string
@@ -174,7 +157,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getAvatarUrl(): ?string
     {
-        if (!$this->avatar) {
+        if (null === $this->avatar || '' === $this->avatar) {
             return null;
         }
 
@@ -183,5 +166,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         return \sprintf('/uploads/avatars/%s', $this->avatar);
+    }
+
+    public function getIdOrFail(): int
+    {
+        return $this->id ?? throw PropertyIsNotSetException::forProperty('id');
+    }
+
+    public function getEmailOrFail(): string
+    {
+        return $this->email ?? throw PropertyIsNotSetException::forProperty('email');
+    }
+
+    public function getPasswordOrFail(): string
+    {
+        return $this->password ?? throw PropertyIsNotSetException::forProperty('password');
+    }
+
+    public function getIsEnabledOrFail(): bool
+    {
+        return $this->isEnabled ?? throw PropertyIsNotSetException::forProperty('isEnabled');
+    }
+
+    public function getCreatedAtOrFail(): \DateTimeImmutable
+    {
+        return $this->createdAt ?? throw PropertyIsNotSetException::forProperty('createdAt');
     }
 }

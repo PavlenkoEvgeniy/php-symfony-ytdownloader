@@ -14,6 +14,9 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final class DownloadDispatcherTest extends TestCase
 {
+    /**
+     * Verifies dispatch persists a queued task and sends a message carrying its id.
+     */
     public function testDispatchPersistsTaskAndDispatchesMessageWithTaskId(): void
     {
         $em = $this->createMock(EntityManagerInterface::class);
@@ -39,9 +42,9 @@ final class DownloadDispatcherTest extends TestCase
         $this->assertSame('https://youtube.com/watch?v=test', $task->getUrl());
         $this->assertSame('best', $task->getQuality());
         $this->assertSame(DownloadTask::STATUS_QUEUED, $task->getStatus());
-        $this->assertSame('https://youtube.com/watch?v=test', $dispatched->getUrl());
-        $this->assertSame('best', $dispatched->getQuality());
-        $this->assertSame('42', $dispatched->getTelegramUserId());
-        $this->assertSame($task->getId(), $dispatched->getTaskId());
+        $this->assertSame('https://youtube.com/watch?v=test', $dispatched->url);
+        $this->assertSame('best', $dispatched->quality);
+        $this->assertSame('42', $dispatched->telegramUserId);
+        $this->assertSame($task->getId(), $dispatched->taskId);
     }
 }

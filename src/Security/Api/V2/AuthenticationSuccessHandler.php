@@ -5,17 +5,20 @@ declare(strict_types=1);
 namespace App\Security\Api\V2;
 
 use App\Entity\User;
-use App\Service\RefreshTokenManager;
+use App\Service\RefreshTokenManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
-final class AuthenticationSuccessHandler implements AuthenticationSuccessHandlerInterface
+final readonly class AuthenticationSuccessHandler implements AuthenticationSuccessHandlerInterface
 {
-    public function __construct(private readonly RefreshTokenManager $refreshTokenManager)
-    {
+    public function __construct(
+        private RefreshTokenManagerInterface $refreshTokenManager,
+        private ?TranslatorInterface $translator = null,
+    ) {
     }
 
     #[\Override]
@@ -24,7 +27,7 @@ final class AuthenticationSuccessHandler implements AuthenticationSuccessHandler
         $user = $token->getUser();
 
         if (!$user instanceof User) {
-            return new JsonResponse(['message' => 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
+            return new JsonResponse(['message' => $this->translator?->trans('api.auth.unauthorized') ?? 'Unauthorized.'], Response::HTTP_UNAUTHORIZED);
         }
 
         $payload = $this->refreshTokenManager->issueTokens($user);

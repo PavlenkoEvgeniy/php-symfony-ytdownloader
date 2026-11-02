@@ -10,14 +10,15 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-final readonly class DownloadDispatcher
+final readonly class DownloadDispatcher implements DownloadDispatcherInterface
 {
     public function __construct(
-        private EntityManagerInterface $em,
-        private MessageBusInterface $bus,
+        private EntityManagerInterface $entityManager,
+        private MessageBusInterface $messageBus,
     ) {
     }
 
+    #[\Override]
     /**
      * Persists the task so it is visible as "queued" and only then
      * dispatches the message, so every dispatch has a matching task row.
@@ -26,15 +27,14 @@ final readonly class DownloadDispatcher
      */
     public function dispatch(string $url, string $quality, string $telegramUserId = ''): DownloadTask
     {
-        $task = new DownloadTask();
-        $task
-            ->setUrl($url)
-            ->setQuality($quality);
+        $task = new DownloadTask()->setUrl($url)
+            ->setQuality($quality)
+        ;
 
-        $this->em->persist($task);
-        $this->em->flush();
+        $this->entityManager->persist($task);
+        $this->entityManager->flush();
 
-        $this->bus->dispatch(new DownloadMessage($url, $quality, $telegramUserId, $task->getId()));
+        $this->messageBus->dispatch(new DownloadMessage($url, $quality, $telegramUserId, $task->getId()));
 
         return $task;
     }

@@ -12,29 +12,16 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
-use Symfony\Component\RateLimiter\Storage\StorageInterface;
+use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class RateLimitIntegrationTest extends TestCase
 {
-    private RateLimitEventListener $listener;
-    private RateLimiterFactory $factory;
-
-    protected function setUp(): void
-    {
-        $storage       = $this->createMock(StorageInterface::class);
-        $this->factory = new RateLimiterFactory([
-            'id'       => 'api',
-            'policy'   => 'sliding_window',
-            'limit'    => 10,
-            'interval' => '1 minute',
-        ], $storage);
-
-        $this->listener = new RateLimitEventListener($this->factory);
-    }
-
+    /**
+     * Verifies class and method attributes expose their configured limits.
+     */
     public function testRateLimitAttributeIsAppliedToClassAndMethod(): void
     {
-        // Create a test controller with both class and method attributes
         $controller = new #[RateLimitAttribute(limit: 100)]
         class {
             #[RateLimitAttribute(limit: 50)]
@@ -55,95 +42,77 @@ final class RateLimitIntegrationTest extends TestCase
             }
         };
 
-        // Test that attributes are correctly applied
         $reflection = new \ReflectionClass($controller);
 
-        // Class-level attribute
         $classAttributes = $reflection->getAttributes(RateLimitAttribute::class);
         $this->assertCount(1, $classAttributes);
-        $classAttribute = $classAttributes[0]->newInstance();
-        $this->assertSame(100, $classAttribute->getLimit());
+        $this->assertSame(100, $classAttributes[0]->newInstance()->getLimit());
 
-        // Method-level attribute (takes precedence)
         $methodAttributes = $reflection->getMethod('limitedMethod')->getAttributes(RateLimitAttribute::class);
         $this->assertCount(1, $methodAttributes);
-        $methodAttribute = $methodAttributes[0]->newInstance();
-        $this->assertSame(50, $methodAttribute->getLimit());
+        $this->assertSame(50, $methodAttributes[0]->newInstance()->getLimit());
 
-        // Method with default attribute
         $defaultAttributes = $reflection->getMethod('defaultLimitMethod')->getAttributes(RateLimitAttribute::class);
         $this->assertCount(1, $defaultAttributes);
-        $defaultAttribute = $defaultAttributes[0]->newInstance();
-        $this->assertSame(60, $defaultAttribute->getLimit());
+        $this->assertSame(60, $defaultAttributes[0]->newInstance()->getLimit());
 
-        // Method without attribute (should fall back to class level)
         $noAttributes = $reflection->getMethod('unlimitedMethod')->getAttributes(RateLimitAttribute::class);
         $this->assertCount(0, $noAttributes);
     }
 
     /**
-     * @doesNotPerformAssertions
+     * Verifies different client IPs consume independent rate-limit buckets.
      */
-    public function testRateLimitKeyGenerationWithClientIp(): void
+    public function testDifferentClientAddressesUseIndependentKeys(): void
     {
-        $request = new Request();
-        $request->server->set('REMOTE_ADDR', '192.168.1.100');
-
-        // The listener should generate a key based on IP when user is not authenticated
-        $controller = new #[RateLimitAttribute]
-        class {
-            #[RateLimitAttribute]
+        $listener   = $this->createListener(1);
+        $controller = new #[RateLimitAttribute(limit: 1)] class {
+            #[RateLimitAttribute(limit: 1)]
             public function method(): Response
             {
                 return new Response('OK');
             }
         };
+        $kernel = $this->createStub(HttpKernelInterface::class);
 
-        $kernel = $this->createMock(HttpKernelInterface::class);
-        $event  = new ControllerEvent($kernel, [$controller, 'method'], $request, HttpKernelInterface::MAIN_REQUEST);
+        $firstRequest = new Request();
+        $firstRequest->server->set('REMOTE_ADDR', '192.168.1.100');
+        $firstEvent = new ControllerEvent($kernel, [$controller, 'method'], $firstRequest, HttpKernelInterface::MAIN_REQUEST);
 
-        // Should not throw exception and should process successfully
-        $this->listener->onKernelController($event);
+        $secondRequest = new Request();
+        $secondRequest->server->set('REMOTE_ADDR', '192.168.1.101');
+        $secondEvent = new ControllerEvent($kernel, [$controller, 'method'], $secondRequest, HttpKernelInterface::MAIN_REQUEST);
+
+        $listener($firstEvent);
+        $listener($secondEvent);
+
+        $this->assertSame([$controller, 'method'], $firstEvent->getController());
+        $this->assertSame([$controller, 'method'], $secondEvent->getController());
     }
 
     /**
-     * @doesNotPerformAssertions
+     * Verifies the attribute defaults and custom limit/interval settings.
      */
-    public function testRateLimitKeyGenerationWithAuthentication(): void
-    {
-        $request    = new Request();
-        $controller = new #[RateLimitAttribute]
-        class {
-            #[RateLimitAttribute]
-            public function method(): Response
-            {
-                return new Response('OK');
-            }
-        };
-
-        $kernel = $this->createMock(HttpKernelInterface::class);
-        $event  = new ControllerEvent($kernel, [$controller, 'method'], $request, HttpKernelInterface::MAIN_REQUEST);
-
-        // Should use user ID from request attributes
-        $this->listener->onKernelController($event);
-    }
-
-    public function testListenerIsEventSubscriber(): void
-    {
-        // Listener implements EventSubscriberInterface and subscribes to kernel.controller event
-        $events = RateLimitEventListener::getSubscribedEvents();
-        $this->assertArrayHasKey('kernel.controller', $events);
-        $this->assertSame('onKernelController', $events['kernel.controller']);
-    }
-
     public function testConfiguredLimitAndInterval(): void
     {
-        $attribute1 = new RateLimitAttribute();
-        $this->assertSame(60, $attribute1->getLimit());
-        $this->assertSame(60, $attribute1->getInterval());
+        $defaultAttribute = new RateLimitAttribute();
+        $this->assertSame(60, $defaultAttribute->getLimit());
+        $this->assertSame(60, $defaultAttribute->getInterval());
 
-        $attribute2 = new RateLimitAttribute(limit: 30, interval: 120);
-        $this->assertSame(30, $attribute2->getLimit());
-        $this->assertSame(120, $attribute2->getInterval());
+        $customAttribute = new RateLimitAttribute(limit: 30, interval: 120);
+        $this->assertSame(30, $customAttribute->getLimit());
+        $this->assertSame(120, $customAttribute->getInterval());
+    }
+
+    private function createListener(int $limit): RateLimitEventListener
+    {
+        $factory = new RateLimiterFactory([
+            'id'       => 'api',
+            'policy'   => 'sliding_window',
+            'limit'    => $limit,
+            'interval' => '1 minute',
+        ], new InMemoryStorage());
+
+        return new RateLimitEventListener($factory, $this->createStub(TranslatorInterface::class));
     }
 }

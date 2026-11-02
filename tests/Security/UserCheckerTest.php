@@ -14,10 +14,13 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 final class UserCheckerTest extends TestCase
 {
+    /**
+     * Verifies the checker allows an enabled user without logging a denial.
+     */
     public function testCheckPreAuthAllowsEnabledUser(): void
     {
         $user = new User();
-        $user->setEmail('enabled@example.test');
+        $user->setEmail('enabled@test.local');
         $user->setPassword('pass');
         $user->setIsEnabled(true);
 
@@ -25,7 +28,7 @@ final class UserCheckerTest extends TestCase
         $userRepository
             ->expects($this->once())
             ->method('findOneByEmail')
-            ->with('enabled@example.test')
+            ->with('enabled@test.local')
             ->willReturn($user);
 
         $logger = $this->createMock(LoggerInterface::class);
@@ -39,16 +42,19 @@ final class UserCheckerTest extends TestCase
         $subject
             ->expects($this->once())
             ->method('getUserIdentifier')
-            ->willReturn('enabled@example.test');
+            ->willReturn('enabled@test.local');
 
         $checker->checkPreAuth($subject);
         $this->addToAssertionCount(1);
     }
 
+    /**
+     * Verifies the checker rejects a disabled user and logs the denial.
+     */
     public function testCheckPreAuthDeniesDisabledUser(): void
     {
         $user = new User();
-        $user->setEmail('disabled@example.test');
+        $user->setEmail('disabled@test.local');
         $user->setPassword('pass');
         $user->setIsEnabled(false);
 
@@ -56,14 +62,14 @@ final class UserCheckerTest extends TestCase
         $userRepository
             ->expects($this->once())
             ->method('findOneByEmail')
-            ->with('disabled@example.test')
+            ->with('disabled@test.local')
             ->willReturn($user);
 
         $logger = $this->createMock(LoggerInterface::class);
         $logger
             ->expects($this->once())
             ->method('info')
-            ->with('Access denied', ['user' => 'disabled@example.test']);
+            ->with('Access denied', ['user' => 'disabled@test.local']);
 
         $checker = new UserChecker($userRepository, $logger);
 
@@ -71,7 +77,7 @@ final class UserCheckerTest extends TestCase
         $subject
             ->expects($this->once())
             ->method('getUserIdentifier')
-            ->willReturn('disabled@example.test');
+            ->willReturn('disabled@test.local');
 
         $this->expectException(CustomUserMessageAccountStatusException::class);
         $this->expectExceptionMessage('Access denied');

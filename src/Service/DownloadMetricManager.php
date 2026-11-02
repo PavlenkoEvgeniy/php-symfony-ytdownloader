@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\DownloadMetric;
-use App\Repository\DownloadMetricRepository;
+use App\Repository\DownloadMetricRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
-final readonly class DownloadMetricManager
+final readonly class DownloadMetricManager implements DownloadMetricManagerInterface
 {
     public function __construct(
-        private DownloadMetricRepository $downloadMetricRepository,
-        private EntityManagerInterface $em,
+        private DownloadMetricRepositoryInterface $downloadMetricRepository,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
+    #[\Override]
     /**
      * The lifetime sum of bytes downloaded into the library. It is a persisted
      * accumulator, deliberately not derived from the Source rows: deleting
@@ -28,6 +29,7 @@ final readonly class DownloadMetricManager
         return $metric?->getTotalBytes() ?? 0.0;
     }
 
+    #[\Override]
     /**
      * Adds bytes into the lifetime counter. Flushing stays the caller's job,
      * so the metric commits together with the Source row it belongs to.
@@ -36,9 +38,9 @@ final readonly class DownloadMetricManager
     {
         $metric = $this->downloadMetricRepository->getSingleton();
 
-        if (null === $metric) {
+        if (!$metric instanceof DownloadMetric) {
             $metric = new DownloadMetric();
-            $this->em->persist($metric);
+            $this->entityManager->persist($metric);
         }
 
         $metric->setTotalBytes(($metric->getTotalBytes() ?? 0.0) + $size);

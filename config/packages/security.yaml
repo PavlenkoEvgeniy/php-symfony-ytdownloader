@@ -41,7 +41,7 @@ security:
                 path: security_logout
             login_throttling:
                 max_attempts: 10
-                interval: '1 minutes'
+                interval: '1 minute'
             remember_me:
                 secret: '%kernel.secret%'
                 lifetime: 604800

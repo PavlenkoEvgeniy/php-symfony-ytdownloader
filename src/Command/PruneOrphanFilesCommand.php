@@ -4,60 +4,51 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\Service\OrphanFilePruner;
+use App\Service\OrphanFilePrunerInterface;
 use OskarStark\Twig\ReadableFilesizeExtension;
 use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Attribute\Option;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[AsCommand(
-    name: 'app:downloads:prune',
     description: 'Delete orphan files in the downloads directory',
+    name: 'app:downloads:prune',
 )]
-final class PruneOrphanFilesCommand extends Command
+final readonly class PruneOrphanFilesCommand
 {
     public function __construct(
-        private readonly OrphanFilePruner $pruner,
-        private readonly ReadableFilesizeExtension $filesizeExtension,
+        private OrphanFilePrunerInterface $orphanFilePruner,
+        private ReadableFilesizeExtension $readableFilesizeExtension,
+        private TranslatorInterface $translator,
     ) {
-        parent::__construct();
     }
 
-    #[\Override]
-    protected function configure(): void
-    {
-        $this->addOption('dry-run', null, InputOption::VALUE_NONE, 'List orphan files without deleting them');
-    }
-
-    #[\Override]
-    protected function execute(InputInterface $input, OutputInterface $output): int
-    {
-        $io       = new SymfonyStyle($input, $output);
-        $isDryRun = (bool) $input->getOption('dry-run');
-
-        if ($isDryRun) {
+    public function __invoke(
+        SymfonyStyle $io,
+        #[Option(description: 'List orphan files without deleting them')]
+        bool $dryRun = false,
+    ): int {
+        if ($dryRun) {
             return $this->listOrphans($io);
         }
 
-        $result = $this->pruner->prune();
+        $result = $this->orphanFilePruner->prune();
 
         if (0 === $result['deleted'] && 0 === $result['failed']) {
-            $io->success('No orphan files found.');
+            $io->success($this->translator->trans('command.prune.no_orphans'));
 
             return Command::SUCCESS;
         }
 
-        $io->success(\sprintf(
-            'Pruned %d orphan file(s), %s freed.',
-            $result['deleted'],
-            $this->filesizeExtension->readableFilesize($result['bytes']),
-        ));
+        $io->success($this->translator->trans('command.prune.pruned', [
+            '%count%' => $result['deleted'],
+            '%size%'  => $this->readableFilesizeExtension->readableFilesize($result['bytes']),
+        ]));
 
         if ($result['failed'] > 0) {
-            $io->error(\sprintf('Failed to delete %d file(s).', $result['failed']));
+            $io->error($this->translator->trans('command.prune.failed', ['%count%' => $result['failed']]));
 
             return Command::FAILURE;
         }
@@ -67,16 +58,20 @@ final class PruneOrphanFilesCommand extends Command
 
     private function listOrphans(SymfonyStyle $io): int
     {
-        $orphans = $this->pruner->findOrphans();
+        $orphans = $this->orphanFilePruner->findOrphans();
 
         if ([] === $orphans) {
-            $io->success('No orphan files found.');
+            $io->success($this->translator->trans('command.prune.no_orphans'));
 
             return Command::SUCCESS;
         }
 
         $io->table(
-            ['File', 'Size', 'Modified'],
+            [
+                $this->translator->trans('command.prune.table.file'),
+                $this->translator->trans('command.prune.table.size'),
+                $this->translator->trans('command.prune.table.modified'),
+            ],
             \array_map(static fn (array $orphan): array => [
                 $orphan['name'],
                 $orphan['size'],
@@ -84,7 +79,7 @@ final class PruneOrphanFilesCommand extends Command
             ], $orphans),
         );
 
-        $io->note(\sprintf('Dry run: %d orphan file(s) would be deleted.', \count($orphans)));
+        $io->note($this->translator->trans('command.prune.dry_run', ['%count%' => \count($orphans)]));
 
         return Command::SUCCESS;
     }

@@ -1,6 +1,6 @@
 # Doctrine transport instead of RabbitMQ
 
-The app is a single-user personal service with a single supervisor-driven worker; RabbitMQ was a full extra container (plus management UI, volumes and healthchecks) whose only job was to carry one message type between HTTP requests and the worker. We replaced the AMQP transport with the doctrine transport (`doctrine://default`): messages now live in the `messenger_messages` table alongside the already-persisted download tasks, and queue statistics were already database-based, so the broker was the last piece of infra serving no purpose.
+The app is a single-user personal service with two supervisor-driven worker processes; RabbitMQ was a full extra container (plus management UI, volumes and healthchecks) whose only job was to carry one message type between HTTP requests and the worker. We replaced the AMQP transport with the doctrine transport (`doctrine://default`): messages now live in the `messenger_messages` table alongside the already-persisted download tasks, and queue statistics were already database-based, so the broker was the last piece of infra serving no purpose.
 
 ## Considered options
 
@@ -11,4 +11,4 @@ The app is a single-user personal service with a single supervisor-driven worker
 ## Consequences
 
 - A task stuck in `processing` still self-heals only for queued messages: a worker death mid-task leaves the row in `processing` (deliberately not fixed, see `CONTEXT.md`).
-- The `messenger_messages` table is provisioned by an explicit migration, mirroring what doctrine auto-setup would create, including the PostgreSQL cleanup trigger for delivered messages.
+- The `messenger_messages` table is provisioned by an explicit migration, mirroring what doctrine auto-setup would create; the PostgreSQL cleanup trigger was later removed as unused (see ADR-0004).

@@ -16,18 +16,15 @@ final class Version20250711172828 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('
-            ALTER TABLE log 
-            ADD size DOUBLE PRECISION 
-            DEFAULT NULL'
-        );
+        $this->addSql(<<<'SQL'
+            ALTER TABLE log
+            ADD size DOUBLE PRECISION
+            DEFAULT NULL
+        SQL);
     }
 
     public function down(Schema $schema): void
     {
-        // this down() migration is auto-generated, please modify it to your needs
-        $this->addSql('CREATE SCHEMA public');
         $this->addSql('ALTER TABLE log DROP size');
     }
 }

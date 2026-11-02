@@ -25,6 +25,8 @@ final class FormatResolverTest extends TestCase
     }
 
     /**
+     * Verifies each quality maps to the expected format and audio flag.
+     *
      * @dataProvider formatProvider
      *
      * @param array{string, bool} $expected

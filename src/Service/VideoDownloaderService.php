@@ -4,34 +4,39 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\Source;
 use App\Enum\DownloadOutcome;
 use BotMan\BotMan\Exceptions\Base\BotManException;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final readonly class VideoDownloaderService implements VideoProcessorInterface
 {
     public function __construct(
-        private YoutubeDlWrapper $youtubeDl,
-        private FormatResolver $formatResolver,
-        private SourceManager $sourceManager,
-        private LogManager $logManager,
+        private YoutubeDlWrapperInterface $youtubeDlWrapper,
+        private FormatResolverInterface $formatResolver,
+        private SourceManagerInterface $sourceManager,
+        private LogManagerInterface $logManager,
         private LoggerInterface $logger,
-        private TelegramNotifier $telegramNotifier,
+        private TelegramNotifierInterface $telegramNotifier,
+        private TranslatorInterface $translator,
     ) {
     }
 
+    #[\Override]
     /**
      * @throws BotManException
      */
-    #[\Override]
     public function process(string $videoUrl, string $format, ?string $telegramUserId = null): DownloadOutcome
     {
+        $telegramUserId ??= '';
+
         $this->logManager->create('commenced', 'Started downloading.');
         $this->logManager->flush();
 
         [$downloadFormat, $mergeAsVideo] = $this->formatResolver->resolve($format);
 
-        $collection = $this->youtubeDl->download($videoUrl, $downloadFormat, $mergeAsVideo);
+        $collection = $this->youtubeDlWrapper->download($videoUrl, $downloadFormat, $mergeAsVideo);
 
         $saved  = 0;
         $errors = 0;
@@ -50,9 +55,10 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
 
             $filename = $video->getFile()->getBasename();
             $path     = $video->getFile()->getPath();
-            $size     = (float) $video->getFile()->getSize();
+            $size     = $video->getFile()->getSize();
+            $source   = $this->sourceManager->findByFilename($filename);
 
-            if (null === $this->sourceManager->findByFilename($filename)) {
+            if (!$source instanceof Source) {
                 $this->sourceManager->createFromDownloadedFile($filename, $path, $size);
 
                 $this->logManager->create('success', \sprintf('File "%s" downloaded successfully.', $filename), $size);
@@ -78,11 +84,17 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
             $this->logManager->flush();
         }
 
-        if ($telegramUserId) {
+        if ('' !== $telegramUserId) {
             if ($hasFiles) {
-                $this->telegramNotifier->notifyFinished($telegramUserId, 'Downloading finished. You can find your file in the downloads directory. To download please visit the website.');
+                $this->telegramNotifier->notifyFinished(
+                    $telegramUserId,
+                    $this->translator->trans('telegram.download_finished'),
+                );
             } else {
-                $this->telegramNotifier->notifyError($telegramUserId, 'Error during downloading: please try again with another link.');
+                $this->telegramNotifier->notifyError(
+                    $telegramUserId,
+                    $this->translator->trans('telegram.download_error'),
+                );
             }
         }
 

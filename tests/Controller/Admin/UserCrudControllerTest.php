@@ -19,14 +19,20 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final class UserCrudControllerTest extends TestCase
 {
+    /**
+     * Verifies the CRUD controller is bound to the User entity.
+     */
     public function testGetEntityFqcn(): void
     {
         $this->assertSame(User::class, UserCrudController::getEntityFqcn());
     }
 
+    /**
+     * Verifies the edit form uses an unmapped required password field.
+     */
     public function testConfigureFieldsForEditPasswordIsPasswordType(): void
     {
-        $hasher     = $this->createMock(UserPasswordHasherInterface::class);
+        $hasher     = $this->createStub(UserPasswordHasherInterface::class);
         $controller = new UserCrudController($hasher);
 
         $fields = \iterator_to_array($controller->configureFields(Crud::PAGE_EDIT));
@@ -45,9 +51,12 @@ final class UserCrudControllerTest extends TestCase
         $this->assertTrue((bool) $this->getFieldFormTypeOption($passwordField, 'required'));
     }
 
+    /**
+     * Verifies the new form uses an unmapped repeated password field.
+     */
     public function testConfigureFieldsForNewPasswordIsRepeatedType(): void
     {
-        $hasher     = $this->createMock(UserPasswordHasherInterface::class);
+        $hasher     = $this->createStub(UserPasswordHasherInterface::class);
         $controller = new UserCrudController($hasher);
 
         $fields = \iterator_to_array($controller->configureFields(Crud::PAGE_NEW));
@@ -67,9 +76,12 @@ final class UserCrudControllerTest extends TestCase
         $this->assertTrue((bool) $this->getFieldFormTypeOption($passwordField, 'required'));
     }
 
+    /**
+     * Verifies email, enabled switch and role choice field options are configured.
+     */
     public function testEmailIsRequiredAndIsEnabledRenderedAsSwitchAndRolesConfigured(): void
     {
-        $hasher     = $this->createMock(UserPasswordHasherInterface::class);
+        $hasher     = $this->createStub(UserPasswordHasherInterface::class);
         $controller = new UserCrudController($hasher);
 
         $fields = \iterator_to_array($controller->configureFields(Crud::PAGE_INDEX));
@@ -103,6 +115,9 @@ final class UserCrudControllerTest extends TestCase
         $this->assertTrue($rolesFound, 'roles field not found');
     }
 
+    /**
+     * Verifies the hash closure leaves the entity untouched for invalid forms or empty passwords.
+     */
     public function testHashPasswordClosureDoesNothingWhenFormInvalidOrPasswordNull(): void
     {
         $hasher = $this->createMock(UserPasswordHasherInterface::class);
@@ -113,20 +128,20 @@ final class UserCrudControllerTest extends TestCase
         $closure = $this->getHashPasswordClosure($controller);
 
         // case: invalid form
-        $formInvalid = $this->createMock(FormInterface::class);
+        $formInvalid = $this->createStub(FormInterface::class);
         $formInvalid->method('isValid')->willReturn(false);
         $eventInvalid = new FormEvent($formInvalid, null);
 
         $closure($eventInvalid);
 
         // case: valid but password null
-        $formValid = $this->createMock(FormInterface::class);
+        $formValid = $this->createStub(FormInterface::class);
         $formValid->method('isValid')->willReturn(true);
 
-        $passwordForm = $this->createMock(FormInterface::class);
+        $passwordForm = $this->createStub(FormInterface::class);
         $passwordForm->method('getData')->willReturn(null);
 
-        $formValid->method('get')->with('password')->willReturn($passwordForm);
+        $formValid->method('get')->willReturn($passwordForm);
         $formValid->method('getData')->willReturn(new User());
 
         $eventValid = new FormEvent($formValid, null);
@@ -134,6 +149,9 @@ final class UserCrudControllerTest extends TestCase
         $closure($eventValid);
     }
 
+    /**
+     * Verifies the hash closure stores the hashed value on the form entity.
+     */
     public function testHashPasswordClosureHashesAndSetsPasswordWhenProvided(): void
     {
         $hasher = $this->createMock(UserPasswordHasherInterface::class);
@@ -145,13 +163,13 @@ final class UserCrudControllerTest extends TestCase
 
         $user = new User();
 
-        $form = $this->createMock(FormInterface::class);
+        $form = $this->createStub(FormInterface::class);
         $form->method('isValid')->willReturn(true);
 
-        $passwordForm = $this->createMock(FormInterface::class);
+        $passwordForm = $this->createStub(FormInterface::class);
         $passwordForm->method('getData')->willReturn('plain');
 
-        $form->method('get')->with('password')->willReturn($passwordForm);
+        $form->method('get')->willReturn($passwordForm);
         $form->method('getData')->willReturn($user);
 
         $event = new FormEvent($form, null);
@@ -165,8 +183,7 @@ final class UserCrudControllerTest extends TestCase
     {
         $ref  = new \ReflectionObject($field);
         $prop = $ref->getProperty('dto');
-        $prop->setAccessible(true);
-        $dto = $prop->getValue($field);
+        $dto  = $prop->getValue($field);
 
         return $dto->getProperty();
     }
@@ -175,8 +192,7 @@ final class UserCrudControllerTest extends TestCase
     {
         $ref  = new \ReflectionObject($field);
         $prop = $ref->getProperty('dto');
-        $prop->setAccessible(true);
-        $dto = $prop->getValue($field);
+        $dto  = $prop->getValue($field);
 
         return $dto->getFormType();
     }
@@ -185,8 +201,7 @@ final class UserCrudControllerTest extends TestCase
     {
         $ref  = new \ReflectionObject($field);
         $prop = $ref->getProperty('dto');
-        $prop->setAccessible(true);
-        $dto = $prop->getValue($field);
+        $dto  = $prop->getValue($field);
 
         return $dto->getFormTypeOption($option);
     }
@@ -195,8 +210,7 @@ final class UserCrudControllerTest extends TestCase
     {
         $ref  = new \ReflectionObject($field);
         $prop = $ref->getProperty('dto');
-        $prop->setAccessible(true);
-        $dto = $prop->getValue($field);
+        $dto  = $prop->getValue($field);
 
         return $dto->getCustomOption($option);
     }
@@ -205,7 +219,6 @@ final class UserCrudControllerTest extends TestCase
     {
         $ref    = new \ReflectionObject($controller);
         $method = $ref->getMethod('hashPassword');
-        $method->setAccessible(true);
 
         return $method->invoke($controller);
     }

@@ -7,6 +7,7 @@ namespace App\Tests\Controller\Ui;
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final class ProfileControllerTest extends WebTestCase
@@ -23,29 +24,38 @@ final class ProfileControllerTest extends WebTestCase
         $this->passwordHasher = $this->getContainer()->get(UserPasswordHasherInterface::class);
     }
 
+    /**
+     * Verifies the profile page opens for an authenticated admin.
+     */
     public function testIndexPageIsOpeningOk(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
         $this->client->loginUser($user);
 
-        $this->client->request('GET', '/ui/profile');
+        $this->client->request(Request::METHOD_GET, '/ui/profile');
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('h1', 'Profile');
         $this->assertSelectorTextContains('h4', 'Change password:');
     }
 
+    /**
+     * Verifies the theme page redirects anonymous visitors to login.
+     */
     public function testThemePageRequiresAuthentication(): void
     {
-        $this->client->request('GET', '/ui/profile/theme');
+        $this->client->request(Request::METHOD_GET, '/ui/profile/theme');
         $this->assertResponseRedirects();
     }
 
+    /**
+     * Verifies the theme page renders all theme options.
+     */
     public function testThemePageIsOpeningOk(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
         $this->client->loginUser($user);
 
-        $crawler = $this->client->request('GET', '/ui/profile/theme');
+        $crawler = $this->client->request(Request::METHOD_GET, '/ui/profile/theme');
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('h1', 'Theme:');
 
@@ -55,20 +65,26 @@ final class ProfileControllerTest extends WebTestCase
         $this->assertCount(1, $crawler->filter('[name="theme"][value="light"]'));
     }
 
+    /**
+     * Verifies the profile page links to the theme page without embedding its form.
+     */
     public function testIndexPageDoesNotContainThemeForm(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
         $this->client->loginUser($user);
 
-        $this->client->request('GET', '/ui/profile');
+        $this->client->request(Request::METHOD_GET, '/ui/profile');
         $this->assertResponseIsSuccessful();
         $this->assertSelectorNotExists('input[name="theme"]');
         $this->assertSelectorExists('a[href="/ui/profile/theme"]');
     }
 
+    /**
+     * Verifies the base layout includes the theme switching script.
+     */
     public function testBaseLayoutContainsThemeScript(): void
     {
-        $this->client->request('GET', '/login');
+        $this->client->request(Request::METHOD_GET, '/login');
         $this->assertResponseIsSuccessful();
 
         $content = $this->client->getResponse()->getContent();
@@ -78,12 +94,15 @@ final class ProfileControllerTest extends WebTestCase
         $this->assertStringContainsString('prefers-color-scheme', $content);
     }
 
+    /**
+     * Verifies changing the password updates the stored hash.
+     */
     public function testChangePasswordIsOk(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
         $this->client->loginUser($user);
 
-        $crawler = $this->client->request('GET', '/ui/profile');
+        $crawler = $this->client->request(Request::METHOD_GET, '/ui/profile');
         $this->assertResponseIsSuccessful();
 
         $currentPassword = 'admin123456';
@@ -101,7 +120,6 @@ final class ProfileControllerTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('.alert-success', 'Your password was successfully updated.');
 
-        // Refresh user
         $user                 = $this->userRepository->findOneByEmail('admin@admin.local');
         $checkPasswordIsValid = $this->passwordHasher->isPasswordValid($user, $newPassword);
 

@@ -4,25 +4,29 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Repository\SourceRepository;
+use App\Repository\SourceRepositoryInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * Finds and deletes orphan files: files in the downloads directory that no Source
  * references and that no download is currently writing (see CONTEXT.md "Orphan File").
  */
-final readonly class OrphanFilePruner
+final readonly class OrphanFilePruner implements OrphanFilePrunerInterface
 {
     public function __construct(
-        private SourceRepository $sourceRepository,
+        private SourceRepositoryInterface $sourceRepository,
         private LoggerInterface $logger,
+        #[Autowire(env: 'string:resolve:APP_DOWNLOADS_DIR')]
         private string $downloadsDir,
+        #[Autowire('%app.downloads.orphan_ttl_seconds%')]
         private int $orphanTtlSeconds,
     ) {
     }
 
+    #[\Override]
     /**
-     * @return list<array{name: string, path: string, size: int, modifiedAt: \DateTimeImmutable}>
+     * @return array{name: string, path: string, size: int, modifiedAt: \DateTimeImmutable}[]
      */
     public function findOrphans(): array
     {
@@ -50,7 +54,7 @@ final readonly class OrphanFilePruner
                 'name'       => $name,
                 'path'       => $file->getPathname(),
                 'size'       => false === $size ? 0 : $size,
-                'modifiedAt' => (new \DateTimeImmutable())->setTimestamp($modifiedAt),
+                'modifiedAt' => new \DateTimeImmutable()->setTimestamp($modifiedAt),
             ];
         }
 
@@ -62,6 +66,7 @@ final readonly class OrphanFilePruner
         return $orphans;
     }
 
+    #[\Override]
     /**
      * @return array{deleted: int, bytes: int, failed: int}
      */
@@ -76,12 +81,12 @@ final readonly class OrphanFilePruner
                 if (!\unlink($orphan['path'])) {
                     throw new \RuntimeException('unlink() returned false.');
                 }
-            } catch (\Throwable $e) {
+            } catch (\Throwable $exception) {
                 ++$failed;
 
                 $this->logger->error('Failed to prune orphan file', [
                     'path'  => $orphan['path'],
-                    'error' => $e->getMessage(),
+                    'error' => $exception->getMessage(),
                 ]);
 
                 continue;
@@ -119,7 +124,7 @@ final readonly class OrphanFilePruner
                 continue;
             }
 
-            $path = $this->downloadsDir . DIRECTORY_SEPARATOR . $entry;
+            $path = \sprintf('%s%s%s', $this->downloadsDir, DIRECTORY_SEPARATOR, $entry);
 
             // Only files are pruned; directories and broken links are left for a human.
             if (!\is_file($path)) {

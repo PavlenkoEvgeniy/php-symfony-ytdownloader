@@ -18,12 +18,18 @@ final class DownloadControllerTest extends WebTestCase
         $this->client = static::createClient();
     }
 
+    /**
+     * Verifies the create endpoint rejects unauthenticated requests.
+     */
     public function testCreateRequiresAuthentication(): void
     {
         $this->client->request(Request::METHOD_POST, '/api/v1/download/create');
         $this->assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
     }
 
+    /**
+     * Verifies an invalid download URL is rejected with HTTP 422.
+     */
     public function testCreateValidatesPayload(): void
     {
         $token = $this->loginAndGetToken('admin@admin.local', 'admin123456');
@@ -32,21 +38,24 @@ final class DownloadControllerTest extends WebTestCase
             'url'     => 'not-a-url',
             'quality' => 'best',
         ], [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+            'HTTP_AUTHORIZATION' => \sprintf('Bearer %s', $token),
         ]);
 
         $this->assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
+    /**
+     * Verifies a valid download request is accepted with HTTP 202.
+     */
     public function testCreateAcceptsValidRequest(): void
     {
         $token = $this->loginAndGetToken('admin@admin.local', 'admin123456');
 
         $this->client->jsonRequest(Request::METHOD_POST, '/api/v1/download/create', [
-            'url'     => 'https://example.com',
+            'url'     => 'https://test.local',
             'quality' => 'moderate',
         ], [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+            'HTTP_AUTHORIZATION' => \sprintf('Bearer %s', $token),
         ]);
 
         $this->assertResponseStatusCodeSame(Response::HTTP_ACCEPTED);

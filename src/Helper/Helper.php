@@ -11,7 +11,7 @@ final class Helper
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
 
         $bytes = (float) \max((float) ($bytes ?? 0), 0);
-        $pow   = $bytes > 0 ? (int) \floor(\log($bytes, 1024)) : 0;
+        $pow   = (int) ($bytes > 0 ? \floor(\log($bytes, 1024)) : 0);
         $pow   = \min(\max($pow, 0), \count($units) - 1);
 
         $bytes /= \pow(1024.0, (float) $pow);

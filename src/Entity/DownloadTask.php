@@ -4,32 +4,35 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Exception\PropertyIsNotSetException;
 use App\Repository\DownloadTaskRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
 
 #[ORM\Entity(repositoryClass: DownloadTaskRepository::class)]
-#[ORM\Index(columns: ['status'], name: 'idx_download_task_status')]
-class DownloadTask
+#[ORM\Table(name: 'download_task')]
+#[ORM\Index(name: 'idx_download_task_status', columns: ['status'])]
+final class DownloadTask
 {
     use TimestampableEntity;
-    public const STATUS_QUEUED     = 'queued';
-    public const STATUS_PROCESSING = 'processing';
-    public const STATUS_SUCCESS    = 'success';
-    public const STATUS_ERROR      = 'error';
+    public const string STATUS_QUEUED     = 'queued';
+    public const string STATUS_PROCESSING = 'processing';
+    public const string STATUS_SUCCESS    = 'success';
+    public const string STATUS_ERROR      = 'error';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(name: 'id', type: Types::INTEGER)]
+    public private(set) ?int $id = null;
 
-    #[ORM\Column(length: 512)]
+    #[ORM\Column(name: 'url', type: Types::STRING, length: 512)]
     private ?string $url = null;
 
-    #[ORM\Column(length: 32)]
+    #[ORM\Column(name: 'quality', type: Types::STRING, length: 32)]
     private ?string $quality = null;
 
-    #[ORM\Column(length: 32)]
+    #[ORM\Column(name: 'status', type: Types::STRING, length: 32)]
     private ?string $status = self::STATUS_QUEUED;
 
     public function getId(): ?int
@@ -71,5 +74,35 @@ class DownloadTask
         $this->status = $status;
 
         return $this;
+    }
+
+    public function getIdOrFail(): int
+    {
+        return $this->id ?? throw PropertyIsNotSetException::forProperty('id');
+    }
+
+    public function getUrlOrFail(): string
+    {
+        return $this->url ?? throw PropertyIsNotSetException::forProperty('url');
+    }
+
+    public function getQualityOrFail(): string
+    {
+        return $this->quality ?? throw PropertyIsNotSetException::forProperty('quality');
+    }
+
+    public function getStatusOrFail(): string
+    {
+        return $this->status ?? throw PropertyIsNotSetException::forProperty('status');
+    }
+
+    public function getCreatedAtOrFail(): \DateTimeInterface
+    {
+        return $this->getCreatedAt() ?? throw PropertyIsNotSetException::forProperty('createdAt');
+    }
+
+    public function getUpdatedAtOrFail(): \DateTimeInterface
+    {
+        return $this->getUpdatedAt() ?? throw PropertyIsNotSetException::forProperty('updatedAt');
     }
 }
