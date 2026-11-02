@@ -30,7 +30,7 @@ final class DashboardControllerTest extends WebTestCase
         $this->assertResponseRedirects('/login');
     }
 
-    public function testAdminPageRedirectsToUserCrudForAdminUser(): void
+    public function testAdminPageRedirectsToActiveTasksForAdminUser(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
         $this->client->loginUser($user);
@@ -38,7 +38,7 @@ final class DashboardControllerTest extends WebTestCase
         $this->client->request('GET', '/admin');
 
         $this->assertResponseStatusCodeSame(Response::HTTP_FOUND);
-        $this->assertResponseRedirects('/admin/user');
+        $this->assertResponseRedirects('/admin/active-tasks');
     }
 
     public function testAdminPageRedirectsRegularUserToUiDownloadsWithWarningMessage(): void
@@ -100,6 +100,20 @@ final class DashboardControllerTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('body', 'Active Tasks');
+    }
+
+    public function testPruneOrphansRejectsInvalidCsrfToken(): void
+    {
+        $user = $this->userRepository->findOneByEmail('admin@admin.local');
+        $this->client->loginUser($user);
+
+        $this->client->request('POST', '/admin/prune-orphans');
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_FOUND);
+        $this->assertResponseRedirects('/admin/active-tasks');
+
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('div.alert-danger', 'Invalid CSRF token.');
     }
 
     public function testActiveTasksPageListsRecentTask(): void

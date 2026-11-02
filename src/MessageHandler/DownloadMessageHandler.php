@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\MessageHandler;
 
+use App\Enum\DownloadOutcome;
 use App\Message\DownloadMessage;
 use App\Service\DownloadTaskManager;
 use App\Service\VideoProcessorInterface;
@@ -31,10 +32,14 @@ final readonly class DownloadMessageHandler
             }
         }
 
-        $this->processYoutubeVideo->process($message->getUrl(), $message->getQuality(), $message->getTelegramUserId());
+        $outcome = $this->processYoutubeVideo->process($message->getUrl(), $message->getQuality(), $message->getTelegramUserId());
 
         if (null !== $taskId) {
-            $this->taskManager->markSuccess($taskId);
+            if (DownloadOutcome::SUCCESS === $outcome) {
+                $this->taskManager->markSuccess($taskId);
+            } else {
+                $this->taskManager->markError($taskId);
+            }
         }
     }
 }
