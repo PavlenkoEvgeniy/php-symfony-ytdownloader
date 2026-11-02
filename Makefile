@@ -38,6 +38,7 @@ help:
 	@echo "34. telegram-bot-unhook ........................... Remove Telegram bot webhook."
 	@echo "35. security-check .......... Check Composer packages for known security issues."
 	@echo "36. pull ............................ Pull prebuilt php-fpm image (prod deploy)."
+	@echo "37. docker-prune ......... Remove unused images, containers and build cache."
 	@echo "+------------------------------------------------------------------------------+"
 
 env-setup:
@@ -143,6 +144,11 @@ cache-clear:
 # Deletes var/cache; safe only while the stack is stopped (see restart).
 cache-purge:
 	rm -rf ./var/cache/
+
+# Clean the host after a deploy. Named volumes (Redis data) are kept because
+# `docker system prune` does not remove volumes unless --volumes is passed.
+docker-prune:
+	docker system prune --all -f
 
 cache-warmup:
 	docker exec -u www-data -e HOME=/tmp ytdownloader-php-fpm php bin/console cache:warmup
