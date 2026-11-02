@@ -35,7 +35,7 @@ final class ReadyControllerTest extends TestCase
         $factory = $this->createStub(RedisConnectionFactory::class);
         $factory->method('create')->willReturn($redis);
 
-        $response = (new ReadyController($connection, $factory))->__invoke();
+        $response = new ReadyController($connection, $factory)->__invoke();
 
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $this->assertSame('{"status":"OK","checks":{"database":"OK","redis":"OK"}}', (string) $response->getContent());
@@ -53,7 +53,7 @@ final class ReadyControllerTest extends TestCase
         $factory = $this->createStub(RedisConnectionFactory::class);
         $factory->method('create')->willThrowException(new \RuntimeException('redis is not needed'));
 
-        $response = (new ReadyController($connection, $factory))->__invoke();
+        $response = new ReadyController($connection, $factory)->__invoke();
 
         $this->assertSame(Response::HTTP_SERVICE_UNAVAILABLE, $response->getStatusCode());
         $this->assertStringContainsString('"database":"FAIL"', (string) $response->getContent());
@@ -71,7 +71,7 @@ final class ReadyControllerTest extends TestCase
         $factory = $this->createStub(RedisConnectionFactory::class);
         $factory->method('create')->willThrowException(new \RuntimeException('redis is down'));
 
-        $response = (new ReadyController($connection, $factory))->__invoke();
+        $response = new ReadyController($connection, $factory)->__invoke();
 
         $this->assertSame(Response::HTTP_SERVICE_UNAVAILABLE, $response->getStatusCode());
         $this->assertStringContainsString('"redis":"FAIL"', (string) $response->getContent());

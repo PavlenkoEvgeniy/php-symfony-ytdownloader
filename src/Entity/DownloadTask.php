@@ -136,6 +136,21 @@ class DownloadTask
         return $this;
     }
 
+    public function getErrorMessageOrFail(): string
+    {
+        return $this->errorMessage ?? throw PropertyIsNotSetException::forProperty('errorMessage');
+    }
+
+    public function getStartedAtOrFail(): \DateTimeImmutable
+    {
+        return $this->startedAt ?? throw PropertyIsNotSetException::forProperty('startedAt');
+    }
+
+    public function getFinishedAtOrFail(): \DateTimeImmutable
+    {
+        return $this->finishedAt ?? throw PropertyIsNotSetException::forProperty('finishedAt');
+    }
+
     public function getIdOrFail(): int
     {
         return $this->id ?? throw PropertyIsNotSetException::forProperty('id');
