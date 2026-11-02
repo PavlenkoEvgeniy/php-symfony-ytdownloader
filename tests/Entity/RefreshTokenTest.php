@@ -6,6 +6,7 @@ namespace App\Tests\Entity;
 
 use App\Entity\RefreshToken;
 use App\Entity\User;
+use App\Exception\PropertyIsNotSetException;
 use PHPUnit\Framework\TestCase;
 
 final class RefreshTokenTest extends TestCase
@@ -177,5 +178,38 @@ final class RefreshTokenTest extends TestCase
         $this->assertNull($token->getCreatedAt());
         $this->assertNull($token->getExpiresAt());
         $this->assertNull($token->getRevokedAt());
+    }
+
+    /**
+     * Verifies the "or fail" getters return assigned values.
+     */
+    public function testOrFailGettersReturnAssignedValues(): void
+    {
+        $user      = new User();
+        $createdAt = new \DateTimeImmutable();
+        $expiresAt = $createdAt->modify('+1 hour');
+
+        $refreshToken = new RefreshToken();
+
+        $refreshToken->setToken('token-value')
+            ->setUser($user)
+            ->setCreatedAt($createdAt)
+            ->setExpiresAt($expiresAt)
+        ;
+
+        $this->assertSame('token-value', $refreshToken->getTokenOrFail());
+        $this->assertSame($user, $refreshToken->getUserOrFail());
+        $this->assertSame($createdAt, $refreshToken->getCreatedAtOrFail());
+        $this->assertSame($expiresAt, $refreshToken->getExpiresAtOrFail());
+    }
+
+    /**
+     * Verifies the identifier "or fail" getter throws before persistence.
+     */
+    public function testIdOrFailThrowsForUnsavedToken(): void
+    {
+        $this->expectException(PropertyIsNotSetException::class);
+
+        new RefreshToken()->getIdOrFail();
     }
 }

@@ -40,6 +40,20 @@ final class PruneOrphanFilesCommandTest extends TestCase
     }
 
     /**
+     * Verifies a dry run without orphans reports success.
+     */
+    public function testDryRunWithoutOrphansReportsSuccess(): void
+    {
+        $pruner = $this->createMock(OrphanFilePrunerInterface::class);
+        $pruner->expects($this->once())->method('findOrphans')->willReturn([]);
+        $pruner->expects($this->never())->method('prune');
+
+        $output = $this->execute($pruner, dryRun: true);
+
+        $this->assertStringContainsString('No orphan files found.', $output);
+    }
+
+    /**
      * Verifies a run without orphans reports success.
      */
     public function testNoOrphansReportsSuccess(): void

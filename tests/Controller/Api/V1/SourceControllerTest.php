@@ -6,6 +6,7 @@ namespace App\Tests\Controller\Api\V1;
 
 use App\Entity\Source;
 use App\Repository\SourceRepository;
+use App\Tests\Support\FakeDownloadsStreamWrapper;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -15,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class SourceControllerTest extends WebTestCase
 {
     private KernelBrowser $client;
-    private EntityManagerInterface $em;
+    private EntityManagerInterface $entityManager;
     private SourceRepository $sourceRepository;
     private string $downloadsDir;
     /** @var int[] */
@@ -25,10 +26,10 @@ final class SourceControllerTest extends WebTestCase
 
     public function setUp(): void
     {
-        $this->client           = static::createClient();
-        $this->em               = $this->getContainer()->get(EntityManagerInterface::class);
-        $this->sourceRepository = $this->getContainer()->get(SourceRepository::class);
-        $this->downloadsDir     = \sprintf('%s/var/downloads', $this->getContainer()->getParameter('kernel.project_dir'));
+        $this->client                      = static::createClient();
+        $this->entityManager               = $this->getContainer()->get(EntityManagerInterface::class);
+        $this->sourceRepository            = $this->getContainer()->get(SourceRepository::class);
+        $this->downloadsDir                = \sprintf('%s/var/downloads', $this->getContainer()->getParameter('kernel.project_dir'));
     }
 
     protected function tearDown(): void
@@ -43,10 +44,10 @@ final class SourceControllerTest extends WebTestCase
             foreach ($this->createdSourceIds as $id) {
                 $source = $this->sourceRepository->find($id);
                 if ($source instanceof Source) {
-                    $this->em->remove($source);
+                    $this->entityManager->remove($source);
                 }
             }
-            $this->em->flush();
+            $this->entityManager->flush();
         }
 
         parent::tearDown();
@@ -107,6 +108,102 @@ final class SourceControllerTest extends WebTestCase
         $this->assertFileDoesNotExist(\sprintf('%s/%s', $source->getFilepath(), $source->getFilename()));
     }
 
+    /**
+     * Verifies the index serializes stored sources.
+     */
+    public function testIndexReturnsStoredSource(): void
+    {
+        $source = $this->createSourceWithFile('index-item.mp4');
+        $token  = $this->loginAndGetToken('admin@admin.local', 'admin123456');
+
+        $this->client->request(Request::METHOD_GET, '/api/v1/source?order=ASC', server: [
+            'HTTP_AUTHORIZATION' => \sprintf('Bearer %s', $token),
+        ]);
+
+        $this->assertResponseIsSuccessful();
+
+        $content = $this->client->getResponse()->getContent();
+        $this->assertNotFalse($content);
+        $data = \json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+
+        $filenames = \array_column($data['items'], 'filename', 'id');
+        $this->assertArrayHasKey($source->getId(), $filenames);
+        $this->assertSame('index-item.mp4', $filenames[$source->getId()]);
+    }
+
+    /**
+     * Verifies downloading a missing file returns HTTP 404.
+     */
+    public function testDownloadReturnsNotFoundForMissingFile(): void
+    {
+        $source = $this->createSource('missing-download.mp4');
+        $token  = $this->loginAndGetToken('admin@admin.local', 'admin123456');
+
+        $this->client->request(Request::METHOD_GET, \sprintf('/api/v1/source/%s/download', $source->getId()), server: [
+            'HTTP_AUTHORIZATION' => \sprintf('Bearer %s', $token),
+        ]);
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+    }
+
+    /**
+     * Verifies deleting a source whose file is missing returns HTTP 404.
+     */
+    public function testDeleteReturnsNotFoundForMissingFile(): void
+    {
+        $source = $this->createSource('missing-delete.mp4');
+        $token  = $this->loginAndGetToken('admin@admin.local', 'admin123456');
+
+        $this->client->request(Request::METHOD_DELETE, \sprintf('/api/v1/source/%s', $source->getId()), server: [
+            'HTTP_AUTHORIZATION' => \sprintf('Bearer %s', $token),
+        ]);
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+        $this->assertNotNull($this->sourceRepository->find($source->getId()));
+    }
+
+    /**
+     * Verifies a failure to remove the file returns HTTP 500 and keeps the entity.
+     */
+    public function testDeleteReturnsServerErrorWhenFileCannotBeRemoved(): void
+    {
+        FakeDownloadsStreamWrapper::register();
+
+        try {
+            $source = $this->createSource('orphan.part', FakeDownloadsStreamWrapper::url('readable'));
+            $token  = $this->loginAndGetToken('admin@admin.local', 'admin123456');
+
+            $this->client->request(Request::METHOD_DELETE, \sprintf('/api/v1/source/%s', $source->getId()), server: [
+                'HTTP_AUTHORIZATION' => \sprintf('Bearer %s', $token),
+            ]);
+
+            $this->assertResponseStatusCodeSame(Response::HTTP_INTERNAL_SERVER_ERROR);
+            $this->assertNotNull($this->sourceRepository->find($source->getId()));
+        } finally {
+            FakeDownloadsStreamWrapper::unregister();
+        }
+    }
+
+    /**
+     * Creates a source row without creating its file on disk.
+     */
+    private function createSource(string $filename, ?string $filepath = null): Source
+    {
+        $source = new Source();
+
+        $source
+            ->setFilename($filename)
+            ->setFilepath($filepath ?? $this->downloadsDir)
+            ->setSize(0.0);
+
+        $this->entityManager->persist($source);
+        $this->entityManager->flush();
+
+        $this->createdSourceIds[] = (int) $source->getId();
+
+        return $source;
+    }
+
     private function createSourceWithFile(string $filename): Source
     {
         if (!\is_dir($this->downloadsDir)) {
@@ -117,13 +214,14 @@ final class SourceControllerTest extends WebTestCase
         \file_put_contents($filePath, 'test');
 
         $source = new Source();
+
         $source
             ->setFilename($filename)
             ->setFilepath($this->downloadsDir)
             ->setSize((float) \filesize($filePath));
 
-        $this->em->persist($source);
-        $this->em->flush();
+        $this->entityManager->persist($source);
+        $this->entityManager->flush();
 
         $this->createdSourceIds[] = (int) $source->getId();
         $this->createdFiles[]     = $filePath;

@@ -6,6 +6,7 @@ namespace App\Tests\Service;
 
 use App\Repository\SourceRepository;
 use App\Service\OrphanFilePruner;
+use App\Tests\Support\FakeDownloadsStreamWrapper;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -88,9 +89,71 @@ final class OrphanFilePrunerTest extends TestCase
     }
 
     /**
+     * Verifies a missing downloads directory yields no orphans.
+     */
+    public function testFindOrphansReturnsEmptyWhenDirectoryDoesNotExist(): void
+    {
+        $pruner = $this->createPruner([], \sprintf('%s-missing', $this->downloadsDir));
+
+        $this->assertSame([], $pruner->findOrphans());
+    }
+
+    /**
+     * Verifies a directory that cannot be listed yields no orphans.
+     */
+    public function testFindOrphansReturnsEmptyWhenDirectoryCannotBeListed(): void
+    {
+        FakeDownloadsStreamWrapper::register();
+        \set_error_handler(static fn (): bool => true);
+
+        try {
+            $pruner = $this->createPruner([], FakeDownloadsStreamWrapper::url('unreadable'));
+
+            $this->assertSame([], $pruner->findOrphans());
+        } finally {
+            \restore_error_handler();
+            FakeDownloadsStreamWrapper::unregister();
+        }
+    }
+
+    /**
+     * Verifies a failing unlink is counted and logged instead of aborting the prune.
+     */
+    public function testPruneCountsAndLogsFailedDeletions(): void
+    {
+        FakeDownloadsStreamWrapper::register();
+        \set_error_handler(static fn (): bool => true);
+
+        try {
+            /** @phpstan-ignore-next-line */
+            $sourceRepository = $this->createStub(SourceRepository::class);
+            $sourceRepository->method('findAllFilenames')->willReturn([]);
+
+            $logger = $this->createMock(LoggerInterface::class);
+            $logger->expects($this->once())
+                ->method('error')
+                ->with('Failed to prune orphan file', $this->arrayHasKey('error'));
+
+            $pruner = new OrphanFilePruner(
+                $sourceRepository,
+                $logger,
+                FakeDownloadsStreamWrapper::url('readable'),
+                3600,
+            );
+
+            $result = $pruner->prune();
+
+            $this->assertSame(['deleted' => 0, 'bytes' => 0, 'failed' => 1], $result);
+        } finally {
+            \restore_error_handler();
+            FakeDownloadsStreamWrapper::unregister();
+        }
+    }
+
+    /**
      * @param string[] $referencedFilenames
      */
-    private function createPruner(array $referencedFilenames): OrphanFilePruner
+    private function createPruner(array $referencedFilenames, ?string $downloadsDir = null): OrphanFilePruner
     {
         /** @phpstan-ignore-next-line */
         $sourceRepository = $this->createStub(SourceRepository::class);
@@ -99,7 +162,7 @@ final class OrphanFilePrunerTest extends TestCase
         return new OrphanFilePruner(
             $sourceRepository,
             $this->createStub(LoggerInterface::class),
-            $this->downloadsDir,
+            $downloadsDir ?? $this->downloadsDir,
             3600,
         );
     }

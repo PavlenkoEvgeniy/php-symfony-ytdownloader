@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Entity;
 
 use App\Entity\User;
+use App\Exception\PropertyIsNotSetException;
 use PHPUnit\Framework\TestCase;
 
 final class UserTest extends TestCase
@@ -237,5 +238,48 @@ final class UserTest extends TestCase
         $user->setRoles([]);
 
         $this->assertSame(['ROLE_USER'], $user->getRoles());
+    }
+
+    /**
+     * Verifies the "or fail" getters return assigned values.
+     */
+    public function testOrFailGettersReturnAssignedValues(): void
+    {
+        $user = new User();
+
+        $user->setEmail('or-fail@test.local')
+            ->setPassword('secret')
+            ->setIsEnabled(true)
+        ;
+
+        $this->assertSame('or-fail@test.local', $user->getEmailOrFail());
+        $this->assertSame('secret', $user->getPasswordOrFail());
+        $this->assertTrue($user->getIsEnabledOrFail());
+        $this->assertSame($user->getCreatedAt(), $user->getCreatedAtOrFail());
+    }
+
+    /**
+     * Verifies the "or fail" getters throw when a value is not set.
+     */
+    public function testOrFailGettersThrowForUnsetValues(): void
+    {
+        $user = new User();
+
+        $user->setCreatedAt(null);
+
+        $this->expectException(PropertyIsNotSetException::class);
+        $this->expectExceptionMessage('Property "createdAt" is not set.');
+
+        $user->getCreatedAtOrFail();
+    }
+
+    /**
+     * Verifies the identifier "or fail" getter throws before persistence.
+     */
+    public function testIdOrFailThrowsForUnsavedUser(): void
+    {
+        $this->expectException(PropertyIsNotSetException::class);
+
+        new User()->getIdOrFail();
     }
 }

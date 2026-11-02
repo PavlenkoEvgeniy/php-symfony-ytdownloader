@@ -20,8 +20,11 @@ final readonly class RedisConnectionFactory
      */
     public function create(): \Redis
     {
-        $connection = RedisAdapter::createConnection($this->redisUrl);
+        return $this->asRedis(RedisAdapter::createConnection($this->redisUrl));
+    }
 
+    private function asRedis(object $connection): \Redis
+    {
         if (!$connection instanceof \Redis) {
             throw new \RuntimeException('Redis connection is not a Redis instance.');
         }

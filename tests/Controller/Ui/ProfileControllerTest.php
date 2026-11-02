@@ -95,6 +95,29 @@ final class ProfileControllerTest extends WebTestCase
     }
 
     /**
+     * Verifies an incorrect current password is rejected with an error flash.
+     */
+    public function testChangePasswordRejectsIncorrectCurrentPassword(): void
+    {
+        $user = $this->userRepository->findOneByEmail('admin@admin.local');
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request(Request::METHOD_GET, '/ui/profile');
+
+        $form = $crawler->selectButton('Change')->form();
+
+        $form['change_password_form[currentPassword]']     = 'wrong-password';
+        $form['change_password_form[newPassword][first]']  = 'Password123!';
+        $form['change_password_form[newPassword][second]'] = 'Password123!';
+
+        $this->client->submit($form);
+
+        $this->assertResponseRedirects('/ui/profile');
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('.alert-danger', 'The current password is incorrect.');
+    }
+
+    /**
      * Verifies changing the password updates the stored hash.
      */
     public function testChangePasswordIsOk(): void

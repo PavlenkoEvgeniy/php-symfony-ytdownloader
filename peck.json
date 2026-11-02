@@ -69,7 +69,14 @@
             "middleware",
             "acked",
             "prebuilt",
-            "serializer"
+            "serializer",
+            "filesystem",
+            "unlink",
+            "unregister",
+            "opendir",
+            "readdir",
+            "rewinddir",
+            "closedir"
         ],
         "paths": [
             "vendor"

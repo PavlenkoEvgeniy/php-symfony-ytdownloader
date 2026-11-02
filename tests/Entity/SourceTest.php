@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Entity;
 
 use App\Entity\Source;
+use App\Exception\PropertyIsNotSetException;
 use PHPUnit\Framework\TestCase;
 
 final class SourceTest extends TestCase
@@ -149,5 +150,38 @@ final class SourceTest extends TestCase
         $source->setSize($largeSize);
 
         $this->assertSame($largeSize, $source->getSize());
+    }
+
+    /**
+     * Verifies the "or fail" getters return assigned values.
+     */
+    public function testOrFailGettersReturnAssignedValues(): void
+    {
+        $now = new \DateTime();
+
+        $source = new Source();
+
+        $source->setFilename('video.mp4')
+            ->setFilepath('/tmp/video.mp4')
+            ->setSize(12.5)
+            ->setCreatedAt($now)
+            ->setUpdatedAt($now)
+        ;
+
+        $this->assertSame('video.mp4', $source->getFilenameOrFail());
+        $this->assertSame('/tmp/video.mp4', $source->getFilepathOrFail());
+        $this->assertSame(12.5, $source->getSizeOrFail());
+        $this->assertSame($now, $source->getCreatedAtOrFail());
+        $this->assertSame($now, $source->getUpdatedAtOrFail());
+    }
+
+    /**
+     * Verifies the identifier "or fail" getter throws before persistence.
+     */
+    public function testIdOrFailThrowsForUnsavedSource(): void
+    {
+        $this->expectException(PropertyIsNotSetException::class);
+
+        new Source()->getIdOrFail();
     }
 }

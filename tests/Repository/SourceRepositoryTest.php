@@ -64,4 +64,20 @@ final class SourceRepositoryTest extends KernelTestCase
 
         $this->assertContains('repo-list.mp4', $this->repository->findAllFilenames());
     }
+
+    /**
+     * Verifies findAllSources returns every persisted source.
+     */
+    public function testFindAllSourcesReturnsStoredSources(): void
+    {
+        $source = new Source()->setFilename('repo-all.mp4')
+            ->setFilepath('/tmp')
+            ->setSize(2.0)
+        ;
+
+        $this->entityManager->persist($source);
+        $this->entityManager->flush();
+
+        $this->assertContains($source, $this->repository->findAllSources());
+    }
 }
