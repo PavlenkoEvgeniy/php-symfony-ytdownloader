@@ -146,8 +146,10 @@ docker-pgsql:
 # (EasyAdmin routes, asset_mapper). The root rm drops any root-owned cache left
 # by composer scripts or a previous run; the rebuild runs as www-data.
 cache-clear:
+	docker exec ytdownloader-php-fpm sh -c 'for i in $$(seq 1 60); do supervisorctl status queue-reset-once 2>/dev/null | grep -Eq "RUNNING|STARTING" || exit 0; sleep 1; done; exit 1'
 	docker exec ytdownloader-php-fpm rm -rf var/cache
 	docker exec -u www-data -e HOME=/tmp ytdownloader-php-fpm php bin/console cache:clear
+	docker exec ytdownloader-php-fpm chown -R www-data:www-data var/cache
 
 # Manual escape hatch: wipes the whole cache directory. Run it only while the
 # stack is stopped — deleting the compiled container under live workers kills
