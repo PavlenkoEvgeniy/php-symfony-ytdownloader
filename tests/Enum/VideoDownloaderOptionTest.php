@@ -9,53 +9,73 @@ use PHPUnit\Framework\TestCase;
 
 final class VideoDownloaderOptionTest extends TestCase
 {
+    /**
+     * Verifies the best video format case has a non-empty value.
+     */
     public function testBestVideoDownloadFormatHasValue(): void
     {
         $this->assertNotEmpty(VideoDownloaderOption::BEST_VIDEO_DOWNLOAD_FORMAT->value);
     }
 
+    /**
+     * Verifies the moderate video format case has a non-empty value.
+     */
     public function testModerateVideoDownloadFormatHasValue(): void
     {
         $this->assertNotEmpty(VideoDownloaderOption::MODERATE_VIDEO_DOWNLOAD_FORMAT->value);
     }
 
+    /**
+     * Verifies the poor video format case has a non-empty value.
+     */
     public function testPoorVideoDownloadFormatHasValue(): void
     {
         $this->assertNotEmpty(VideoDownloaderOption::POOR_VIDEO_DOWNLOAD_FORMAT->value);
     }
 
+    /**
+     * Verifies the audio-only format case has a non-empty value.
+     */
     public function testNoVideoDownloadFormatHasValue(): void
     {
         $this->assertNotEmpty(VideoDownloaderOption::NO_VIDEO_DOWNLOAD_FORMAT->value);
     }
 
+    /**
+     * Verifies the video output template case has a non-empty value.
+     */
     public function testOutputFileFormatVideoHasValue(): void
     {
         $this->assertNotEmpty(VideoDownloaderOption::OUTPUT_FILE_FORMAT_VIDEO->value);
     }
 
+    /**
+     * Verifies the audio output template case has a non-empty value.
+     */
     public function testOutputFileFormatAudioHasValue(): void
     {
         $this->assertNotEmpty(VideoDownloaderOption::OUTPUT_FILE_FORMAT_AUDIO->value);
     }
 
+    /**
+     * Verifies the merge output format case has a non-empty value.
+     */
     public function testMergeOutputFormatVideoHasValue(): void
     {
         $this->assertNotEmpty(VideoDownloaderOption::MERGE_OUTPUT_FORMAT_VIDEO->value);
     }
 
+    /**
+     * Verifies the audio codec case has a non-empty value.
+     */
     public function testFormatAudioHasValue(): void
     {
         $this->assertNotEmpty(VideoDownloaderOption::FORMAT_AUDIO->value);
     }
 
-    public function testAllCasesAreDefined(): void
-    {
-        $cases = VideoDownloaderOption::cases();
-        // PHPStan knows cases() always returns 8 items
-        $this->addToAssertionCount(1);
-    }
-
+    /**
+     * Verifies video quality cases reference height levels.
+     */
     public function testEnumCasesContainExpectedQualityLevels(): void
     {
         // Video quality formats should reference different height levels
@@ -69,6 +89,9 @@ final class VideoDownloaderOptionTest extends TestCase
         $this->assertStringContainsString('height', $poorValue);
     }
 
+    /**
+     * Verifies the audio-only format carries no video height specifier.
+     */
     public function testAudioOnlyFormatDoesNotContainVideoQualitySpecifier(): void
     {
         $audioValue = VideoDownloaderOption::NO_VIDEO_DOWNLOAD_FORMAT->value;
@@ -79,22 +102,9 @@ final class VideoDownloaderOptionTest extends TestCase
         $this->assertStringNotContainsString('320', $audioValue);
     }
 
-    public function testMergeOutputFormatIsValidCodec(): void
-    {
-        $mergeFormat = VideoDownloaderOption::MERGE_OUTPUT_FORMAT_VIDEO->value;
-
-        // Should be a valid video codec (PHPStan knows this is 'mp4' from enum)
-        $this->addToAssertionCount(1);
-    }
-
-    public function testAudioFormatIsValidCodec(): void
-    {
-        $audioFormat = VideoDownloaderOption::FORMAT_AUDIO->value;
-
-        // Should be a valid audio codec (PHPStan knows this is 'mp3' from enum)
-        $this->addToAssertionCount(1);
-    }
-
+    /**
+     * Verifies output templates contain yt-dlp placeholders.
+     */
     public function testOutputFileFormatsContainYtDlpTemplateVariables(): void
     {
         $videoOutput = VideoDownloaderOption::OUTPUT_FILE_FORMAT_VIDEO->value;
@@ -105,6 +115,9 @@ final class VideoDownloaderOptionTest extends TestCase
         $this->assertStringContainsString('%(', $audioOutput);
     }
 
+    /**
+     * Verifies all enum cases can be iterated.
+     */
     public function testCanIterateAllEnumCases(): void
     {
         $count = 0;
@@ -115,6 +128,9 @@ final class VideoDownloaderOptionTest extends TestCase
         $this->assertGreaterThan(0, $count);
     }
 
+    /**
+     * Verifies enum cases can be used as array values.
+     */
     public function testEnumCasesCanBeUsedInArrays(): void
     {
         $qualityOptions = [

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Video/audio downloader service (YouTube, Instagram, Telegram, TikTok, etc.) built on **PHP 8.4 + Symfony 7.4**, with EasyAdmin 4, PostgreSQL, Redis, JWT auth (v1 and v2 APIs), and a Telegram bot. Downloads run through `yt-dlp` via the `p3sdev/php-ytdlp-wrapper` package. See `CONTEXT.md` for the project's ubiquitous language and `Readme.md` for API endpoint docs.
+Video/audio downloader service (YouTube, Instagram, Telegram, TikTok, etc.) built on **PHP 8.4 + Symfony 7.4**, with EasyAdmin 4, PostgreSQL, Redis, JWT auth (v1 and v2 APIs), and a Telegram bot. Downloads run through `yt-dlp` via the `p3sdev/php-ytdlp-wrapper` package. See `CONTEXT.md` for the project's ubiquitous language and `README.md` for API endpoint docs.
 
 ## Commands
 

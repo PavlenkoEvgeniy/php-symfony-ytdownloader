@@ -1,11 +1,11 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}New Source{% endblock %}
+{% block title %}{{ 'ui.source.new_title'|trans }}{% endblock %}
 
 {% block body %}
-    <h1>Create new Source</h1>
+    <h1>{{ 'ui.source.new_heading'|trans }}</h1>
 
     {{ include('ui/source/_form.html.twig') }}
 
-    <a class="btn btn-secondary" href="{{ path('ui_source_index') }}">Back to list</a>
+    <a class="btn btn-secondary" href="{{ path('ui_source_index') }}">{{ 'ui.source.back_to_list'|trans }}</a>
 {% endblock %}

@@ -9,125 +9,41 @@ use PHPUnit\Framework\TestCase;
 
 final class DownloadMessageTest extends TestCase
 {
-    public function testDownloadMessageConstructorWithRequiredFields(): void
-    {
-        $message = new DownloadMessage(
-            'https://youtube.com/watch?v=test',
-            'best'
-        );
-
-        $this->assertSame('https://youtube.com/watch?v=test', $message->getUrl());
-        $this->assertSame('best', $message->getQuality());
-        $this->assertSame('', $message->getTelegramUserId());
-    }
-
-    public function testDownloadMessageConstructorWithTelegramUserId(): void
-    {
-        $message = new DownloadMessage(
-            'https://youtube.com/watch?v=test',
-            'moderate',
-            '12345'
-        );
-
-        $this->assertSame('https://youtube.com/watch?v=test', $message->getUrl());
-        $this->assertSame('moderate', $message->getQuality());
-        $this->assertSame('12345', $message->getTelegramUserId());
-    }
-
-    public function testDownloadMessageGetUrlReturnsUrl(): void
-    {
-        $url     = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
-        $message = new DownloadMessage($url, 'best');
-
-        $this->assertSame($url, $message->getUrl());
-    }
-
-    public function testDownloadMessageGetQualityReturnsQuality(): void
-    {
-        $message = new DownloadMessage('https://youtube.com/watch?v=test', 'poor');
-
-        $this->assertSame('poor', $message->getQuality());
-    }
-
-    public function testDownloadMessageGetTelegramUserIdReturnsUserId(): void
-    {
-        $userId  = '987654321';
-        $message = new DownloadMessage('https://youtube.com/watch?v=test', 'audio', $userId);
-
-        $this->assertSame($userId, $message->getTelegramUserId());
-    }
-
-    public function testDownloadMessageDefaultTelegramUserIdIsEmpty(): void
+    /**
+     * Verifies the message keeps the required url and quality and defaults optional fields.
+     */
+    public function testMessageKeepsRequiredFields(): void
     {
         $message = new DownloadMessage('https://youtube.com/watch?v=test', 'best');
 
-        $this->assertSame('', $message->getTelegramUserId());
+        $this->assertSame('https://youtube.com/watch?v=test', $message->url);
+        $this->assertSame('best', $message->quality);
+        $this->assertSame('', $message->telegramUserId);
+        $this->assertNull($message->taskId);
     }
 
-    public function testDownloadMessageWithVariousQualityOptions(): void
+    /**
+     * Verifies the message keeps the optional telegram user id and task id.
+     */
+    public function testMessageKeepsOptionalFields(): void
+    {
+        $message = new DownloadMessage('https://youtube.com/watch?v=test', 'moderate', '12345', 7);
+
+        $this->assertSame('12345', $message->telegramUserId);
+        $this->assertSame(7, $message->taskId);
+    }
+
+    /**
+     * Verifies the message accepts every supported quality value.
+     */
+    public function testMessageAcceptsEveryQuality(): void
     {
         $qualities = ['best', 'moderate', 'poor', 'audio'];
 
         foreach ($qualities as $quality) {
             $message = new DownloadMessage('https://youtube.com/watch?v=test', $quality);
-            $this->assertSame($quality, $message->getQuality());
+
+            $this->assertSame($quality, $message->quality);
         }
-    }
-
-    public function testDownloadMessageWithDifferentUrls(): void
-    {
-        $urls = [
-            'https://youtube.com/watch?v=test1',
-            'https://instagram.com/p/test2',
-            'https://tiktok.com/@user/video/123',
-        ];
-
-        foreach ($urls as $url) {
-            $message = new DownloadMessage($url, 'best');
-            $this->assertSame($url, $message->getUrl());
-        }
-    }
-
-    public function testDownloadMessageIsImmutable(): void
-    {
-        $message = new DownloadMessage('https://youtube.com/watch?v=test', 'best', '123');
-
-        $this->assertSame('https://youtube.com/watch?v=test', $message->getUrl());
-        $this->assertSame('best', $message->getQuality());
-        $this->assertSame('123', $message->getTelegramUserId());
-
-        // Message is immutable, so values should remain the same
-        $this->assertSame('https://youtube.com/watch?v=test', $message->getUrl());
-        $this->assertSame('best', $message->getQuality());
-        $this->assertSame('123', $message->getTelegramUserId());
-    }
-
-    public function testDownloadMessageCanBeSerializedByMessenger(): void
-    {
-        $message = new DownloadMessage(
-            'https://youtube.com/watch?v=test',
-            'best',
-            '12345'
-        );
-
-        // Message should be serializable by the Messenger component
-        // Return types are already known to be strings from method signatures
-        $this->assertNotEmpty($message->getUrl());
-        $this->assertNotEmpty($message->getQuality());
-        $this->assertNotEmpty($message->getTelegramUserId());
-    }
-
-    public function testDownloadMessageTaskIdDefaultsToNull(): void
-    {
-        $message = new DownloadMessage('https://youtube.com/watch?v=test', 'best');
-
-        $this->assertNull($message->getTaskId());
-    }
-
-    public function testDownloadMessageTaskIdReturnsValue(): void
-    {
-        $message = new DownloadMessage('https://youtube.com/watch?v=test', 'best', '12345', 7);
-
-        $this->assertSame(7, $message->getTaskId());
     }
 }

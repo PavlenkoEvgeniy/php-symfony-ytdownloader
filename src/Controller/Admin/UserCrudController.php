@@ -20,14 +20,17 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /** @extends AbstractCrudController<User> */
 final class UserCrudController extends AbstractCrudController
 {
     public function __construct(
-        public UserPasswordHasherInterface $userPasswordHasher,
+        private readonly UserPasswordHasherInterface $userPasswordHasher,
+        private readonly ?TranslatorInterface $translator = null,
     ) {
     }
 
@@ -40,33 +43,31 @@ final class UserCrudController extends AbstractCrudController
     #[\Override]
     public function configureFields(string $pageName): iterable
     {
-        $isNewOrEditPage = \in_array($pageName, [Crud::PAGE_NEW, Crud::PAGE_EDIT], true);
-
-        yield IdField::new('id', 'ID')
+        yield IdField::new('id', $this->trans('admin.field.id', 'ID'))
             ->onlyOnIndex();
 
-        yield ImageField::new('avatar', 'Avatar')
+        yield ImageField::new('avatar', $this->trans('admin.field.avatar', 'Avatar'))
             ->setBasePath('uploads/avatars')
             ->setUploadDir('public/uploads/avatars')
             ->setUploadedFileNamePattern('[slug]-[timestamp].[extension]');
 
-        yield EmailField::new('email', 'Email')
+        yield EmailField::new('email', $this->trans('admin.field.email', 'Email'))
             ->setRequired(true);
 
-        yield BooleanField::new('isEnabled', 'Enabled')
+        yield BooleanField::new('isEnabled', $this->trans('admin.field.enabled', 'Enabled'))
             ->renderAsSwitch();
 
-        yield ChoiceField::new('roles', 'Roles')
+        yield ChoiceField::new('roles', $this->trans('admin.field.roles', 'Roles'))
             ->setChoices([
-                'admin' => 'ROLE_ADMIN',
-                'user'  => 'ROLE_USER',
+                $this->trans('admin.field.role_admin', 'admin') => 'ROLE_ADMIN',
+                $this->trans('admin.field.role_user', 'user')   => 'ROLE_USER',
             ])
             ->setRequired(true)
             ->allowMultipleChoices()
             ->renderExpanded()
             ->renderAsBadges();
 
-        yield DateTimeField::new('createdAt', 'Created At')
+        yield DateTimeField::new('createdAt', $this->trans('admin.field.created_at_capitalized', 'Created At'))
             ->hideOnForm();
 
         if (Crud::PAGE_EDIT === $pageName) {
@@ -75,15 +76,15 @@ final class UserCrudController extends AbstractCrudController
                 ->setFormTypeOptions([
                     'mapped' => false,
                 ])
-                ->setRequired($isNewOrEditPage)
+                ->setRequired(true)
                 ->onlyOnForms();
         } else {
             yield TextField::new('password')
                 ->setFormType(RepeatedType::class)
                 ->setFormTypeOptions([
                     'type'           => PasswordType::class,
-                    'first_options'  => ['label' => 'Password'],
-                    'second_options' => ['label' => '(Repeat)'],
+                    'first_options'  => ['label' => $this->trans('admin.field.password', 'Password')],
+                    'second_options' => ['label' => $this->trans('admin.field.repeat', '(Repeat)')],
                     'mapped'         => false,
                 ])
                 ->setRequired(Crud::PAGE_NEW === $pageName)
@@ -114,21 +115,32 @@ final class UserCrudController extends AbstractCrudController
 
     private function hashPassword(): \Closure
     {
-        return function ($event) {
+        return function (FormEvent $event) {
             $form = $event->getForm();
+
             if (!$form->isValid()) {
                 return;
             }
+
             $password = $form->get('password')->getData();
-            if (null === $password) {
+
+            if (!\is_string($password) || '' === $password) {
                 return;
             }
 
-            /** @var User $user */
             $user = $form->getData();
 
-            $hash = $this->userPasswordHasher->hashPassword($user, $password);
-            $user->setPassword($hash);
+            if (!$user instanceof User) {
+                return;
+            }
+
+            $hashedPassword = $this->userPasswordHasher->hashPassword($user, $password);
+            $user->setPassword($hashedPassword);
         };
+    }
+
+    private function trans(string $key, string $fallback): string
+    {
+        return $this->translator?->trans($key) ?? $fallback;
     }
 }

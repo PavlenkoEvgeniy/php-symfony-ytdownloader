@@ -20,6 +20,9 @@ final class HealthCheckControllerTest extends WebTestCase
         $this->client = static::createClient();
     }
 
+    /**
+     * Verifies the health endpoint returns an OK status payload.
+     */
     public function testHealthCheckIsOk(): void
     {
         $this->client->request(Request::METHOD_GET, '/health');

@@ -47,6 +47,8 @@ final class SecurityControllerTest extends WebTestCase
     }
 
     /**
+     * Verifies login succeeds regardless of the email case in the credentials.
+     *
      * @dataProvider userProvider
      */
     public function testLoginIsOk(string $username, string $password): void
@@ -66,9 +68,12 @@ final class SecurityControllerTest extends WebTestCase
 
         $this->client->request(Request::METHOD_GET, '/ui/download');
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorTextContains('h3', 'Please paste YouTube link into the form bellow:');
+        $this->assertSelectorTextContains('h3', 'Please paste YouTube link into the form below:');
     }
 
+    /**
+     * Verifies logging out ends the session and redirects to login.
+     */
     public function testLogoutIsOk(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
@@ -76,7 +81,7 @@ final class SecurityControllerTest extends WebTestCase
 
         $this->client->request(Request::METHOD_GET, '/ui/download');
         $this->assertResponseIsSuccessful();
-        $this->assertSelectorTextContains('h3', 'Please paste YouTube link into the form bellow:');
+        $this->assertSelectorTextContains('h3', 'Please paste YouTube link into the form below:');
 
         $this->client->request(Request::METHOD_GET, '/logout');
         $this->assertResponseStatusCodeSame(Response::HTTP_FOUND);
@@ -87,12 +92,15 @@ final class SecurityControllerTest extends WebTestCase
         $this->assertSelectorTextContains('h1', 'Please sign in');
     }
 
+    /**
+     * Verifies invalid credentials keep the user on the login page with an error.
+     */
     public function testLoginFailsWithNotOkCredentials(): void
     {
         $crawler = $this->client->request(Request::METHOD_GET, '/login');
 
         $form = $crawler->filter('form')->form([
-            'email'    => 'not_valid_user@example.local',
+            'email'    => 'not_valid_user@test.local',
             'password' => 'not_valid_password',
         ]);
 
@@ -105,9 +113,12 @@ final class SecurityControllerTest extends WebTestCase
         $this->assertSelectorTextContains('div.alert', 'Invalid credentials.');
     }
 
+    /**
+     * Verifies a disabled user cannot sign in and stays on the login page.
+     */
     public function testIndexPageIsNotAvailableForDisabledUser(): void
     {
-        $crawler = $this->client->request('GET', '/login');
+        $crawler = $this->client->request(Request::METHOD_GET, '/login');
 
         $form             = $crawler->selectButton('Sign in')->form();
         $form['email']    = 'user.disabled@test.local';

@@ -12,6 +12,9 @@ use PHPUnit\Framework\TestCase;
 
 final class DownloadTaskManagerTest extends TestCase
 {
+    /**
+     * Verifies claiming a queued task switches it to processing.
+     */
     public function testClaimProcessingUpdatesQueuedTask(): void
     {
         $connection = $this->createMock(Connection::class);
@@ -30,53 +33,65 @@ final class DownloadTaskManagerTest extends TestCase
         $em = $this->createMock(EntityManagerInterface::class);
         $em->expects($this->once())->method('getConnection')->willReturn($connection);
 
-        $this->assertTrue((new DownloadTaskManager($em))->claimProcessing(1));
+        $this->assertTrue(new DownloadTaskManager($em)->claimProcessing(1));
     }
 
+    /**
+     * Verifies claiming fails when no queued row matches.
+     */
     public function testClaimProcessingReturnsFalseWhenTaskIsNotQueued(): void
     {
-        $connection = $this->createMock(Connection::class);
+        $connection = $this->createStub(Connection::class);
         $connection->method('executeStatement')->willReturn(0);
 
-        $em = $this->createMock(EntityManagerInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
         $em->method('getConnection')->willReturn($connection);
 
-        $this->assertFalse((new DownloadTaskManager($em))->claimProcessing(1));
+        $this->assertFalse(new DownloadTaskManager($em)->claimProcessing(1));
     }
 
+    /**
+     * Verifies marking a task successful updates its status.
+     */
     public function testMarkSuccessSetsStatus(): void
     {
         $task = new DownloadTask();
 
-        $em = $this->createMock(EntityManagerInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
         $em->method('find')->willReturn($task);
 
-        (new DownloadTaskManager($em))->markSuccess(1);
+        new DownloadTaskManager($em)->markSuccess(1);
 
         $this->assertSame(DownloadTask::STATUS_SUCCESS, $task->getStatus());
     }
 
+    /**
+     * Verifies marking a task errored updates its status.
+     */
     public function testMarkErrorSetsStatus(): void
     {
         $task = new DownloadTask();
-        $task->setUrl('https://example.com')->setQuality('best');
+        $task->setUrl('https://test.local')->setQuality('best');
 
-        $em = $this->createMock(EntityManagerInterface::class);
+        $em = $this->createStub(EntityManagerInterface::class);
         $em->method('find')->willReturn($task);
 
-        (new DownloadTaskManager($em))->markError(1);
+        new DownloadTaskManager($em)->markError(1);
 
         $this->assertSame(DownloadTask::STATUS_ERROR, $task->getStatus());
     }
 
+    /**
+     * Verifies marking a missing task does not flush anything.
+     */
     public function testMarkStatusIgnoresMissingTask(): void
     {
         $em = $this->createMock(EntityManagerInterface::class);
         $em->expects($this->once())->method('find')->willReturn(null);
         $em->expects($this->never())->method('flush');
 
-        (new DownloadTaskManager($em))->markError(99);
+        new DownloadTaskManager($em)->markError(99);
 
-        $this->assertSame(DownloadTask::STATUS_QUEUED, (new DownloadTask())->getStatus());
+        $this->assertSame(DownloadTask::STATUS_QUEUED, new DownloadTask()->getStatus());
     }
 }

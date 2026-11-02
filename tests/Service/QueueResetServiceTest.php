@@ -18,16 +18,6 @@ final class QueueResetServiceTest extends KernelTestCase
 
     public function setUp(): void
     {
-        // Skip functional DB tests if the database host is not resolvable in this environment
-        $dbUrl = $_ENV['DATABASE_URL'] ?? $_SERVER['DATABASE_URL'] ?? \getenv('DATABASE_URL') ?: '';
-        $parts = \parse_url($dbUrl);
-        if (false !== $parts && isset($parts['host'])) {
-            $host = $parts['host'];
-            if (\gethostbyname($host) === $host) {
-                $this->markTestSkipped('Database host not resolvable - skipping QueueResetService tests.');
-            }
-        }
-
         self::bootKernel();
 
         /** @var EntityManager $em */
@@ -72,6 +62,9 @@ final class QueueResetServiceTest extends KernelTestCase
         );
     }
 
+    /**
+     * Verifies reset moves processing tasks back to queued and leaves others untouched.
+     */
     public function testResetReturnsOnlyProcessingTasksToQueued(): void
     {
         $before = $this->em->getRepository(DownloadTask::class)->getStatusCounts();
@@ -93,6 +86,9 @@ final class QueueResetServiceTest extends KernelTestCase
         $this->assertSame($before[DownloadTask::STATUS_SUCCESS] + 1, $counts[DownloadTask::STATUS_SUCCESS]);
     }
 
+    /**
+     * Verifies reset redelivers in-flight download messages and leaves other queues alone.
+     */
     public function testResetRedeliversInFlightMessagesOfDownloadQueueOnly(): void
     {
         $beforeStuck = (int) $this->connection->executeQuery(

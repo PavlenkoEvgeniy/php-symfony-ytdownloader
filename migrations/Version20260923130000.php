@@ -8,11 +8,8 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
- * Create messenger_messages table for the doctrine messenger transport,
- * mirroring the schema doctrine-messenger auto-setup creates.
- *
- * Idempotent on purpose: auto-setup may have created the table before this
- * migration runs (the worker starts before migrations are applied on deploy).
+ * Creates messenger_messages for the doctrine transport, mirroring auto-setup.
+ * Idempotent: workers may create it before migrations run (ADR-0003).
  */
 final class Version20260923130000 extends AbstractMigration
 {

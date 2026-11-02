@@ -5,28 +5,21 @@ declare(strict_types=1);
 namespace App\EventSubscriber;
 
 use App\Message\DownloadMessage;
-use App\Service\DownloadTaskManager;
+use App\Service\DownloadTaskManagerInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 
-final readonly class DownloadTaskFailureListener implements EventSubscriberInterface
+#[AsEventListener]
+final readonly class DownloadTaskFailureListener
 {
     public function __construct(
-        private DownloadTaskManager $taskManager,
+        private DownloadTaskManagerInterface $downloadTaskManager,
         private LoggerInterface $logger,
     ) {
     }
 
-    #[\Override]
-    public static function getSubscribedEvents(): array
-    {
-        return [
-            WorkerMessageFailedEvent::class => 'onMessageFailed',
-        ];
-    }
-
-    public function onMessageFailed(WorkerMessageFailedEvent $event): void
+    public function __invoke(WorkerMessageFailedEvent $event): void
     {
         if ($event->willRetry()) {
             return;
@@ -35,13 +28,13 @@ final readonly class DownloadTaskFailureListener implements EventSubscriberInter
         try {
             $message = $event->getEnvelope()->getMessage();
 
-            if ($message instanceof DownloadMessage && null !== $message->getTaskId()) {
-                $this->taskManager->markError($message->getTaskId());
+            if ($message instanceof DownloadMessage && null !== $message->taskId) {
+                $this->downloadTaskManager->markError($message->taskId);
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $exception) {
             // Never break the worker itself: the failed message still reaches the failed transport.
             $this->logger->error('Failed to mark download task as errored', [
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
         }
     }

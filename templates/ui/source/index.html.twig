@@ -1,7 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}YoutubeDownload :: Downloads
-{% endblock %}
+{% block title %}{{ 'ui.source.index_title'|trans }}{% endblock %}
 
 {% block body %}
     {% for message in app.flashes('success') %}
@@ -20,26 +19,25 @@
         </div>
     {% endfor %}
     <div class="d-flex justify-content-between mt-4 mb-2">
-        <a class="btn btn-outline-success" href="{{ path('ui_download_index') }}">+ Add new download</a>
+        <a class="btn btn-outline-success" href="{{ path('ui_download_index') }}">{{ 'ui.source.add_download'|trans }}</a>
         {% if pagination is not empty %}
             {{ include('ui/source/_delete_all_form.html.twig') }}
         {% endif %}
     </div>
     <div class="text-center mt-4" id="queue-stats" data-stats-url="{{ path('ui_source_queue_stats') }}">
-        <span class="fw-bold">In queue: <span data-counter="queued">{{ stats.queued }}</span></span> |
-        <span class="fw-bold">In progress: <span data-counter="processing">{{ stats.processing }}</span></span> |
-        <span class="fw-bold">Errors: <span data-counter="error">{{ stats.error }}</span></span>
+        <span class="fw-bold">{{ 'ui.source.in_queue'|trans }} <span data-counter="queued">{{ stats.queued }}</span></span> |
+        <span class="fw-bold">{{ 'ui.source.in_progress'|trans }} <span data-counter="processing">{{ stats.processing }}</span></span> |
+        <span class="fw-bold">{{ 'ui.source.errors'|trans }} <span data-counter="error">{{ stats.error }}</span></span>
     </div>
     {% if pagination is not empty %}
         <div class="col-sm-3 col-md-2 col-lg-1">
-            <div>
-                <label for="sort_by_select"></label>
-                <select id="sort_by_select"
-                        onchange="location.search.includes('order') ? location.search = location.search.replace(/order=\w+/, this.value) : location.search += '&' + this.value"
-                        class="form-select form-select-sm">
-                    <option {{ (order=='asc' ) ? 'selected' : '' }} value="order=asc">Date &#8595;</option>
-                    <option {{ (order=='desc' ) ? 'selected' : '' }} value="order=desc">Date &#8593;</option>
-                </select>
+            <div class="d-flex flex-column gap-1">
+                <a class="btn btn-sm btn-outline-secondary" href="{{ path('ui_source_index', {'order': 'asc'}) }}">
+                    {{ 'ui.source.date_asc'|trans }}
+                </a>
+                <a class="btn btn-sm btn-outline-secondary" href="{{ path('ui_source_index', {'order': 'desc'}) }}">
+                    {{ 'ui.source.date_desc'|trans }}
+                </a>
             </div>
         </div>
     {% endif %}
@@ -47,10 +45,10 @@
         <table class="table table-sm">
             <thead class="text-center">
             <tr>
-                <th>No</th>
-                <th>Filename</th>
-                <th>Size</th>
-                <th>Actions</th>
+                <th>{{ 'ui.source.no'|trans }}</th>
+                <th>{{ 'ui.source.filename'|trans }}</th>
+                <th>{{ 'ui.source.size'|trans }}</th>
+                <th>{{ 'ui.source.actions'|trans }}</th>
             </tr>
             </thead>
             <tbody>
@@ -90,7 +88,7 @@
                 </tr>
             {% else %}
                 <tr>
-                    <td class="text-center" colspan="8">No records found...</td>
+                    <td class="text-center" colspan="4">{{ 'ui.source.no_records'|trans }}</td>
                 </tr>
             {% endfor %}
             </tbody>

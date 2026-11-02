@@ -13,34 +13,39 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotNull;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class SourceForm extends AbstractType
 {
+    public function __construct(
+        private readonly TranslatorInterface $translator,
+    ) {
+    }
+
     #[\Override]
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder
-            ->add('filename', TextType::class, [
-                'label'       => 'Filename',
-                'required'    => true,
-                'trim'        => true,
-                'constraints' => [
-                    new Length(min: 5, max: 255),
-                    new NotBlank([
-                        'normalizer' => 'trim',
-                    ]),
-                    new NotNull(),
-                ],
-            ])
+        $builder->add('filename', TextType::class, [
+            'label'       => $this->translator->trans('form.filename'),
+            'required'    => true,
+            'trim'        => true,
+            'constraints' => [
+                new Length(min: 5, max: 255),
+                new NotBlank([
+                    'normalizer' => 'trim',
+                ]),
+                new NotNull(),
+            ],
+        ])
             ->add('filepath', TextType::class, [
-                'label' => 'Filepath',
+                'label' => $this->translator->trans('form.filepath'),
                 'attr'  => [
                     'readonly' => true,
                 ],
                 'required' => true,
             ])
             ->add('description', TextareaType::class, [
-                'label' => 'Description',
+                'label' => $this->translator->trans('form.description'),
                 'attr'  => [
                     'rows' => 5,
                 ],

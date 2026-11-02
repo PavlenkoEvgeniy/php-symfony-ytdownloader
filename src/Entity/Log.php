@@ -4,28 +4,30 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Exception\PropertyIsNotSetException;
 use App\Repository\LogRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: LogRepository::class)]
-class Log
+#[ORM\Table(name: 'log')]
+final class Log
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(name: 'id', type: Types::INTEGER)]
+    public private(set) ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(name: 'type', type: Types::STRING, length: 255)]
     private ?string $type = null;
 
-    #[ORM\Column(type: Types::TEXT)]
+    #[ORM\Column(name: 'message', type: Types::TEXT)]
     private ?string $message = null;
 
-    #[ORM\Column]
+    #[ORM\Column(name: 'created_at', type: Types::DATETIME_IMMUTABLE)]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(name: 'size', type: Types::FLOAT, nullable: true)]
     private ?float $size = null;
 
     public function __construct()
@@ -84,5 +86,25 @@ class Log
         $this->size = $size;
 
         return $this;
+    }
+
+    public function getIdOrFail(): int
+    {
+        return $this->id ?? throw PropertyIsNotSetException::forProperty('id');
+    }
+
+    public function getTypeOrFail(): string
+    {
+        return $this->type ?? throw PropertyIsNotSetException::forProperty('type');
+    }
+
+    public function getMessageOrFail(): string
+    {
+        return $this->message ?? throw PropertyIsNotSetException::forProperty('message');
+    }
+
+    public function getCreatedAtOrFail(): \DateTimeImmutable
+    {
+        return $this->createdAt ?? throw PropertyIsNotSetException::forProperty('createdAt');
     }
 }

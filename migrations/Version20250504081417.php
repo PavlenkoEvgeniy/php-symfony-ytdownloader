@@ -7,9 +7,6 @@ namespace DoctrineMigrations;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
-/**
- * Auto-generated Migration: Please modify to your needs!
- */
 final class Version20250504081417 extends AbstractMigration
 {
     public function getDescription(): string
@@ -19,7 +16,6 @@ final class Version20250504081417 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // this up() migration is auto-generated, please modify it to your needs
         $this->addSql(<<<'SQL'
             CREATE TABLE source (id SERIAL NOT NULL, filename VARCHAR(255) NOT NULL, filepath VARCHAR(255) NOT NULL, description VARCHAR(255) DEFAULT NULL, size DOUBLE PRECISION NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, updated_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, PRIMARY KEY(id))
         SQL);
@@ -29,11 +25,8 @@ final class Version20250504081417 extends AbstractMigration
         $this->addSql(<<<'SQL'
             CREATE UNIQUE INDEX UNIQ_IDENTIFIER_EMAIL ON "user" (email)
         SQL);
-        // The doctrine messenger transport creates this table itself (auto-setup)
-        // the first time a worker touches it — and workers start before migrations
-        // run in make init and on deploy (see ADR-0003). Idempotent on purpose;
-        // the schema mirrors what doctrine auto-setup creates, including the
-        // composite index (see ADR-0004).
+        // Workers may create this table before migrations run (ADR-0003);
+        // keep the block idempotent and mirror auto-setup (ADR-0004).
         $tableExists = (bool) $this->connection->fetchOne(
             "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'messenger_messages'"
         );
@@ -52,7 +45,6 @@ final class Version20250504081417 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
-        // this down() migration is auto-generated, please modify it to your needs
         $this->addSql(<<<'SQL'
             DROP TABLE source
         SQL);

@@ -9,6 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 final class UserTest extends TestCase
 {
+    /**
+     * Verifies a new user receives a creation timestamp.
+     */
     public function testUserConstructorInitializesCreatedAt(): void
     {
         $user = new User();
@@ -16,6 +19,9 @@ final class UserTest extends TestCase
         $this->assertInstanceOf(\DateTimeImmutable::class, $user->getCreatedAt());
     }
 
+    /**
+     * Verifies two generated passwords differ.
+     */
     public function testGeneratePasswordReturnsRandomString(): void
     {
         $password1 = User::generatePassword();
@@ -24,6 +30,9 @@ final class UserTest extends TestCase
         $this->assertNotSame($password1, $password2);
     }
 
+    /**
+     * Verifies generated passwords use the default length.
+     */
     public function testGeneratePasswordReturnsDefaultLength(): void
     {
         $password = User::generatePassword();
@@ -31,6 +40,9 @@ final class UserTest extends TestCase
         $this->assertSame(User::DEFAULT_PASSWORD_LENGTH, \strlen($password));
     }
 
+    /**
+     * Verifies generated passwords honor a custom length.
+     */
     public function testGeneratePasswordReturnsCustomLength(): void
     {
         $password = User::generatePassword(10);
@@ -38,6 +50,9 @@ final class UserTest extends TestCase
         $this->assertSame(10, \strlen($password));
     }
 
+    /**
+     * Verifies generated passwords contain only letters and digits.
+     */
     public function testGeneratePasswordContainsOnlyAlphanumeric(): void
     {
         $password = User::generatePassword(100);
@@ -45,32 +60,31 @@ final class UserTest extends TestCase
         $this->assertMatchesRegularExpression('/^[a-zA-Z0-9]+$/', $password);
     }
 
+    /**
+     * Verifies setting an email normalizes it to lowercase.
+     */
     public function testEmailIsNormalizedToLowercase(): void
     {
         $user = new User();
-        $user->setEmail('Admin@EXAMPLE.COM');
+        $user->setEmail('Admin@TEST.LOCAL');
 
-        $this->assertSame('admin@example.com', $user->getEmail());
+        $this->assertSame('admin@test.local', $user->getEmail());
     }
 
-    public function testEmailGetterReturnsLowercase(): void
-    {
-        $user = new User();
-        $user->setEmail('Admin@EXAMPLE.COM');
-        // Set it again to make sure getter normalizes
-        $email = $user->getEmail();
-
-        $this->assertSame('admin@example.com', $email);
-    }
-
+    /**
+     * Verifies the security identifier is the user email.
+     */
     public function testGetUserIdentifierReturnsEmail(): void
     {
         $user = new User();
-        $user->setEmail('test@example.com');
+        $user->setEmail('test@test.local');
 
-        $this->assertSame('test@example.com', $user->getUserIdentifier());
+        $this->assertSame('test@test.local', $user->getUserIdentifier());
     }
 
+    /**
+     * Verifies every user implicitly has the user role.
+     */
     public function testGetRolesIncludesRoleUser(): void
     {
         $user = new User();
@@ -80,6 +94,9 @@ final class UserTest extends TestCase
         $this->assertContains('ROLE_USER', $roles);
     }
 
+    /**
+     * Verifies custom roles are returned alongside the user role.
+     */
     public function testGetRolesIncludesCustomRoles(): void
     {
         $user = new User();
@@ -91,6 +108,9 @@ final class UserTest extends TestCase
         $this->assertContains('ROLE_USER', $roles);
     }
 
+    /**
+     * Verifies getRoles does not return duplicate roles.
+     */
     public function testGetRolesDeduplicatesRoles(): void
     {
         $user = new User();
@@ -101,20 +121,14 @@ final class UserTest extends TestCase
         $this->assertCount(2, \array_unique($roles));
     }
 
-    public function testEraseCredentialsDoesNotThrow(): void
-    {
-        $user = new User();
-        $user->eraseCredentials();
-
-        // Method executed successfully without throwing exception
-        $this->addToAssertionCount(1);
-    }
-
+    /**
+     * Verifies every user setter returns the same instance.
+     */
     public function testSettersReturnInstance(): void
     {
         $user = new User();
 
-        $result1 = $user->setEmail('test@example.com');
+        $result1 = $user->setEmail('test@test.local');
         $result2 = $user->setRoles(['ROLE_ADMIN']);
         $result3 = $user->setPassword('hashed-password');
         $result4 = $user->setIsEnabled(true);
@@ -129,6 +143,9 @@ final class UserTest extends TestCase
         $this->assertSame($user, $result6);
     }
 
+    /**
+     * Verifies the avatar URL is null when no avatar is set.
+     */
     public function testGetAvatarUrlReturnsNullWhenNoAvatar(): void
     {
         $user = new User();
@@ -136,6 +153,9 @@ final class UserTest extends TestCase
         $this->assertNull($user->getAvatarUrl());
     }
 
+    /**
+     * Verifies an absolute avatar path is returned unchanged.
+     */
     public function testGetAvatarUrlReturnsFullPathWhenAvatarIsPath(): void
     {
         $user = new User();
@@ -144,6 +164,9 @@ final class UserTest extends TestCase
         $this->assertSame('/uploads/avatars/custom-path/avatar.jpg', $user->getAvatarUrl());
     }
 
+    /**
+     * Verifies a bare avatar filename is prefixed with the upload path.
+     */
     public function testGetAvatarUrlBuildsPathWhenAvatarIsFilename(): void
     {
         $user = new User();
@@ -152,6 +175,9 @@ final class UserTest extends TestCase
         $this->assertSame('/uploads/avatars/avatar.jpg', $user->getAvatarUrl());
     }
 
+    /**
+     * Verifies the password hash is stored and returned unchanged.
+     */
     public function testPasswordFieldGettersAndSetters(): void
     {
         $user           = new User();
@@ -162,6 +188,9 @@ final class UserTest extends TestCase
         $this->assertSame($hashedPassword, $user->getPassword());
     }
 
+    /**
+     * Verifies a new user is enabled by default.
+     */
     public function testIsEnabledDefaultsToTrue(): void
     {
         $user = new User();
@@ -169,6 +198,9 @@ final class UserTest extends TestCase
         $this->assertTrue($user->getIsEnabled() ?? false);
     }
 
+    /**
+     * Verifies the email getter returns null before an email is set.
+     */
     public function testEmailNullableGetterReturnsNullBeforeSet(): void
     {
         $user = new User();
@@ -176,6 +208,9 @@ final class UserTest extends TestCase
         $this->assertNull($user->getEmail());
     }
 
+    /**
+     * Verifies the avatar getter returns null before an avatar is set.
+     */
     public function testAvatarNullableGetterReturnsNullBeforeSet(): void
     {
         $user = new User();
@@ -183,6 +218,9 @@ final class UserTest extends TestCase
         $this->assertNull($user->getAvatar());
     }
 
+    /**
+     * Verifies a new user has no identifier before persistence.
+     */
     public function testIdIsNullByDefault(): void
     {
         $user = new User();
@@ -190,12 +228,14 @@ final class UserTest extends TestCase
         $this->assertNull($user->getId());
     }
 
-    public function testRolesArrayIsEmptyByDefault(): void
+    /**
+     * Verifies a user without explicit roles gets only the implicit user role.
+     */
+    public function testDefaultRolesContainOnlyUserRole(): void
     {
         $user = new User();
-
-        // getRoles() always includes ROLE_USER, but internal roles should be empty
         $user->setRoles([]);
-        $this->assertSame([], [] === $user->getRoles() ? [] : \array_diff($user->getRoles(), ['ROLE_USER']));
+
+        $this->assertSame(['ROLE_USER'], $user->getRoles());
     }
 }

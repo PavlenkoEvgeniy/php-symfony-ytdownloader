@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\DownloadTask;
-use App\Repository\DownloadTaskRepository;
+use App\Repository\DownloadTaskRepositoryInterface;
 
-final readonly class QueueStatsService
+final readonly class QueueStatsService implements QueueStatsServiceInterface
 {
     public function __construct(
-        private DownloadTaskRepository $downloadTaskRepository,
-        private DownloadMetricManager $downloadMetricManager,
+        private DownloadTaskRepositoryInterface $downloadTaskRepository,
+        private DownloadMetricManagerInterface $downloadMetricManager,
     ) {
     }
 
+    #[\Override]
     /**
      * @return array{
      *     queued: int,

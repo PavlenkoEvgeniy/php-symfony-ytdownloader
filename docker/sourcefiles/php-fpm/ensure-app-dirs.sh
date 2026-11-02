@@ -1,9 +1,6 @@
 #!/bin/sh
-# The whole repository is bind-mounted over /application at container start,
-# so permissions cannot be set in the Dockerfile: anything the image creates
-# before mount time is shadowed by the mount. This entrypoint makes sure every
-# application-writable directory exists and is owned by www-data, then hands
-# over to the official php-fpm entrypoint.
+# The repo is bind-mounted over /application, so this entrypoint prepares
+# writable directories and hands over to the official php-fpm entrypoint.
 
 set -e
 

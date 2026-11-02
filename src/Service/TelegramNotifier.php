@@ -6,12 +6,14 @@ namespace App\Service;
 
 use BotMan\BotMan\Exceptions\Base\BotManException;
 
-final readonly class TelegramNotifier
+final readonly class TelegramNotifier implements TelegramNotifierInterface
 {
-    public function __construct(private TelegramBotService $telegramBotService)
-    {
+    public function __construct(
+        private TelegramBotServiceInterface $telegramBotService,
+    ) {
     }
 
+    #[\Override]
     /**
      * @throws BotManException
      */
@@ -20,6 +22,7 @@ final readonly class TelegramNotifier
         $this->telegramBotService->getBot()->say($message, $telegramUserId);
     }
 
+    #[\Override]
     /**
      * @throws BotManException
      */

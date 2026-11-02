@@ -4,36 +4,64 @@ declare(strict_types=1);
 
 namespace App\Tests\Repository;
 
-use App\Repository\SourceRepository;
+use App\Entity\Source;
+use App\Repository\SourceRepositoryInterface;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class SourceRepositoryTest extends KernelTestCase
 {
-    protected SourceRepository $repository;
+    private EntityManagerInterface $entityManager;
+    private SourceRepositoryInterface $repository;
 
     protected function setUp(): void
     {
         self::bootKernel();
-        $this->repository = self::getContainer()->get(SourceRepository::class);
+
+        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
+        $this->repository    = self::getContainer()->get(SourceRepositoryInterface::class);
+
+        $this->entityManager->getConnection()->beginTransaction();
     }
 
-    public function testRepositoryCanBeInstantiated(): void
+    protected function tearDown(): void
     {
-        // Repository is loaded via DI in setUp and typed as SourceRepository
-        // This test ensures the DI container properly configures it
-        $this->addToAssertionCount(1);
+        if ($this->entityManager->getConnection()->isTransactionActive()) {
+            $this->entityManager->getConnection()->rollback();
+            $this->entityManager->clear();
+        }
     }
 
-    public function testRepositoryHasDoctrineEntityRepository(): void
+    /**
+     * Verifies a stored source is found by filename and missing names return null.
+     */
+    public function testFindOneByFilenameReturnsStoredSource(): void
     {
-        // Doctrine repository methods are inherited from EntityRepository
-        $this->addToAssertionCount(1);
+        $source = new Source()->setFilename('repo-test.mp4')
+            ->setFilepath('/tmp')
+            ->setSize(12.5)
+        ;
+
+        $this->entityManager->persist($source);
+        $this->entityManager->flush();
+
+        $this->assertSame($source, $this->repository->findOneByFilename('repo-test.mp4'));
+        $this->assertNull($this->repository->findOneByFilename('missing.mp4'));
     }
 
-    public function testRepositorySupportsCustomQueries(): void
+    /**
+     * Verifies the filename list used by the orphan pruner includes stored sources.
+     */
+    public function testFindAllFilenamesContainsStoredFilename(): void
     {
-        // The repository supports custom query methods via __call
-        // This is documented in the class comment
-        $this->addToAssertionCount(1);
+        $source = new Source()->setFilename('repo-list.mp4')
+            ->setFilepath('/tmp')
+            ->setSize(1.0)
+        ;
+
+        $this->entityManager->persist($source);
+        $this->entityManager->flush();
+
+        $this->assertContains('repo-list.mp4', $this->repository->findAllFilenames());
     }
 }

@@ -17,16 +17,6 @@ final class RefreshTokenRepositoryTest extends KernelTestCase
 
     public function setUp(): void
     {
-        // Skip functional DB tests if the database host is not resolvable in this environment
-        $dbUrl = $_ENV['DATABASE_URL'] ?? $_SERVER['DATABASE_URL'] ?? \getenv('DATABASE_URL') ?: '';
-        $parts = \parse_url($dbUrl);
-        if (false !== $parts && isset($parts['host'])) {
-            $host = $parts['host'];
-            if (\gethostbyname($host) === $host) {
-                $this->markTestSkipped('Database host not resolvable - skipping RefreshTokenRepository tests.');
-            }
-        }
-
         self::bootKernel();
 
         /** @var EntityManager $em */
@@ -47,10 +37,13 @@ final class RefreshTokenRepositoryTest extends KernelTestCase
         parent::tearDown();
     }
 
+    /**
+     * Verifies the repository finds a persisted token by value and returns null for an unknown one.
+     */
     public function testFindOneByTokenReturnsEntityOrNull(): void
     {
         $user = new User();
-        $user->setEmail('refresh@example.test');
+        $user->setEmail('refresh@test.local');
         $user->setPassword('pass');
 
         $this->em->persist($user);

@@ -9,10 +9,10 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+#[Route('/', name: 'ui_main')]
 final class MainController extends AbstractController
 {
-    #[Route('/', name: 'ui_main')]
-    public function index(): RedirectResponse
+    public function __invoke(): RedirectResponse
     {
         return $this->redirectToRoute('ui_download_index', [], Response::HTTP_MOVED_PERMANENTLY);
     }

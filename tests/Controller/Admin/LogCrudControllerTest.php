@@ -15,11 +15,17 @@ use PHPUnit\Framework\TestCase;
 
 final class LogCrudControllerTest extends TestCase
 {
+    /**
+     * Verifies the CRUD controller is bound to the Log entity.
+     */
     public function testGetEntityFqcn(): void
     {
         $this->assertSame(Log::class, LogCrudController::getEntityFqcn());
     }
 
+    /**
+     * Verifies new, delete and batch delete actions are disabled.
+     */
     public function testConfigureActionsDisablesNewAndDelete(): void
     {
         $controller = new LogCrudController();
@@ -36,6 +42,9 @@ final class LogCrudControllerTest extends TestCase
         $this->assertContains(Action::BATCH_DELETE, $disabled);
     }
 
+    /**
+     * Verifies the log list is sorted by id in descending order.
+     */
     public function testConfigureCrudSetsDefaultSort(): void
     {
         $controller = new LogCrudController();
@@ -46,12 +55,14 @@ final class LogCrudControllerTest extends TestCase
         // reflect into private dto to assert default sort
         $ref  = new \ReflectionObject($returned);
         $prop = $ref->getProperty('dto');
-        $prop->setAccessible(true);
-        $dto = $prop->getValue($returned);
+        $dto  = $prop->getValue($returned);
 
         $this->assertSame(['id' => 'DESC'], $dto->getDefaultSort());
     }
 
+    /**
+     * Verifies the CRUD fields expose id, type, message, size and createdAt.
+     */
     public function testConfigureFields(): void
     {
         $controller = new LogCrudController();
@@ -60,16 +71,13 @@ final class LogCrudControllerTest extends TestCase
 
         $this->assertCount(5, $fields);
 
-        // id
         $idField = $fields[0];
         $this->assertSame('id', $this->getFieldProperty($idField));
 
-        // type
         $typeField = $fields[1];
         $this->assertSame('type', $this->getFieldProperty($typeField));
         $this->assertStringContainsString('Result', (string) $this->getFieldLabel($typeField));
 
-        // message
         $messageField = $fields[2];
         $this->assertSame('message', $this->getFieldProperty($messageField));
 
@@ -83,7 +91,6 @@ final class LogCrudControllerTest extends TestCase
         $this->assertSame('-', $formatCallable(null));
         $this->assertSame(Helper::formatBytes(1024), $formatCallable(1024));
 
-        // createdAt
         $createdAtField = $fields[4];
         $this->assertSame('createdAt', $this->getFieldProperty($createdAtField));
     }
@@ -95,8 +102,7 @@ final class LogCrudControllerTest extends TestCase
     {
         $ref  = new \ReflectionObject($field);
         $prop = $ref->getProperty('dto');
-        $prop->setAccessible(true);
-        $dto = $prop->getValue($field);
+        $dto  = $prop->getValue($field);
 
         return $dto->getProperty();
     }
@@ -105,8 +111,7 @@ final class LogCrudControllerTest extends TestCase
     {
         $ref  = new \ReflectionObject($field);
         $prop = $ref->getProperty('dto');
-        $prop->setAccessible(true);
-        $dto = $prop->getValue($field);
+        $dto  = $prop->getValue($field);
 
         return $dto->getLabel();
     }
@@ -115,8 +120,7 @@ final class LogCrudControllerTest extends TestCase
     {
         $ref  = new \ReflectionObject($field);
         $prop = $ref->getProperty('dto');
-        $prop->setAccessible(true);
-        $dto = $prop->getValue($field);
+        $dto  = $prop->getValue($field);
 
         return $dto->getFormatValueCallable();
     }

@@ -68,7 +68,8 @@
             "supervisord",
             "middleware",
             "acked",
-            "prebuilt"
+            "prebuilt",
+            "serializer"
         ],
         "paths": [
             "vendor"

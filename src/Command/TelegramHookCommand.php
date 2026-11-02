@@ -6,30 +6,29 @@ namespace App\Command;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[AsCommand(
-    name: 'app:telegram-hook',
     description: 'Add a webhook for the Telegram bot',
+    name: 'app:telegram-hook',
 )]
-final class TelegramHookCommand extends Command
+final readonly class TelegramHookCommand
 {
     public function __construct(
-        private readonly string $telegramBotToken,
-        private readonly string $telegramHostUrl,
-        private readonly HttpClientInterface $httpClient,
+        #[Autowire(env: 'string:TELEGRAM_BOT_TOKEN')]
+        private string $telegramBotToken,
+        #[Autowire(env: 'string:TELEGRAM_HOST_URL')]
+        private string $telegramHostUrl,
+        private HttpClientInterface $httpClient,
+        private TranslatorInterface $translator,
     ) {
-        parent::__construct();
     }
 
-    #[\Override]
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    public function __invoke(SymfonyStyle $io): int
     {
-        $io = new SymfonyStyle($input, $output);
-
         $route = \sprintf('%s%s', $this->telegramHostUrl, '/telegram/hook');
 
         $url = \sprintf('https://api.telegram.org/bot%s/setWebhook', $this->telegramBotToken);
@@ -42,7 +41,7 @@ final class TelegramHookCommand extends Command
 
         $result = $response->getContent(false);
 
-        $io->info(\sprintf('Reply from telegram: %s', $result));
+        $io->info($this->translator->trans('command.telegram.reply', ['%reply%' => $result]));
 
         return Command::SUCCESS;
     }

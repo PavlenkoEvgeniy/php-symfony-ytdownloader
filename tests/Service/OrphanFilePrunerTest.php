@@ -15,7 +15,7 @@ final class OrphanFilePrunerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->downloadsDir = \sys_get_temp_dir() . '/orphan-pruner-' . \bin2hex(\random_bytes(6));
+        $this->downloadsDir = \sprintf('%s/orphan-pruner-%s', \sys_get_temp_dir(), \bin2hex(\random_bytes(6)));
         \mkdir($this->downloadsDir);
     }
 
@@ -24,13 +24,16 @@ final class OrphanFilePrunerTest extends TestCase
         $this->removeDirectory($this->downloadsDir);
     }
 
+    /**
+     * Verifies only old orphan files are reported.
+     */
     public function testFindOrphansReturnsOnlyOldFilesWithoutSource(): void
     {
         $oldTimestamp = \time() - 7200;
 
-        $keptPath   = $this->downloadsDir . '/kept.mp4';
-        $freshPath  = $this->downloadsDir . '/fresh.part';
-        $orphanPath = $this->downloadsDir . '/orphan.part';
+        $keptPath   = \sprintf('%s/kept.mp4', $this->downloadsDir);
+        $freshPath  = \sprintf('%s/fresh.part', $this->downloadsDir);
+        $orphanPath = \sprintf('%s/orphan.part', $this->downloadsDir);
 
         \file_put_contents($keptPath, 'kept');
         \file_put_contents($freshPath, 'fresh');
@@ -49,13 +52,16 @@ final class OrphanFilePrunerTest extends TestCase
         $this->assertFileExists($orphanPath);
     }
 
+    /**
+     * Verifies pruning deletes old orphan files and keeps the rest.
+     */
     public function testPruneDeletesOnlyOrphans(): void
     {
         $oldTimestamp = \time() - 7200;
 
-        $keptPath   = $this->downloadsDir . '/kept.mp4';
-        $freshPath  = $this->downloadsDir . '/fresh.part';
-        $orphanPath = $this->downloadsDir . '/orphan.part';
+        $keptPath   = \sprintf('%s/kept.mp4', $this->downloadsDir);
+        $freshPath  = \sprintf('%s/fresh.part', $this->downloadsDir);
+        $orphanPath = \sprintf('%s/orphan.part', $this->downloadsDir);
 
         \file_put_contents($keptPath, 'kept');
         \file_put_contents($freshPath, 'fresh');
@@ -71,25 +77,28 @@ final class OrphanFilePrunerTest extends TestCase
         $this->assertFileExists($freshPath);
     }
 
+    /**
+     * Verifies directories in the downloads folder are not treated as orphans.
+     */
     public function testFindOrphansIgnoresDirectories(): void
     {
-        \mkdir($this->downloadsDir . '/nested');
+        \mkdir(\sprintf('%s/nested', $this->downloadsDir));
 
         $this->assertSame([], $this->createPruner([])->findOrphans());
     }
 
     /**
-     * @param list<string> $referencedFilenames
+     * @param string[] $referencedFilenames
      */
     private function createPruner(array $referencedFilenames): OrphanFilePruner
     {
         /** @phpstan-ignore-next-line */
-        $sourceRepository = $this->createMock(SourceRepository::class);
+        $sourceRepository = $this->createStub(SourceRepository::class);
         $sourceRepository->method('findAllFilenames')->willReturn($referencedFilenames);
 
         return new OrphanFilePruner(
             $sourceRepository,
-            $this->createMock(LoggerInterface::class),
+            $this->createStub(LoggerInterface::class),
             $this->downloadsDir,
             3600,
         );
@@ -108,7 +117,7 @@ final class OrphanFilePrunerTest extends TestCase
                 continue;
             }
 
-            $path = $directory . '/' . $entry;
+            $path = \sprintf('%s/%s', $directory, $entry);
 
             if (\is_dir($path)) {
                 $this->removeDirectory($path);

@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Repository\DownloadTaskRepository;
+use App\Repository\DownloadTaskRepositoryInterface;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -14,28 +15,29 @@ use Doctrine\ORM\EntityManagerInterface;
  * redelivered) become deliverable again. The counterpart of QueuePurgeService:
  * purge deletes, reset resumes (see CONTEXT.md "Reset").
  */
-final readonly class QueueResetService
+final readonly class QueueResetService implements QueueResetServiceInterface
 {
     /** Messenger transport queue names from config/packages/messenger.yaml. */
-    private const TRANSPORT_QUEUE_NAMES = ['download_queue'];
+    private const array TRANSPORT_QUEUE_NAMES = ['download_queue'];
 
     public function __construct(
-        private EntityManagerInterface $em,
-        private DownloadTaskRepository $taskRepository,
+        private EntityManagerInterface $entityManager,
+        private DownloadTaskRepositoryInterface $downloadTaskRepository,
     ) {
     }
 
+    #[\Override]
     /**
      * @return array{processing: int, messages: int}
      */
     public function reset(): array
     {
-        $connection = $this->em->getConnection();
+        $connection = $this->entityManager->getConnection();
         $processing = 0;
         $messages   = 0;
 
-        $connection->transactional(function () use ($connection, &$processing, &$messages): void {
-            $processing = $this->taskRepository->resetProcessing();
+        $connection->transactional(function (Connection $connection) use (&$processing, &$messages): void {
+            $processing = $this->downloadTaskRepository->resetProcessing();
 
             $messages = $connection->executeStatement(
                 'UPDATE messenger_messages SET delivered_at = NULL

@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}YoutubeDownload :: Profile{% endblock %}
+{% block title %}{{ 'ui.profile.title'|trans }}{% endblock %}
 
 {% block body %}
     {% for flash_error in app.flashes('error') %}
@@ -12,21 +12,21 @@
     {% endfor %}
 
     <div class="d-flex justify-content-between my-4">
-        <a class="btn btn-outline-success" href="{{ path('ui_download_index') }}">Go back to downloads</a>
-        <a class="btn btn-outline-secondary" href="{{ path('ui_profile_theme') }}">Theme</a>
+        <a class="btn btn-outline-success" href="{{ path('ui_download_index') }}">{{ 'ui.profile.back_to_downloads'|trans }}</a>
+        <a class="btn btn-outline-secondary" href="{{ path('ui_profile_theme') }}">{{ 'ui.profile.theme'|trans }}</a>
     </div>
 
-    <h1 class="mt-4">Profile of:</h1>
+    <h1 class="mt-4">{{ 'ui.profile.heading'|trans }}</h1>
     <h3 class="mt-2 text-success fst-italic">{{ app.user.email }}</h3>
-    <h4 class="mt-4">Change password:</h4>
+    <h4 class="mt-4">{{ 'ui.profile.change_password'|trans }}</h4>
 
     {{ form_start(form) }}
     {{ form_row(form.currentPassword) }}
     {{ form_row(form.newPassword.first) }}
     {{ form_row(form.newPassword.second) }}
     <div class="d-flex">
-        <button type="submit" class="btn btn-warning">Change</button>
-        <a class="btn btn-outline-danger ms-auto" href="{{ path('ui_download_index') }}">Cancel</a>
+        <button type="submit" class="btn btn-warning">{{ 'ui.profile.change'|trans }}</button>
+        <a class="btn btn-outline-danger ms-auto" href="{{ path('ui_download_index') }}">{{ 'ui.profile.cancel'|trans }}</a>
     </div>
     {{ form_end(form) }}
 {% endblock %}

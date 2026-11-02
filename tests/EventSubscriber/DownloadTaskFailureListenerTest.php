@@ -15,10 +15,13 @@ use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 
 final class DownloadTaskFailureListenerTest extends TestCase
 {
+    /**
+     * Verifies a failed message without retries marks its task as errored.
+     */
     public function testMarksTaskAsErroredWhenNoRetryIsPlanned(): void
     {
         $task = new DownloadTask();
-        $task->setUrl('https://example.com')->setQuality('best');
+        $task->setUrl('https://test.local')->setQuality('best');
 
         $em = $this->createMock(EntityManagerInterface::class);
         $em->method('find')->willReturn($task);
@@ -27,16 +30,19 @@ final class DownloadTaskFailureListenerTest extends TestCase
         $listener = new DownloadTaskFailureListener(new DownloadTaskManager($em), $this->createStub(\Psr\Log\LoggerInterface::class));
 
         $event = new WorkerMessageFailedEvent(
-            new Envelope(new DownloadMessage('https://example.com', 'best', '', 5)),
+            new Envelope(new DownloadMessage('https://test.local', 'best', '', 5)),
             'async',
             new \RuntimeException('download failed')
         );
 
-        $listener->onMessageFailed($event);
+        ($listener)($event);
 
         $this->assertSame(DownloadTask::STATUS_ERROR, $task->getStatus());
     }
 
+    /**
+     * Verifies a message scheduled for retry leaves the task untouched.
+     */
     public function testDoesNothingWhileRetriesArePlanned(): void
     {
         $em = $this->createMock(EntityManagerInterface::class);
@@ -46,15 +52,18 @@ final class DownloadTaskFailureListenerTest extends TestCase
         $listener = new DownloadTaskFailureListener(new DownloadTaskManager($em), $this->createStub(\Psr\Log\LoggerInterface::class));
 
         $event = new WorkerMessageFailedEvent(
-            new Envelope(new DownloadMessage('https://example.com', 'best', '', 5)),
+            new Envelope(new DownloadMessage('https://test.local', 'best', '', 5)),
             'async',
             new \RuntimeException('temporary failure')
         );
         $event->setForRetry();
 
-        $listener->onMessageFailed($event);
+        ($listener)($event);
     }
 
+    /**
+     * Verifies a failed message without a task id is ignored.
+     */
     public function testIgnoresMessagesWithoutTaskId(): void
     {
         $em = $this->createMock(EntityManagerInterface::class);
@@ -63,11 +72,11 @@ final class DownloadTaskFailureListenerTest extends TestCase
         $listener = new DownloadTaskFailureListener(new DownloadTaskManager($em), $this->createStub(\Psr\Log\LoggerInterface::class));
 
         $event = new WorkerMessageFailedEvent(
-            new Envelope(new DownloadMessage('https://example.com', 'best')),
+            new Envelope(new DownloadMessage('https://test.local', 'best')),
             'async',
             new \RuntimeException('download failed')
         );
 
-        $listener->onMessageFailed($event);
+        ($listener)($event);
     }
 }

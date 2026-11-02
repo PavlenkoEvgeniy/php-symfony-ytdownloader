@@ -1,7 +1,7 @@
 # Supervisord runs as the container main process
 
 The php-fpm container must run the queue workers, but supervisor was started by a
-manual `make supervisor-step` after `docker compose up` — every restart that skipped
+manual step after `docker compose up` — every restart that skipped
 that step left the container alive with no worker, and all new downloads silently
 stayed `queued` (this produced the exit-code-0 image bug of v1.3.2 and the
 "stuck on queued" incident of v1.3.5). We decided the container starts

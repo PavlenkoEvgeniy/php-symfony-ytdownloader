@@ -27,6 +27,8 @@ final class HelperTest extends TestCase
     }
 
     /**
+     * Verifies byte sizes are formatted with the expected unit and precision.
+     *
      * @dataProvider bytesProvider
      */
     public function testFormatByBitesWorkingOk(int|float|null $bytes, int $precision, string $expected): void

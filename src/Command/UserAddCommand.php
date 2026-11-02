@@ -5,93 +5,86 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Entity\User;
-use App\Repository\UserRepository;
+use App\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Console\Attribute\Argument;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[AsCommand(
+    description: 'Add new admin user',
     name: 'app:user-add',
-    description: 'Add new admin user'
 )]
-final class UserAddCommand extends Command
+final readonly class UserAddCommand
 {
     public function __construct(
-        private readonly EntityManagerInterface $em,
-        private readonly UserPasswordHasherInterface $passwordHasher,
-        private readonly UserRepository $userRepository,
+        private EntityManagerInterface $entityManager,
+        private UserPasswordHasherInterface $passwordHasher,
+        private UserRepositoryInterface $userRepository,
+        private TranslatorInterface $translator,
     ) {
-        parent::__construct();
     }
 
-    #[\Override]
-    protected function configure(): void
-    {
-        $this->addArgument('username', InputArgument::REQUIRED);
-        $this->addArgument('password', InputArgument::OPTIONAL);
-    }
+    public function __invoke(
+        SymfonyStyle $io,
+        #[Argument(description: 'User email')]
+        string $username,
+        #[Argument(description: 'Password (generated when omitted)')]
+        ?string $password = null,
+    ): int {
+        $username = \mb_strtolower(\trim($username));
 
-    #[\Override]
-    protected function execute(InputInterface $input, OutputInterface $output): int
-    {
-        $io = new SymfonyStyle($input, $output);
-
-        $username = \trim((string) $input->getArgument('username'));
-
-        // Check if username is empty
         if ('' === $username) {
-            $io->error('Username is required');
+            $io->error($this->translator->trans('command.user_add.username_required'));
 
             return Command::FAILURE;
         }
 
-        $username = \mb_strtolower($username);
-
-        // Check if username is valid
         if (!\filter_var($username, FILTER_VALIDATE_EMAIL)) {
-            $io->error('Username should have email format');
+            $io->error($this->translator->trans('command.user_add.username_invalid'));
 
             return Command::FAILURE;
         }
 
-        // Check if user already exists
-        if ($this->userRepository->findOneByEmail($username)) {
-            $io->error('User with this email already exists');
+        $existingUser = $this->userRepository->findOneByEmail($username);
+
+        if ($existingUser instanceof User) {
+            $io->error($this->translator->trans('command.user_add.username_exists'));
 
             return Command::FAILURE;
         }
 
         $user           = new User();
-        $plainPassword  = $input->getArgument('password') ?? User::generatePassword(16);
-        $hashedPassword = $this->passwordHasher->hashPassword(
-            $user,
-            $plainPassword
-        );
+        $plainPassword  = $password ?? User::generatePassword();
+        $hashedPassword = $this->passwordHasher->hashPassword($user, $plainPassword);
 
-        $user
-            ->setEmail($username)
+        $user->setEmail($username)
             ->setPassword($hashedPassword)
             ->setRoles([User::ROLE_ADMIN])
         ;
 
         try {
-            $this->em->persist($user);
-            $this->em->flush();
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
         } catch (\Throwable $exception) {
-            $io->error(\sprintf('Error: %s', $exception->getMessage()));
+            $io->error($this->translator->trans('command.user_add.error', ['%message%' => $exception->getMessage()]));
 
             return Command::FAILURE;
         }
 
-        if (null === $input->getArgument('password')) {
-            $io->success(\sprintf('User %s created successfully. Generated password: %s', $username, $plainPassword));
+        if (null === $password) {
+            $io->success($this->translator->trans('command.user_add.created_generated', [
+                '%username%' => $username,
+                '%password%' => $plainPassword,
+            ]));
         } else {
-            $io->success(\sprintf('User %s created successfully. Password: %s', $username, $plainPassword));
+            $io->success($this->translator->trans('command.user_add.created', [
+                '%username%' => $username,
+                '%password%' => $plainPassword,
+            ]));
         }
 
         return Command::SUCCESS;

@@ -1,27 +1,27 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}YoutubeDownload :: Theme{% endblock %}
+{% block title %}{{ 'ui.profile.theme_title'|trans }}{% endblock %}
 
 {% block body %}
     <div class="d-flex justify-content-between my-4">
-        <a class="btn btn-outline-success" href="{{ path('ui_profile_index') }}">Go back to profile</a>
+        <a class="btn btn-outline-success" href="{{ path('ui_profile_index') }}">{{ 'ui.theme.back'|trans }}</a>
     </div>
 
-    <h1 class="mt-4">Theme:</h1>
-    <p class="mt-2 text-secondary">"Auto" follows the theme of your system.</p>
+    <h1 class="mt-4">{{ 'ui.theme.heading'|trans }}</h1>
+    <p class="mt-2 text-secondary">{{ 'ui.theme.auto_description'|trans }}</p>
     <div class="theme-toggle">
         <div class="form-check">
             <input class="form-check-input" type="radio" name="theme" id="theme-auto" value="auto" data-theme-option="auto">
-            <label class="form-check-label" for="theme-auto">Auto</label>
+            <label class="form-check-label" for="theme-auto">{{ 'ui.theme.auto'|trans }}</label>
         </div>
         <div class="form-check">
             <input class="form-check-input" type="radio" name="theme" id="theme-dark" value="dark" data-theme-option="dark">
-            <label class="form-check-label" for="theme-dark">Dark</label>
+            <label class="form-check-label" for="theme-dark">{{ 'ui.theme.dark'|trans }}</label>
         </div>
         <div class="form-check">
             <input class="form-check-input" type="radio" name="theme" id="theme-light" value="light" data-theme-option="light">
-            <label class="form-check-label" for="theme-light">Light</label>
+            <label class="form-check-label" for="theme-light">{{ 'ui.theme.light'|trans }}</label>
         </div>
-        <button type="button" id="theme-save" class="btn btn-primary mt-2">Save</button>
+        <button type="button" id="theme-save" class="btn btn-primary mt-2">{{ 'ui.theme.save'|trans }}</button>
     </div>
 {% endblock %}

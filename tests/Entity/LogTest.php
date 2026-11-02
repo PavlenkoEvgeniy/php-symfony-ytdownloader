@@ -9,6 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 final class LogTest extends TestCase
 {
+    /**
+     * Verifies a new log receives a creation timestamp.
+     */
     public function testLogConstructorInitializesCreatedAt(): void
     {
         $log = new Log();
@@ -16,6 +19,9 @@ final class LogTest extends TestCase
         $this->assertInstanceOf(\DateTimeImmutable::class, $log->getCreatedAt());
     }
 
+    /**
+     * Verifies every log setter returns the same instance.
+     */
     public function testLogSettersReturnInstance(): void
     {
         $log = new Log();
@@ -32,6 +38,9 @@ final class LogTest extends TestCase
         $this->assertSame($log, $result4);
     }
 
+    /**
+     * Verifies log getters return the values assigned to the entity.
+     */
     public function testLogGettersReturnSetValues(): void
     {
         $log = new Log();
@@ -48,6 +57,9 @@ final class LogTest extends TestCase
         $this->assertSame(1024.5, $log->getSize());
     }
 
+    /**
+     * Verifies a new log has no identifier before persistence.
+     */
     public function testLogIdIsNullByDefault(): void
     {
         $log = new Log();
@@ -55,6 +67,9 @@ final class LogTest extends TestCase
         $this->assertNull($log->getId());
     }
 
+    /**
+     * Verifies a new log has no size value.
+     */
     public function testLogSizeIsNullableByDefault(): void
     {
         $log = new Log();
@@ -62,6 +77,9 @@ final class LogTest extends TestCase
         $this->assertNull($log->getSize());
     }
 
+    /**
+     * Verifies type, message and size are null before being set.
+     */
     public function testLogPropertiesAreNullBeforeSet(): void
     {
         $log = new Log();
@@ -71,6 +89,9 @@ final class LogTest extends TestCase
         $this->assertNull($log->getSize());
     }
 
+    /**
+     * Verifies a zero size is stored unchanged.
+     */
     public function testLogCanStoreZeroSize(): void
     {
         $log = new Log();
@@ -79,6 +100,9 @@ final class LogTest extends TestCase
         $this->assertSame(0.0, $log->getSize());
     }
 
+    /**
+     * Verifies a negative size is stored unchanged.
+     */
     public function testLogCanStoreNegativeSize(): void
     {
         $log = new Log();
@@ -87,6 +111,9 @@ final class LogTest extends TestCase
         $this->assertSame(-1.5, $log->getSize());
     }
 
+    /**
+     * Verifies a large size is stored without precision loss.
+     */
     public function testLogCanStoreLargeSize(): void
     {
         $log       = new Log();

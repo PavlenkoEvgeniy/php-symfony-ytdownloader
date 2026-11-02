@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ app.request.locale }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
-        // Theme switcher for the web UI: modes are auto / dark / light, the
-        // choice is persisted in localStorage. Runs before the stylesheets
-        // load to avoid a flash of the light theme on page load.
+        // Theme switcher: auto/dark/light persisted in localStorage, applied
+        // before the stylesheets load to avoid a flash of the light theme.
         (function () {
             const storageKey = 'ytdownloader-theme';
             const modes = ['auto', 'dark', 'light'];
@@ -69,7 +68,6 @@
 </head>
 <body class="container">
     {% block body %}{% endblock %}
-    </body>
-    <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
     {% block javascript %}{% endblock %}
+</body>
 </html>

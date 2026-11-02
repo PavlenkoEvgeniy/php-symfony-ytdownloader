@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Entity\User;
-use App\Repository\DownloadTaskRepository;
-use App\Service\OrphanFilePruner;
-use App\Service\QueuePurgeService;
-use App\Service\QueueResetService;
-use App\Service\QueueStatsService;
+use App\Repository\DownloadTaskRepositoryInterface;
+use App\Service\OrphanFilePrunerInterface;
+use App\Service\QueuePurgeServiceInterface;
+use App\Service\QueueResetServiceInterface;
+use App\Service\QueueStatsServiceInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -24,10 +24,16 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 final class DashboardController extends AbstractDashboardController
 {
+    public function __construct(
+        private readonly TranslatorInterface $translator,
+    ) {
+    }
+
     #[\Override]
     public function index(): RedirectResponse
     {
@@ -39,9 +45,9 @@ final class DashboardController extends AbstractDashboardController
      */
     #[AdminRoute(path: '/active-tasks', name: 'active_tasks')]
     public function activeTasks(
-        QueueStatsService $queueStatsService,
-        DownloadTaskRepository $downloadTaskRepository,
-        OrphanFilePruner $orphanFilePruner,
+        QueueStatsServiceInterface $queueStatsService,
+        DownloadTaskRepositoryInterface $downloadTaskRepository,
+        OrphanFilePrunerInterface $orphanFilePruner,
     ): Response {
         return $this->render('admin/active_tasks.html.twig', [
             'stats'   => $queueStatsService->getStats(),
@@ -53,11 +59,11 @@ final class DashboardController extends AbstractDashboardController
     /**
      * Purge the queue: delete every queued task together with all pending transport messages.
      */
-    #[AdminRoute(path: '/purge-queue', name: 'purge_queue', options: ['methods' => ['POST']])]
-    public function purgeQueue(Request $request, QueuePurgeService $queuePurgeService): RedirectResponse
+    #[AdminRoute(path: '/purge-queue', name: 'purge_queue', options: ['methods' => [Request::METHOD_POST]])]
+    public function purgeQueue(Request $request, QueuePurgeServiceInterface $queuePurgeService): RedirectResponse
     {
         if (!$this->isCsrfTokenValid('purge_queue', $request->getPayload()->getString('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
+            $this->addFlash('error', $this->translator->trans('admin.flash.invalid_csrf'));
 
             return $this->redirectToRoute('admin_active_tasks');
         }
@@ -66,7 +72,10 @@ final class DashboardController extends AbstractDashboardController
 
         $this->addFlash(
             'success',
-            \sprintf('Purged %d task(s) and %d pending message(s).', $result['tasks'], $result['messages']),
+            $this->translator->trans('admin.flash.purged', [
+                '%count%'    => $result['tasks'],
+                '%messages%' => $result['messages'],
+            ]),
         );
 
         return $this->redirectToRoute('admin_active_tasks');
@@ -76,11 +85,11 @@ final class DashboardController extends AbstractDashboardController
      * Reset stuck work: processing tasks go back to queued and stuck in-flight
      * transport messages become deliverable again.
      */
-    #[AdminRoute(path: '/reset-stuck-tasks', name: 'reset_stuck_tasks', options: ['methods' => ['POST']])]
-    public function resetStuckTasks(Request $request, QueueResetService $queueResetService): RedirectResponse
+    #[AdminRoute(path: '/reset-stuck-tasks', name: 'reset_stuck_tasks', options: ['methods' => [Request::METHOD_POST]])]
+    public function resetStuckTasks(Request $request, QueueResetServiceInterface $queueResetService): RedirectResponse
     {
         if (!$this->isCsrfTokenValid('reset_stuck_tasks', $request->getPayload()->getString('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
+            $this->addFlash('error', $this->translator->trans('admin.flash.invalid_csrf'));
 
             return $this->redirectToRoute('admin_active_tasks');
         }
@@ -89,7 +98,10 @@ final class DashboardController extends AbstractDashboardController
 
         $this->addFlash(
             'success',
-            \sprintf('Reset %d processing task(s) and %d stuck message(s).', $result['processing'], $result['messages']),
+            $this->translator->trans('admin.flash.reset', [
+                '%count%'    => $result['processing'],
+                '%messages%' => $result['messages'],
+            ]),
         );
 
         return $this->redirectToRoute('admin_active_tasks');
@@ -98,14 +110,14 @@ final class DashboardController extends AbstractDashboardController
     /**
      * Delete orphan files: files in the downloads directory that no Source references.
      */
-    #[AdminRoute(path: '/prune-orphans', name: 'prune_orphans', options: ['methods' => ['POST']])]
+    #[AdminRoute(path: '/prune-orphans', name: 'prune_orphans', options: ['methods' => [Request::METHOD_POST]])]
     public function pruneOrphans(
         Request $request,
-        OrphanFilePruner $orphanFilePruner,
+        OrphanFilePrunerInterface $orphanFilePruner,
         ReadableFilesizeExtension $filesizeExtension,
     ): RedirectResponse {
         if (!$this->isCsrfTokenValid('prune_orphans', $request->getPayload()->getString('_token'))) {
-            $this->addFlash('error', 'Invalid CSRF token.');
+            $this->addFlash('error', $this->translator->trans('admin.flash.invalid_csrf'));
 
             return $this->redirectToRoute('admin_active_tasks');
         }
@@ -113,17 +125,15 @@ final class DashboardController extends AbstractDashboardController
         $result = $orphanFilePruner->prune();
 
         if ($result['failed'] > 0) {
-            $this->addFlash('error', \sprintf(
-                'Deleted %d orphan file(s), failed to delete %d file(s).',
-                $result['deleted'],
-                $result['failed'],
-            ));
+            $this->addFlash('error', $this->translator->trans('admin.flash.prune_failed', [
+                '%deleted%' => $result['deleted'],
+                '%failed%'  => $result['failed'],
+            ]));
         } else {
-            $this->addFlash('success', \sprintf(
-                'Pruned %d orphan file(s), %s freed.',
-                $result['deleted'],
-                $filesizeExtension->readableFilesize($result['bytes']),
-            ));
+            $this->addFlash('success', $this->translator->trans('admin.flash.pruned', [
+                '%count%' => $result['deleted'],
+                '%size%'  => $filesizeExtension->readableFilesize($result['bytes']),
+            ]));
         }
 
         return $this->redirectToRoute('admin_active_tasks');
@@ -133,14 +143,14 @@ final class DashboardController extends AbstractDashboardController
     public function configureDashboard(): Dashboard
     {
         return Dashboard::new()
-            ->setTitle('Admin Panel')
+            ->setTitle($this->translator->trans('admin.dashboard.title'))
         ;
     }
 
+    #[\Override]
     /**
      * @throws \Exception
      */
-    #[\Override]
     public function configureUserMenu(UserInterface $user): UserMenu
     {
         if (!$user instanceof User) {
@@ -155,11 +165,11 @@ final class DashboardController extends AbstractDashboardController
     #[\Override]
     public function configureMenuItems(): iterable
     {
-        yield MenuItem::linkToRoute('Active Tasks', 'fa-solid fa-list-check', 'admin_active_tasks');
-        yield MenuItem::linkTo(UserCrudController::class, 'Users', 'fa fa-users');
-        yield MenuItem::linkTo(SourceCrudController::class, 'Sources', 'fa-regular fa-file-video');
-        yield MenuItem::linkTo(LogCrudController::class, 'Logs', 'fa-solid fa-book');
-        yield MenuItem::linkToUrl('Back to downloads', 'fa-solid fa-arrow-left', $this->generateUrl('ui_download_index'));
+        yield MenuItem::linkToRoute($this->translator->trans('admin.menu.active_tasks'), 'fa-solid fa-list-check', 'admin_active_tasks');
+        yield MenuItem::linkTo(UserCrudController::class, $this->translator->trans('admin.menu.users'), 'fa fa-users');
+        yield MenuItem::linkTo(SourceCrudController::class, $this->translator->trans('admin.menu.sources'), 'fa-regular fa-file-video');
+        yield MenuItem::linkTo(LogCrudController::class, $this->translator->trans('admin.menu.logs'), 'fa-solid fa-book');
+        yield MenuItem::linkToUrl($this->translator->trans('admin.menu.back_to_downloads'), 'fa-solid fa-arrow-left', $this->generateUrl('ui_download_index'));
     }
 
     #[\Override]

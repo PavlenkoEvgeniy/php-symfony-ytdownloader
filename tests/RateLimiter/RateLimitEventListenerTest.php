@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\RateLimiter;
 
+use App\Entity\User;
 use App\RateLimiter\RateLimitAttribute;
 use App\RateLimiter\RateLimitEventListener;
 use PHPUnit\Framework\TestCase;
@@ -12,49 +13,49 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
-use Symfony\Component\RateLimiter\Storage\StorageInterface;
+use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class RateLimitEventListenerTest extends TestCase
 {
     private RateLimitEventListener $listener;
-    private RateLimiterFactory $factory;
 
     protected function setUp(): void
     {
-        $storage       = $this->createMock(StorageInterface::class);
-        $this->factory = new RateLimiterFactory([
-            'id'       => 'api',
-            'policy'   => 'sliding_window',
-            'limit'    => 60,
-            'interval' => '1 minute',
-        ], $storage);
-
-        $this->listener = new RateLimitEventListener($this->factory);
+        $this->listener = $this->createListener(60);
     }
 
+    /**
+     * Verifies the listener leaves controllers of sub-requests unchanged.
+     */
     public function testIgnoresSubRequests(): void
     {
         $request = new Request();
-        $kernel  = $this->createMock(HttpKernelInterface::class);
+        $kernel  = $this->createStub(HttpKernelInterface::class);
         $event   = new ControllerEvent($kernel, function () {}, $request, HttpKernelInterface::SUB_REQUEST);
 
-        // This should not throw, and the controller should not be modified
         $controller = $event->getController();
-        $this->listener->onKernelController($event);
+        ($this->listener)($event);
         $this->assertSame($controller, $event->getController());
     }
 
+    /**
+     * Verifies the listener ignores controllers that are plain closures.
+     */
     public function testIgnoresCallableWithoutClass(): void
     {
         $callable = function () {};
         $request  = new Request();
-        $kernel   = $this->createMock(HttpKernelInterface::class);
+        $kernel   = $this->createStub(HttpKernelInterface::class);
         $event    = new ControllerEvent($kernel, $callable, $request, HttpKernelInterface::MAIN_REQUEST);
 
-        $this->listener->onKernelController($event);
+        ($this->listener)($event);
         $this->assertSame($callable, $event->getController());
     }
 
+    /**
+     * Verifies the listener ignores controllers without the attribute.
+     */
     public function testIgnoresControllerWithoutRateLimitAttribute(): void
     {
         $controller = new class {
@@ -64,22 +65,22 @@ final class RateLimitEventListenerTest extends TestCase
         };
 
         $request = new Request();
-        $kernel  = $this->createMock(HttpKernelInterface::class);
+        $kernel  = $this->createStub(HttpKernelInterface::class);
         $event   = new ControllerEvent($kernel, [$controller, 'method'], $request, HttpKernelInterface::MAIN_REQUEST);
 
         $originalController = $event->getController();
-        $this->listener->onKernelController($event);
+        ($this->listener)($event);
         $this->assertSame($originalController, $event->getController());
     }
 
     /**
-     * @doesNotPerformAssertions
+     * Verifies the client IP is used as the limiter key and the request is blocked.
      */
     public function testEnforcesRateLimitWithClientIp(): void
     {
-        $controller = new #[RateLimitAttribute]
-        class {
-            #[RateLimitAttribute(limit: 2, interval: 60)]
+        $listener   = $this->createListener(1);
+        $controller = new #[RateLimitAttribute(limit: 1)] class {
+            #[RateLimitAttribute(limit: 1, interval: 60)]
             public function method(): Response
             {
                 return new Response('OK');
@@ -88,44 +89,59 @@ final class RateLimitEventListenerTest extends TestCase
 
         $request = new Request();
         $request->server->set('REMOTE_ADDR', '192.168.1.1');
-        $kernel = $this->createMock(HttpKernelInterface::class);
+        $kernel = $this->createStub(HttpKernelInterface::class);
         $event  = new ControllerEvent($kernel, [$controller, 'method'], $request, HttpKernelInterface::MAIN_REQUEST);
 
-        // First call should not throw and should not modify the controller
-        $originalController = $event->getController();
-        $this->listener->onKernelController($event);
+        $listener($event);
+        $this->assertSame([$controller, 'method'], $event->getController());
+
+        $listener($event);
+        $response = ($event->getController())();
+
+        $this->assertSame(Response::HTTP_TOO_MANY_REQUESTS, $response->getStatusCode());
+        $this->assertSame('1', $response->headers->get('RateLimit-Limit'));
     }
 
     /**
-     * @doesNotPerformAssertions
+     * Verifies different authenticated users get independent limiter buckets.
      */
     public function testUsesUserIdAsKeyWhenAvailable(): void
     {
-        $controller = new #[RateLimitAttribute]
-        class {
-            #[RateLimitAttribute]
+        $listener   = $this->createListener(1);
+        $controller = new #[RateLimitAttribute(limit: 1)] class {
+            #[RateLimitAttribute(limit: 1)]
             public function method(): Response
             {
                 return new Response('OK');
             }
         };
+        $kernel = $this->createStub(HttpKernelInterface::class);
 
-        $request = new Request();
-        $request->attributes->set('user', 'user123');
-        $kernel = $this->createMock(HttpKernelInterface::class);
-        $event  = new ControllerEvent($kernel, [$controller, 'method'], $request, HttpKernelInterface::MAIN_REQUEST);
+        $firstUser  = new User()->setEmail('first@test.local');
+        $secondUser = new User()->setEmail('second@test.local');
 
-        // Should use user ID from request attributes
-        $this->listener->onKernelController($event);
+        $firstRequest = new Request();
+        $firstRequest->attributes->set('user', $firstUser);
+        $firstEvent = new ControllerEvent($kernel, [$controller, 'method'], $firstRequest, HttpKernelInterface::MAIN_REQUEST);
+
+        $secondRequest = new Request();
+        $secondRequest->attributes->set('user', $secondUser);
+        $secondEvent = new ControllerEvent($kernel, [$controller, 'method'], $secondRequest, HttpKernelInterface::MAIN_REQUEST);
+
+        $listener($firstEvent);
+        $listener($secondEvent);
+
+        $this->assertSame([$controller, 'method'], $firstEvent->getController());
+        $this->assertSame([$controller, 'method'], $secondEvent->getController());
     }
 
     /**
-     * @doesNotPerformAssertions
+     * Verifies the method-level attribute wins over the class-level one.
      */
     public function testPrefersMethodAttributeOverClassAttribute(): void
     {
-        $controller = new #[RateLimitAttribute(limit: 100)]
-        class {
+        $listener   = $this->createListener(1);
+        $controller = new #[RateLimitAttribute(limit: 100)] class {
             #[RateLimitAttribute(limit: 50)]
             public function method(): Response
             {
@@ -135,18 +151,26 @@ final class RateLimitEventListenerTest extends TestCase
 
         $request = new Request();
         $request->server->set('REMOTE_ADDR', '192.168.1.1');
-        $kernel = $this->createMock(HttpKernelInterface::class);
+        $kernel = $this->createStub(HttpKernelInterface::class);
         $event  = new ControllerEvent($kernel, [$controller, 'method'], $request, HttpKernelInterface::MAIN_REQUEST);
 
-        // Should use method attribute (limit: 50), not class attribute (limit: 100)
-        $this->listener->onKernelController($event);
+        $listener($event);
+        $listener($event);
+        $response = ($event->getController())();
+
+        $this->assertSame(Response::HTTP_TOO_MANY_REQUESTS, $response->getStatusCode());
+        $this->assertSame('50', $response->headers->get('RateLimit-Limit'));
     }
 
-    public function testSubscribedToControllerEvent(): void
+    private function createListener(int $limit): RateLimitEventListener
     {
-        $subscribedEvents = RateLimitEventListener::getSubscribedEvents();
+        $factory = new RateLimiterFactory([
+            'id'       => 'api',
+            'policy'   => 'sliding_window',
+            'limit'    => $limit,
+            'interval' => '1 minute',
+        ], new InMemoryStorage());
 
-        $this->assertArrayHasKey('kernel.controller', $subscribedEvents);
-        $this->assertSame('onKernelController', $subscribedEvents['kernel.controller']);
+        return new RateLimitEventListener($factory, $this->createStub(TranslatorInterface::class));
     }
 }

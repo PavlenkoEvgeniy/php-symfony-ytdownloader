@@ -6,49 +6,38 @@ namespace App\Command;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[AsCommand(
-    name: 'app:telegram-unhook',
     description: 'Remove a webhook for the Telegram bot',
+    name: 'app:telegram-unhook',
 )]
-final class TelegramUnhookCommand extends Command
+final readonly class TelegramUnhookCommand
 {
-    private readonly mixed $requester;
-
     public function __construct(
-        private readonly string $telegramBotToken,
-        ?callable $requester = null,
+        #[Autowire(env: 'string:TELEGRAM_BOT_TOKEN')]
+        private string $telegramBotToken,
+        private HttpClientInterface $httpClient,
+        private TranslatorInterface $translator,
     ) {
-        $this->requester = $requester ?? static function (string $url, $context): string|false {
-            return \file_get_contents($url, false, $context);
-        };
-
-        parent::__construct();
     }
 
-    #[\Override]
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    public function __invoke(SymfonyStyle $io): int
     {
-        $io = new SymfonyStyle($input, $output);
-
         $url = \sprintf('https://api.telegram.org/bot%s/setWebhook', $this->telegramBotToken);
 
-        $context = \stream_context_create([
-            'http' => [
-                'method'  => 'POST',
-                'header'  => 'Content-Type: application/x-www-form-urlencoded',
-                'content' => \http_build_query([
-                    'url' => '',
-                ]),
+        $response = $this->httpClient->request('POST', $url, [
+            'body' => [
+                'url' => '',
             ],
         ]);
 
-        $result = ($this->requester)($url, $context);
+        $result = $response->getContent(false);
 
-        $io->info(\sprintf('Reply from telegram: %s', $result));
+        $io->info($this->translator->trans('command.telegram.reply', ['%reply%' => $result]));
 
         return Command::SUCCESS;
     }

@@ -5,10 +5,8 @@ framework:
                 adapter: cache.adapter.redis
                 provider: '%env(REDIS)%'
 
-        # App cache
         app: cache.adapter.redis
 
-        # System cache
         system: cache.adapter.redis
 
         default_redis_provider: '%env(REDIS)%'

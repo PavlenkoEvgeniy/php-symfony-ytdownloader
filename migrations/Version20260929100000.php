@@ -8,12 +8,8 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
 /**
- * Introduces the download_metric singleton — the lifetime "Total downloaded"
- * counter. It is seeded from the sizes of the Source rows still present at
- * migration time (bytes of already deleted sources are unrecoverable) and is
- * incremented afterwards whenever a new Source is stored. Deleting sources
- * never reduces it, unlike the previous derived SUM(source.size) (issue #77,
- * ADR-0006).
+ * Seeds the download_metric singleton from the existing Source sizes; it is
+ * incremented on new sources and never reduced by deletions (ADR-0006).
  */
 final class Version20260929100000 extends AbstractMigration
 {

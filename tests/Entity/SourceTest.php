@@ -9,6 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 final class SourceTest extends TestCase
 {
+    /**
+     * Verifies every source setter returns the same instance.
+     */
     public function testSourceSettersReturnInstance(): void
     {
         $source = new Source();
@@ -24,6 +27,9 @@ final class SourceTest extends TestCase
         $this->assertSame($source, $result4);
     }
 
+    /**
+     * Verifies source getters return the values assigned to the entity.
+     */
     public function testSourceGettersReturnSetValues(): void
     {
         $source = new Source();
@@ -39,6 +45,9 @@ final class SourceTest extends TestCase
         $this->assertSame(1024.5, $source->getSize());
     }
 
+    /**
+     * Verifies a new source has no identifier before persistence.
+     */
     public function testSourceIdIsNullByDefault(): void
     {
         $source = new Source();
@@ -46,6 +55,9 @@ final class SourceTest extends TestCase
         $this->assertNull($source->getId());
     }
 
+    /**
+     * Verifies a new source has no description.
+     */
     public function testSourceDescriptionIsNullableByDefault(): void
     {
         $source = new Source();
@@ -53,6 +65,9 @@ final class SourceTest extends TestCase
         $this->assertNull($source->getDescription());
     }
 
+    /**
+     * Verifies filename, filepath, description and size are null before being set.
+     */
     public function testSourcePropertiesAreNullBeforeSet(): void
     {
         $source = new Source();
@@ -63,6 +78,9 @@ final class SourceTest extends TestCase
         $this->assertNull($source->getSize());
     }
 
+    /**
+     * Verifies a set description can be cleared to null.
+     */
     public function testSourceCanSetDescriptionToNull(): void
     {
         $source = new Source();
@@ -72,6 +90,9 @@ final class SourceTest extends TestCase
         $this->assertNull($source->getDescription());
     }
 
+    /**
+     * Verifies the filename is stored and returned unchanged.
+     */
     public function testSourceFilenameCanBeSet(): void
     {
         $source   = new Source();
@@ -82,6 +103,9 @@ final class SourceTest extends TestCase
         $this->assertSame($filename, $source->getFilename());
     }
 
+    /**
+     * Verifies the filepath is stored and returned unchanged.
+     */
     public function testSourceFilepathCanBeSet(): void
     {
         $source   = new Source();
@@ -92,6 +116,9 @@ final class SourceTest extends TestCase
         $this->assertSame($filepath, $source->getFilepath());
     }
 
+    /**
+     * Verifies a zero size is stored unchanged.
+     */
     public function testSourceSizeCanBeZero(): void
     {
         $source = new Source();
@@ -100,6 +127,9 @@ final class SourceTest extends TestCase
         $this->assertSame(0.0, $source->getSize());
     }
 
+    /**
+     * Verifies a negative size is stored unchanged.
+     */
     public function testSourceSizeCanBeNegative(): void
     {
         $source = new Source();
@@ -108,6 +138,9 @@ final class SourceTest extends TestCase
         $this->assertSame(-1.5, $source->getSize());
     }
 
+    /**
+     * Verifies a large size is stored without precision loss.
+     */
     public function testSourceSizeCanBeLarge(): void
     {
         $source    = new Source();
@@ -116,13 +149,5 @@ final class SourceTest extends TestCase
         $source->setSize($largeSize);
 
         $this->assertSame($largeSize, $source->getSize());
-    }
-
-    public function testSourceHasTimestampableTraitProperties(): void
-    {
-        $source = new Source();
-
-        // TimestampableEntity trait should provide these methods
-        $this->addToAssertionCount(1);
     }
 }

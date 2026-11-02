@@ -45,3 +45,6 @@ phpstan.neon
 # AI agents
 .gigacode
 .continue
+
+# macOS
+.DS_Store

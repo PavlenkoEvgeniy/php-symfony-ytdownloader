@@ -7,12 +7,14 @@ namespace App\Service;
 use App\Entity\DownloadTask;
 use Doctrine\ORM\EntityManagerInterface;
 
-final readonly class DownloadTaskManager
+final readonly class DownloadTaskManager implements DownloadTaskManagerInterface
 {
-    public function __construct(private EntityManagerInterface $em)
-    {
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+    ) {
     }
 
+    #[\Override]
     /**
      * Atomically claims a queued task for processing. There is no wrapping transaction
      * (messenger has no doctrine_transaction middleware on purpose), so the UPDATE
@@ -22,7 +24,7 @@ final readonly class DownloadTaskManager
      */
     public function claimProcessing(int $taskId): bool
     {
-        $affected = (int) $this->em->getConnection()->executeStatement(
+        $affected = (int) $this->entityManager->getConnection()->executeStatement(
             'UPDATE download_task SET status = :processing WHERE id = :id AND status = :queued',
             [
                 'id'         => $taskId,
@@ -34,11 +36,13 @@ final readonly class DownloadTaskManager
         return $affected > 0;
     }
 
+    #[\Override]
     public function markSuccess(int $taskId): void
     {
         $this->markStatus($taskId, DownloadTask::STATUS_SUCCESS);
     }
 
+    #[\Override]
     public function markError(int $taskId): void
     {
         $this->markStatus($taskId, DownloadTask::STATUS_ERROR);
@@ -47,13 +51,13 @@ final readonly class DownloadTaskManager
     private function markStatus(int $taskId, string $status): void
     {
         /** @var DownloadTask|null $task */
-        $task = $this->em->find(DownloadTask::class, $taskId);
+        $task = $this->entityManager->find(DownloadTask::class, $taskId);
 
-        if (null === $task) {
+        if (!$task instanceof DownloadTask) {
             return;
         }
 
         $task->setStatus($status);
-        $this->em->flush();
+        $this->entityManager->flush();
     }
 }

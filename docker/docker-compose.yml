@@ -22,6 +22,7 @@ services:
             args:
                 XDEBUG_INSTALL: ${XDEBUG_INSTALL:-false}
         container_name: ${PROJECT_NAME}-php-fpm
+        restart: always
         env_file:
             - .env
         depends_on:
@@ -75,8 +76,6 @@ services:
             - internal
 
 volumes:
-    pg-data:
-        driver: local
     redis-data:
         driver: local
 

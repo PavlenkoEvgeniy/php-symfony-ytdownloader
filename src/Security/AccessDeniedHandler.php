@@ -10,18 +10,20 @@ use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Http\Authorization\AccessDeniedHandlerInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
-readonly class AccessDeniedHandler implements AccessDeniedHandlerInterface
+final readonly class AccessDeniedHandler implements AccessDeniedHandlerInterface
 {
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
+        private ?TranslatorInterface $translator = null,
     ) {
     }
 
     #[\Override]
-    public function handle(Request $request, AccessDeniedException $accessDeniedException): ?RedirectResponse
+    public function handle(Request $request, AccessDeniedException $accessDeniedException): RedirectResponse
     {
-        $this->addFlash($request, 'warning', 'Access denied.');
+        $this->addFlash($request, 'warning', $this->translator?->trans('security.access_denied') ?? 'Access denied.');
 
         return new RedirectResponse($this->urlGenerator->generate('ui_download_index'));
     }

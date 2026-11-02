@@ -17,13 +17,16 @@ use Symfony\Component\Security\Http\SecurityRequestAttributes;
 
 final class UserAuthenticatorTest extends TestCase
 {
+    /**
+     * Verifies authentication stores the normalized username and returns a passport.
+     */
     public function testAuthenticateStoresLastUsernameAndReturnsPassport(): void
     {
-        $urlGenerator  = $this->createMock(UrlGeneratorInterface::class);
+        $urlGenerator  = $this->createStub(UrlGeneratorInterface::class);
         $authenticator = new UserAuthenticator($urlGenerator);
 
         $request = Request::create('/', Request::METHOD_POST, [
-            'email'       => 'USER@Example.TLD',
+            'email'       => 'USER@Test.LOCAL',
             'password'    => 'secret',
             '_csrf_token' => 'csrf-token',
         ]);
@@ -32,10 +35,13 @@ final class UserAuthenticatorTest extends TestCase
         $passport = $authenticator->authenticate($request);
 
         $userBadge = $passport->getBadge(UserBadge::class);
-        $this->assertSame('user@example.tld', $userBadge->getUserIdentifier());
-        $this->assertSame('user@example.tld', $request->getSession()->get(SecurityRequestAttributes::LAST_USERNAME));
+        $this->assertSame('user@test.local', $userBadge->getUserIdentifier());
+        $this->assertSame('user@test.local', $request->getSession()->get(SecurityRequestAttributes::LAST_USERNAME));
     }
 
+    /**
+     * Verifies a stored target path wins over the default route.
+     */
     public function testOnAuthenticationSuccessRedirectsToTargetPath(): void
     {
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
@@ -49,7 +55,7 @@ final class UserAuthenticatorTest extends TestCase
         $request->setSession(new Session(new MockArraySessionStorage()));
         $request->getSession()->set('_security.main.target_path', '/target');
 
-        $token = $this->createMock(TokenInterface::class);
+        $token = $this->createStub(TokenInterface::class);
 
         $response = $authenticator->onAuthenticationSuccess($request, $token, 'main');
 
@@ -57,6 +63,9 @@ final class UserAuthenticatorTest extends TestCase
         $this->assertSame('/target', $response->headers->get('location'));
     }
 
+    /**
+     * Verifies authentication without a target path redirects to downloads.
+     */
     public function testOnAuthenticationSuccessRedirectsToDefault(): void
     {
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);
@@ -71,7 +80,7 @@ final class UserAuthenticatorTest extends TestCase
         $request = new Request();
         $request->setSession(new Session(new MockArraySessionStorage()));
 
-        $token = $this->createMock(TokenInterface::class);
+        $token = $this->createStub(TokenInterface::class);
 
         $response = $authenticator->onAuthenticationSuccess($request, $token, 'main');
 
@@ -79,6 +88,9 @@ final class UserAuthenticatorTest extends TestCase
         $this->assertSame('/ui/download', $response->headers->get('location'));
     }
 
+    /**
+     * Verifies the authenticator redirects to the login route.
+     */
     public function testGetLoginUrlUsesLoginRoute(): void
     {
         $urlGenerator = $this->createMock(UrlGeneratorInterface::class);

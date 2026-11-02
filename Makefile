@@ -50,19 +50,12 @@ ci-cd-init: composer-install generate-jwt-keypair db-setup cache-clear
 build:
 	docker compose -f docker/docker-compose.yml up -d --build
 
-# Pull the prebuilt php-fpm image instead of building it on the host — used by
-# the production deploy (see docs/adr/0005-prod-pulls-prebuilt-ci-image.md).
-# The compose files come from DOCKER_COMPOSE_FILES; prod additionally sets
-# PHP_FPM_IMAGE_TAG (the compose override refuses to run without it).
+# Pulls the prebuilt image for production (ADR-0005); PHP_FPM_IMAGE_TAG is required.
 pull:
 	docker compose $(foreach file,$(DOCKER_COMPOSE_FILES),-f $(file)) pull php-fpm
 
-# Workers start with the container (supervisord is PID 1, see ADR-0003),
-# so no manual supervisor start is needed anywhere. Cache operations replace
-# var/cache/ under the running workers and kill them mid-message (a delivered
-# message is never redelivered, so the task stays queued forever), which is why
-# restart stops the workers around cache:clear. A one-shot queue reset runs at
-# container start (see conf.d/queue-reset-once.conf).
+# Workers start with the container (ADR-0003); stop them around cache:clear,
+# because a killed worker never redelivers its message.
 restart: docker-compose-down docker-compose-up worker-stop cache-clear worker-start
 
 stop: docker-compose-down
@@ -74,9 +67,7 @@ supervisor-restart:
 	docker exec ytdownloader-php-fpm supervisorctl reread
 	docker exec ytdownloader-php-fpm supervisorctl update
 
-# Only safe while the stack is up; used by restart to keep workers away from
-# cache:clear (see the restart comment). The wait covers the gap between
-# "docker compose up -d" returning and supervisord creating its socket.
+# Waits for supervisord, then stops workers so cache:clear cannot kill them.
 worker-stop:
 	docker exec ytdownloader-php-fpm sh -c 'for i in $$(seq 1 30); do supervisorctl stop messenger-consume:* >/dev/null 2>&1 && exit 0; sleep 1; done; supervisorctl status'
 
@@ -142,18 +133,14 @@ docker-php:
 docker-pgsql:
 	docker exec -it ytdownloader-pgsql bash
 
-# php-fpm serves requests as www-data and must be able to write lazy caches
-# (EasyAdmin routes, asset_mapper). The root rm drops any root-owned cache left
-# by composer scripts or a previous run; the rebuild runs as www-data.
+# Rebuild cache as www-data; the root rm drops caches left by root processes.
 cache-clear:
 	docker exec ytdownloader-php-fpm sh -c 'for i in $$(seq 1 60); do supervisorctl status queue-reset-once 2>/dev/null | grep -Eq "RUNNING|STARTING" || exit 0; sleep 1; done; exit 1'
 	docker exec ytdownloader-php-fpm rm -rf var/cache
 	docker exec -u www-data -e HOME=/tmp ytdownloader-php-fpm php bin/console cache:clear
 	docker exec ytdownloader-php-fpm chown -R www-data:www-data var/cache
 
-# Manual escape hatch: wipes the whole cache directory. Run it only while the
-# stack is stopped — deleting the compiled container under live workers kills
-# them mid-message (see the restart comment).
+# Deletes var/cache; safe only while the stack is stopped (see restart).
 cache-purge:
 	rm -rf ./var/cache/
 

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\RateLimiter;
 
 #[\Attribute(\Attribute::TARGET_CLASS | \Attribute::TARGET_METHOD)]
-final class RateLimitAttribute
+final readonly class RateLimitAttribute
 {
     public function __construct(
-        private readonly int $limit = 60,
-        private readonly int $interval = 60,
+        private int $limit = 60,
+        private int $interval = 60,
     ) {
     }
 

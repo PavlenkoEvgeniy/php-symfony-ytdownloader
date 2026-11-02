@@ -26,10 +26,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: checks
-    # appleboy/ssh-action `envs` only forwards variables that already exist in
-    # the runner env: GITHUB_SHA is built-in, but a secret must be mapped to an
-    # env var explicitly, otherwise the script sees it empty ("password is
-    # empty" from docker login).
+    # GHCR_TOKEN must be mapped explicitly; ssh-action forwards only existing env vars.
     env:
       GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
 
@@ -43,45 +40,32 @@ jobs:
           host: ${{ secrets.SSH_VPS_HOST }}
           username: ${{ secrets.SSH_VPS_USERNAME }}
           password: ${{ secrets.SSH_VPS_PASSWORD }}
-          # Fail fast: without it the script keeps running after a failed step
-          # and the action still reports success on a half-deployed stack.
+          # Fail fast instead of reporting a half-deployed stack as success.
           script_stop: true
-          # The image pull replaces the local build, so deploys take minutes,
-          # not the 10m+ that used to trip the default command timeout.
+          # Image pull replaces the local build; allow a few minutes.
           command_timeout: 20m
           # GHCR_TOKEN is provided by the job-level env mapping above.
           envs: GHCR_TOKEN
           script: |
             cd ${{ secrets.SSH_PROJECT_PATH }}
             export DOCKER_COMPOSE_FILES="docker/docker-compose.yml docker/docker-compose.prod.yml"
-            # On workflow_dispatch GITHUB_SHA is the sha of the branch the run
-            # was dispatched on, not of the deployed tag — resolve the tag and
-            # its commit explicitly.
+            # workflow_dispatch: GITHUB_SHA is the branch head, so resolve the tag commit.
             export DEPLOY_TAG="${{ inputs.tag || github.ref_name }}"
             git stash
             git fetch origin --tags --force
-            # Checkout runs before make stop: the new Makefile needs
-            # docker/docker-compose.prod.yml, which the previous checkout may
-            # not have (a stopped stack is not required for git operations).
+            # Checkout before stop: the new Makefile may need the prod compose file.
             git checkout --detach --force "$DEPLOY_TAG"
-            # The image tag must be the sha of the checked-out commit (the one
-            # lint-and-test built), never the triggering run's GITHUB_SHA.
+            # Image tag must match the checked-out commit that lint-and-test built.
             export PHP_FPM_IMAGE_TAG="ci-$(git rev-parse HEAD)"
             echo "$GHCR_TOKEN" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-            # Pull while the old stack is still running, so downtime is limited
-            # to the stop -> restart window.
+            # Pull while the old stack runs to limit downtime.
             make pull
-            # Composer and migrations run in the old container, but it may have
-            # been stopped manually (or removed by a failed deploy). Start the
-            # stack first so those steps always have a container, and wait for
-            # a cold Postgres before migrating.
+            # Start a stopped stack before composer/migrations; wait for Postgres.
             if ! docker inspect -f '{{.State.Running}}' ytdownloader-php-fpm 2>/dev/null | grep -q true; then
               make docker-compose-up
               docker exec ytdownloader-pgsql sh -c 'for i in $(seq 1 30); do pg_isready -U "$POSTGRES_USER" >/dev/null 2>&1 && exit 0; sleep 1; done; exit 1'
             fi
-            # The app code is bind-mounted into php-fpm, so install/migrate can
-            # run in the still-running old container: workers then start last,
-            # already with the new code, vendor and schema.
+            # Install/migrate in the old container so workers start with the new code.
             make composer-install
             docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate --no-interaction
             make stop
