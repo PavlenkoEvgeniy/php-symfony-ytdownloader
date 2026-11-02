@@ -95,6 +95,23 @@ final class SourceFormTest extends TypeTestCase
     }
 
     /**
+     * Verifies filenames with path separators are rejected.
+     */
+    public function testFormRejectsPathTraversalAttempts(): void
+    {
+        foreach (['../escape.mp4', '..\\escape.mp4', '..'] as $filename) {
+            $form = $this->factory->create(SourceForm::class, new Source());
+
+            $form->submit([
+                'filename' => $filename,
+                'filepath' => '/var/downloads',
+            ]);
+
+            $this->assertFalse($form->isValid(), $filename);
+        }
+    }
+
+    /**
      * Verifies the description is optional.
      */
     public function testDescriptionIsOptional(): void

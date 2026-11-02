@@ -35,6 +35,18 @@ class DownloadTask
     #[ORM\Column(name: 'status', type: Types::STRING, length: 32)]
     private ?string $status = self::STATUS_QUEUED;
 
+    #[ORM\Column(name: 'error_message', type: Types::TEXT, nullable: true)]
+    private ?string $errorMessage = null;
+
+    #[ORM\Column(name: 'attempts', type: Types::INTEGER, options: ['default' => 0])]
+    private int $attempts = 0;
+
+    #[ORM\Column(name: 'started_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $startedAt = null;
+
+    #[ORM\Column(name: 'finished_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $finishedAt = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -72,6 +84,54 @@ class DownloadTask
     public function setStatus(string $status): static
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    public function getErrorMessage(): ?string
+    {
+        return $this->errorMessage;
+    }
+
+    public function setErrorMessage(?string $errorMessage): static
+    {
+        $this->errorMessage = $errorMessage;
+
+        return $this;
+    }
+
+    public function getAttempts(): int
+    {
+        return $this->attempts;
+    }
+
+    public function setAttempts(int $attempts): static
+    {
+        $this->attempts = $attempts;
+
+        return $this;
+    }
+
+    public function getStartedAt(): ?\DateTimeImmutable
+    {
+        return $this->startedAt;
+    }
+
+    public function setStartedAt(?\DateTimeImmutable $startedAt): static
+    {
+        $this->startedAt = $startedAt;
+
+        return $this;
+    }
+
+    public function getFinishedAt(): ?\DateTimeImmutable
+    {
+        return $this->finishedAt;
+    }
+
+    public function setFinishedAt(?\DateTimeImmutable $finishedAt): static
+    {
+        $this->finishedAt = $finishedAt;
 
         return $this;
     }

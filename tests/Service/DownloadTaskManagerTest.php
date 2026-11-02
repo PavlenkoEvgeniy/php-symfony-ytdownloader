@@ -21,7 +21,8 @@ final class DownloadTaskManagerTest extends TestCase
         $connection->expects($this->once())
             ->method('executeStatement')
             ->with(
-                'UPDATE download_task SET status = :processing WHERE id = :id AND status = :queued',
+                'UPDATE download_task SET status = :processing, started_at = NOW(), attempts = attempts + 1
+             WHERE id = :id AND status = :queued',
                 [
                     'id'         => 1,
                     'processing' => DownloadTask::STATUS_PROCESSING,
@@ -76,9 +77,11 @@ final class DownloadTaskManagerTest extends TestCase
         $em = $this->createStub(EntityManagerInterface::class);
         $em->method('find')->willReturn($task);
 
-        new DownloadTaskManager($em)->markError(1);
+        new DownloadTaskManager($em)->markError(1, 'download failed');
 
         $this->assertSame(DownloadTask::STATUS_ERROR, $task->getStatus());
+        $this->assertSame('download failed', $task->getErrorMessage());
+        $this->assertInstanceOf(\DateTimeImmutable::class, $task->getFinishedAt());
     }
 
     /**

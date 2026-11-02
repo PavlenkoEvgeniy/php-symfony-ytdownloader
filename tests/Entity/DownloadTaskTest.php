@@ -21,6 +21,10 @@ final class DownloadTaskTest extends TestCase
         $this->assertNull($task->getUrl());
         $this->assertNull($task->getQuality());
         $this->assertSame(DownloadTask::STATUS_QUEUED, $task->getStatus());
+        $this->assertNull($task->getErrorMessage());
+        $this->assertSame(0, $task->getAttempts());
+        $this->assertNull($task->getStartedAt());
+        $this->assertNull($task->getFinishedAt());
     }
 
     /**
@@ -33,6 +37,10 @@ final class DownloadTaskTest extends TestCase
         $this->assertSame($task, $task->setUrl('https://test.local'));
         $this->assertSame($task, $task->setQuality('best'));
         $this->assertSame($task, $task->setStatus(DownloadTask::STATUS_PROCESSING));
+        $this->assertSame($task, $task->setErrorMessage('error'));
+        $this->assertSame($task, $task->setAttempts(2));
+        $this->assertSame($task, $task->setStartedAt(new \DateTimeImmutable()));
+        $this->assertSame($task, $task->setFinishedAt(new \DateTimeImmutable()));
     }
 
     /**
@@ -50,6 +58,10 @@ final class DownloadTaskTest extends TestCase
         $this->assertSame('https://test.local', $task->getUrl());
         $this->assertSame('moderate', $task->getQuality());
         $this->assertSame(DownloadTask::STATUS_SUCCESS, $task->getStatus());
+        $this->assertNull($task->getErrorMessage());
+        $this->assertSame(0, $task->getAttempts());
+        $this->assertNull($task->getStartedAt());
+        $this->assertNull($task->getFinishedAt());
     }
 
     /**

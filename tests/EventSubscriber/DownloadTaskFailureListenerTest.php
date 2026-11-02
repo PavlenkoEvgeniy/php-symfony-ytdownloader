@@ -41,6 +41,8 @@ final class DownloadTaskFailureListenerTest extends TestCase
         ($listener)($event);
 
         $this->assertSame(DownloadTask::STATUS_ERROR, $task->getStatus());
+        $this->assertSame('download failed', $task->getErrorMessage());
+        $this->assertInstanceOf(\DateTimeImmutable::class, $task->getFinishedAt());
     }
 
     /**

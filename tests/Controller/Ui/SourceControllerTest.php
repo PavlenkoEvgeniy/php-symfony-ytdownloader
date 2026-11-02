@@ -133,6 +133,16 @@ final class SourceControllerTest extends WebTestCase
     }
 
     /**
+     * Verifies downloading a file requires authentication.
+     */
+    public function testDownloadRequiresAuthentication(): void
+    {
+        $this->client->request(Request::METHOD_GET, '/ui/source/download/1');
+
+        $this->assertResponseRedirects('/login');
+    }
+
+    /**
      * Verifies downloading a source returns the file as an attachment.
      */
     public function testDownloadReturnsFile(): void
@@ -432,12 +442,15 @@ final class SourceControllerTest extends WebTestCase
      */
     public function testEditRedirectsWhenRenameFails(): void
     {
-        $source = $this->createSourceWithFile('edit-rename-fail.mp4');
+        $source     = $this->createSourceWithFile('edit-rename-fail.mp4');
+        $targetPath = \sprintf('%s/rename-target.mp4', $this->downloadsDir);
+        \mkdir($targetPath);
+
         $this->loginAsAdmin();
 
         $crawler = $this->client->request(Request::METHOD_GET, \sprintf('/ui/source/%d/edit', $source->getId()));
         $form    = $crawler->filter('form')->form([
-            'source_form[filename]' => 'missing-dir/renamed.mp4',
+            'source_form[filename]' => 'rename-target.mp4',
         ]);
 
         \set_error_handler(static function (int $severity, string $message): bool {
@@ -452,6 +465,7 @@ final class SourceControllerTest extends WebTestCase
             $this->client->submit($form);
         } finally {
             \restore_error_handler();
+            @\rmdir($targetPath);
         }
 
         $this->assertResponseRedirects('/ui/source');
