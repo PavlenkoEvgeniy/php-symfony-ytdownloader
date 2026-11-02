@@ -264,7 +264,6 @@ final class RefreshTokenManagerTest extends TestCase
      */
     private function createMockToken(): mixed
     {
-        /** @phpstan-ignore-next-line */
         return $this->createMock(RefreshToken::class);
     }
 }
