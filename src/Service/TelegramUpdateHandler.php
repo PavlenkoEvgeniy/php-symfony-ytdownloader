@@ -80,7 +80,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             return;
         }
 
-        $this->telegramClient->sendMessage($chatId, 'Send me an https:// link to a video.', $this->mainMenu());
+        $this->telegramClient->sendMessage($chatId, 'Send me an https:// link to a video.', $this->hiddenKeyboard());
     }
 
     private function parseCommand(string $text): string
@@ -110,7 +110,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $user = $this->userRepository->findOneByTelegramUserId($userId);
 
         if ($user instanceof User && $user->getIsEnabled()) {
-            $this->telegramClient->sendMessage($chatId, $this->linkedWelcome($user), $this->mainMenu());
+            $this->telegramClient->sendMessage($chatId, $this->linkedWelcome($user), $this->hiddenKeyboard());
 
             return;
         }
@@ -118,7 +118,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $this->telegramClient->sendMessage(
             $chatId,
             "Welcome to YT Downloader.\n\nLink your account first with /login.",
-            $this->mainMenu(),
+            $this->hiddenKeyboard(),
         );
     }
 
@@ -133,7 +133,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             $this->telegramClient->sendMessage(
                 $chatId,
                 \sprintf('Already linked as %s. Use /logout to unlink.', $this->telegramLabel($existing)),
-                $this->mainMenu(),
+                $this->hiddenKeyboard(),
             );
 
             return;
@@ -153,7 +153,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $this->telegramClient->sendMessage(
             $chatId,
             \sprintf("Open this link to sign in and link your account:\n%s\n\nThe link expires in 10 minutes.", $url),
-            $this->mainMenu(),
+            $this->hiddenKeyboard(),
         );
     }
 
@@ -171,7 +171,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $user->unlinkTelegram();
         $this->entityManager->flush();
 
-        $this->telegramClient->sendMessage($chatId, 'Unlinked. Queued downloads were cancelled.', $this->mainMenu());
+        $this->telegramClient->sendMessage($chatId, 'Unlinked. Queued downloads were cancelled.', $this->hiddenKeyboard());
     }
 
     private function handleCancel(int $chatId, int $userId): void
@@ -188,7 +188,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $this->telegramClient->sendMessage(
             $chatId,
             $cancelled > 0 ? \sprintf('Cancelled %d queued download(s).', $cancelled) : 'Nothing to cancel.',
-            $this->mainMenu(),
+            $this->hiddenKeyboard(),
         );
     }
 
@@ -203,7 +203,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $tasks = $this->downloadTaskRepository->findActiveByUser($user);
 
         if ([] === $tasks) {
-            $this->telegramClient->sendMessage($chatId, 'No active downloads.', $this->mainMenu());
+            $this->telegramClient->sendMessage($chatId, 'No active downloads.', $this->hiddenKeyboard());
 
             return;
         }
@@ -220,7 +220,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             );
         }
 
-        $this->telegramClient->sendMessage($chatId, "Active downloads:\n" . \implode("\n", $lines), $this->mainMenu());
+        $this->telegramClient->sendMessage($chatId, "Active downloads:\n" . \implode("\n", $lines), $this->hiddenKeyboard());
     }
 
     private function sendHelp(int $chatId): void
@@ -228,7 +228,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $this->telegramClient->sendMessage(
             $chatId,
             "Commands:\n/start — start\n/login — link your account\n/logout — unlink\n/cancel — cancel queued downloads\n/status — active downloads\n/help — this message\n\nOr send an https:// video link.",
-            $this->mainMenu(),
+            $this->hiddenKeyboard(),
         );
     }
 
@@ -241,13 +241,13 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         }
 
         if (\strlen($url) > 512) {
-            $this->telegramClient->sendMessage($chatId, 'The link is too long.', $this->mainMenu());
+            $this->telegramClient->sendMessage($chatId, 'The link is too long.', $this->hiddenKeyboard());
 
             return;
         }
 
         if ($this->downloadTaskRepository->findActiveByUserAndUrl($user, $url) instanceof DownloadTask) {
-            $this->telegramClient->sendMessage($chatId, 'This link is already queued.', $this->mainMenu());
+            $this->telegramClient->sendMessage($chatId, 'This link is already queued.', $this->hiddenKeyboard());
 
             return;
         }
@@ -256,7 +256,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             $this->telegramClient->sendMessage(
                 $chatId,
                 \sprintf('You already have %d downloads in progress.', self::MAX_ACTIVE_TASKS),
-                $this->mainMenu(),
+                $this->hiddenKeyboard(),
             );
 
             return;
@@ -268,7 +268,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             $probe = $this->probe->probe($url);
         } catch (\Throwable $exception) {
             $this->logger->info('Telegram link probe failed', ['url' => $url, 'error' => $exception->getMessage()]);
-            $this->telegramClient->sendMessage($chatId, 'Could not read this link.', $this->mainMenu());
+            $this->telegramClient->sendMessage($chatId, 'Could not read this link.', $this->hiddenKeyboard());
 
             return;
         }
@@ -277,7 +277,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             $this->telegramClient->sendMessage(
                 $chatId,
                 'Playlists are not supported. Send a link to a single video.',
-                $this->mainMenu(),
+                $this->hiddenKeyboard(),
             );
 
             return;
@@ -396,13 +396,13 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $user = $this->userRepository->findOneByTelegramUserId($userId);
 
         if (!$user instanceof User) {
-            $this->telegramClient->sendMessage($chatId, 'Your Telegram account is not linked. Use /login to link it.', $this->mainMenu());
+            $this->telegramClient->sendMessage($chatId, 'Your Telegram account is not linked. Use /login to link it.', $this->hiddenKeyboard());
 
             return null;
         }
 
         if (!$user->getIsEnabled()) {
-            $this->telegramClient->sendMessage($chatId, 'This account is disabled.', $this->mainMenu());
+            $this->telegramClient->sendMessage($chatId, 'This account is disabled.', $this->hiddenKeyboard());
 
             return null;
         }
@@ -437,22 +437,13 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
     }
 
     /**
-     * Collapsible reply keyboard shown under the input field.
+     * Removes the reply keyboard so it never stays expanded over the chat.
      *
      * @return array<string, mixed>
      */
-    private function mainMenu(): array
+    private function hiddenKeyboard(): array
     {
-        return [
-            'keyboard' => [
-                [['text' => '/start'], ['text' => '/login']],
-                [['text' => '/logout'], ['text' => '/cancel']],
-                [['text' => '/status'], ['text' => '/help']],
-            ],
-            'resize_keyboard'         => true,
-            'is_persistent'           => false,
-            'input_field_placeholder' => 'Send a video link or choose a command',
-        ];
+        return ['remove_keyboard' => true];
     }
 
     private function linkTokenKey(string $token): string

@@ -18,9 +18,9 @@ use Psr\Log\LoggerInterface;
 final class TelegramUpdateHandlerTest extends TestCase
 {
     /**
-     * Verifies /help sends the collapsible command menu.
+     * Verifies /help lists the commands and keeps the reply keyboard hidden.
      */
-    public function testHelpSendsMainMenu(): void
+    public function testHelpRemovesKeyboard(): void
     {
         $client = $this->createMock(TelegramClientInterface::class);
         $client->expects($this->once())
@@ -28,20 +28,7 @@ final class TelegramUpdateHandlerTest extends TestCase
             ->with(
                 42,
                 $this->stringContains('/start'),
-                $this->callback(static function (array $markup): bool {
-                    $labels = \array_map(
-                        static fn (array $row): array => \array_map(static fn (array $button): string => $button['text'], $row),
-                        $markup['keyboard'],
-                    );
-
-                    return [
-                        ['/start', '/login'],
-                        ['/logout', '/cancel'],
-                        ['/status', '/help'],
-                    ] === $labels
-                        && true === $markup['resize_keyboard']
-                        && false === $markup['is_persistent'];
-                }),
+                ['remove_keyboard' => true],
             );
 
         $handler = new TelegramUpdateHandler(
