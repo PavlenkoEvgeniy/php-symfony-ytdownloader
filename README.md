@@ -18,6 +18,10 @@
 
 <img src="docs/preview/1.jpg" alt="Login page" height="300"> <img src="docs/preview/2.jpg" alt="Index page" height="300"> <img src="docs/preview/3.jpg" alt="Downloads page" height="300"> <img src="docs/preview/4.jpg" alt="Admin dashboard" height="300"> <img src="docs/preview/5.jpg" alt="Admin menu" height="300"> <img src="docs/preview/6.jpg" alt="Admin menu" height="300">
 
+**📱 Mobile (dark)**:
+
+<img src="docs/preview/mobile-login.jpg" alt="Mobile login" height="300"> <img src="docs/preview/mobile-downloads.jpg" alt="Mobile downloads" height="300"> <img src="docs/preview/mobile-library.jpg" alt="Mobile library" height="300"> <img src="docs/preview/mobile-profile.jpg" alt="Mobile profile" height="300">
+
 ## ⚠️ Legal Disclaimer
 
 This program is strictly for lawful personal use. You must not use it to
