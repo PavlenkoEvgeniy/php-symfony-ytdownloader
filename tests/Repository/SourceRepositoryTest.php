@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Repository;
 
+use App\Entity\DownloadTask;
 use App\Entity\Source;
 use App\Repository\SourceRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -79,5 +80,46 @@ final class SourceRepositoryTest extends KernelTestCase
         $this->entityManager->flush();
 
         $this->assertContains($source, $this->repository->findAllSources());
+    }
+
+    /**
+     * Verifies old sources are returned, fresh ones are not, and sources of
+     * active tasks are skipped unless explicitly requested.
+     */
+    public function testFindOlderThanSkipsFreshAndActiveSources(): void
+    {
+        $old = (new Source())->setFilename('repo-old.mp4')
+            ->setFilepath('/tmp')
+            ->setSize(1.0)
+            ->setCreatedAt(new \DateTime('-2 days'))
+        ;
+
+        $fresh = (new Source())->setFilename('repo-fresh.mp4')
+            ->setFilepath('/tmp')
+            ->setSize(1.0)
+        ;
+
+        $task = (new DownloadTask())->setUrl('https://test.local')->setQuality('best');
+
+        $active = (new Source())->setFilename('repo-active.mp4')
+            ->setFilepath('/tmp')
+            ->setSize(1.0)
+            ->setCreatedAt(new \DateTime('-2 days'))
+            ->setDownloadTask($task)
+        ;
+
+        $this->entityManager->persist($task);
+        $this->entityManager->persist($old);
+        $this->entityManager->persist($fresh);
+        $this->entityManager->persist($active);
+        $this->entityManager->flush();
+
+        $cutoff = new \DateTimeImmutable('-1 day');
+        $found  = $this->repository->findOlderThan($cutoff);
+
+        $this->assertContains($old, $found);
+        $this->assertNotContains($fresh, $found);
+        $this->assertNotContains($active, $found);
+        $this->assertContains($active, $this->repository->findOlderThan($cutoff, false));
     }
 }

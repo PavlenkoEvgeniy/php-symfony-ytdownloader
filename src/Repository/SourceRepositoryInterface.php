@@ -19,6 +19,11 @@ interface SourceRepositoryInterface
     /**
      * @return Source[]
      */
+    public function findOlderThan(\DateTimeImmutable $cutoff, bool $skipActiveTasks = true): array;
+
+    /**
+     * @return Source[]
+     */
     public function findAllSources(): array;
 
     /**

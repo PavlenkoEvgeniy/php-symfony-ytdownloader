@@ -21,4 +21,5 @@ enum AuditAction: string
     case ORPHANS_PRUNE            = 'admin.orphans_pruned';
     case TELEGRAM_DELIVERED       = 'telegram.delivered';
     case TELEGRAM_DELIVERY_FAILED = 'telegram.delivery_failed';
+    case LIBRARY_PRUNE            = 'admin.library_pruned';
 }

@@ -7,6 +7,7 @@ namespace App\Repository;
 use App\Entity\DownloadTask;
 use App\Entity\Source;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -47,6 +48,38 @@ final class SourceRepository extends ServiceEntityRepository implements SourceRe
             ->getQuery()
             ->getResult()
         ;
+
+        return $sources;
+    }
+
+    #[\Override]
+    /**
+     * Sources older than the cutoff; sources of active tasks are skipped so a
+     * running download cannot lose a file the worker may still need.
+     *
+     * @return Source[]
+     */
+    public function findOlderThan(\DateTimeImmutable $cutoff, bool $skipActiveTasks = true): array
+    {
+        $queryBuilder = $this->createQueryBuilder('s')
+            ->where('s.createdAt < :cutoff')
+            ->setParameter('cutoff', $cutoff)
+            ->orderBy('s.createdAt')
+        ;
+
+        if ($skipActiveTasks) {
+            $queryBuilder
+                ->leftJoin('s.downloadTask', 't')
+                ->andWhere('t IS NULL OR t.status NOT IN (:activeStatuses)')
+                ->setParameter('activeStatuses', [
+                    DownloadTask::STATUS_QUEUED,
+                    DownloadTask::STATUS_PROCESSING,
+                ], ArrayParameterType::STRING)
+            ;
+        }
+
+        /** @var Source[] $sources */
+        $sources = $queryBuilder->getQuery()->getResult();
 
         return $sources;
     }

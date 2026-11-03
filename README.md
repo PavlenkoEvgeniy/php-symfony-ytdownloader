@@ -121,6 +121,18 @@ nginx port is not published in production (locally it stays on loopback).
 Certificates and ACME account state persist in the `caddy-data` and `caddy-config`
 volumes, so `make restart` does not reissue them.
 
+## 🗂️ Library retention
+
+The `library-prune` supervisor program runs `app:library:prune` hourly in the
+php-fpm container. Files and their `Source` rows older than
+`LIBRARY_RETENTION_DAYS` (1 by default) are deleted; the lifetime Total
+Downloaded counter is not reduced. Files whose task is still `queued` or
+`processing` are skipped. Dry run:
+
+```bash
+docker exec ytdownloader-php-fpm php bin/console app:library:prune --dry-run
+```
+
 ## 🤖 Telegram bot
 
 1. **Initialize**:

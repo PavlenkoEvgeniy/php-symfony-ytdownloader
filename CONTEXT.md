@@ -31,6 +31,12 @@ _Avoid_: temp file, garbage, junk (not every orphan is temporary, and not every 
 Deleting orphan files. Purge deletes tasks, Prune deletes files; Reset resumes tasks.
 _Avoid_: clean, clear (prune is deletion of files, not a general cleanup)
 
+**Library Retention**:
+The automatic deletion of library files after a fixed period (1 day by default).
+Deleting a file also deletes its Source; the Total Downloaded counter is not
+reduced, and files of queued or processing tasks are skipped.
+_Avoid_: cleanup, purge (Purge deletes queued tasks), prune (Prune deletes orphan files)
+
 ### Admin Panel
 
 **Admin Panel**:

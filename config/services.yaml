@@ -35,6 +35,8 @@ services:
         alias: App\Service\QueueStatsService
     App\Service\OrphanFilePrunerInterface:
         alias: App\Service\OrphanFilePruner
+    App\Service\LibraryPrunerInterface:
+        alias: App\Service\LibraryPruner
     App\Service\QueuePurgeServiceInterface:
         alias: App\Service\QueuePurgeService
     App\Service\QueueResetServiceInterface:
