@@ -1,0 +1,8 @@
+{
+	admin off
+}
+
+{$APP_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy webserver:80
+}

@@ -99,11 +99,27 @@ make build
 make restart
 ```
 
+## 🌐 Domain and HTTPS
+
+Production terminates TLS in the `caddy` service from `docker/docker-compose.prod.yml`
+(ADR-0007). Caddy obtains and renews a Let's Encrypt certificate for `APP_DOMAIN`
+and proxies requests to the application nginx on the private Docker network; the
+nginx port is bound to loopback only.
+
+- `APP_DOMAIN` comes from the `APP_DOMAIN` GitHub secret during deploy (or from
+  `docker/.env` when running the prod compose file by hand).
+- Ports **80** and **443** must be open on the VPS.
+- `TELEGRAM_HOST_URL` must be `https://<APP_DOMAIN>`.
+- Check: `curl -I https://<APP_DOMAIN>/health`.
+
+Certificates and ACME account state persist in the `caddy-data` and `caddy-config`
+volumes, so `make restart` does not reissue them.
+
 ## 🤖 Telegram bot
 1. **Initialize**:
       - Enable the bot in `.env.local`: `TELEGRAM_BOT_ENABLED=true`
       - Set your bot token: `TELEGRAM_BOT_TOKEN=change_me_please`
-      - Set the public host URL: `TELEGRAM_HOST_URL=https://host.tld`
+      - Set the public host URL: `TELEGRAM_HOST_URL=https://<APP_DOMAIN>`
       - Register the webhook:
          ```bash
          make telegram-bot-hook

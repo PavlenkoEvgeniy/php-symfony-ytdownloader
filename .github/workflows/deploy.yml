@@ -29,9 +29,11 @@ jobs:
     # The release step below creates a GitHub release with the workflow token.
     permissions:
       contents: write
-    # GHCR_TOKEN must be mapped explicitly; ssh-action forwards only existing env vars.
+    # GHCR_TOKEN and APP_DOMAIN must be mapped explicitly; ssh-action forwards only
+    # existing env vars. APP_DOMAIN stays out of the repository (public hostname).
     env:
       GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+      APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
 
     steps:
       - name: Checkout code
@@ -47,11 +49,13 @@ jobs:
           script_stop: true
           # Image pull replaces the local build; allow a few minutes.
           command_timeout: 20m
-          # GHCR_TOKEN is provided by the job-level env mapping above.
-          envs: GHCR_TOKEN
+          # GHCR_TOKEN and APP_DOMAIN are provided by the job-level env mapping above.
+          envs: GHCR_TOKEN,APP_DOMAIN
           script: |
             cd ${{ secrets.SSH_PROJECT_PATH }}
             export DOCKER_COMPOSE_FILES="docker/docker-compose.yml docker/docker-compose.prod.yml"
+            # Caddy needs the public hostname; Docker Compose takes it from the shell.
+            export APP_DOMAIN="${APP_DOMAIN:?APP_DOMAIN secret is not set}"
             # workflow_dispatch: GITHUB_SHA is the branch head, so resolve the tag commit.
             export DEPLOY_TAG="${{ inputs.tag || github.ref_name }}"
             git stash

@@ -30,6 +30,16 @@ set_env_value() {
     fi
 }
 
+ensure_env_value() {
+    local key="$1"
+    local value="$2"
+
+    if ! grep -q "^${key}=" "${DOCKER_ENV}"; then
+        echo "${key}=${value}" >> "${DOCKER_ENV}"
+        log "Added ${key} to docker/.env"
+    fi
+}
+
 ensure_docker_env() {
     if [ ! -f "${DOCKER_ENV_EXAMPLE}" ]; then
         log "Missing docker/.env.example; cannot generate docker/.env automatically."
@@ -44,6 +54,8 @@ ensure_docker_env() {
     else
         log "docker/.env already exists; keeping current values"
     fi
+
+    ensure_env_value "APP_DOMAIN" "${APP_DOMAIN:-change_me_please.tld}"
 }
 
 load_docker_env() {
@@ -88,7 +100,7 @@ DATABASE_URL="postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_INTERNA
 REDIS="redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_INTERNAL_PORT}"
 TELEGRAM_BOT_ENABLED=false
 TELEGRAM_BOT_TOKEN=change_me_please
-TELEGRAM_HOST_URL=https://change_me_please.tld
+TELEGRAM_HOST_URL=https://${APP_DOMAIN_VALUE}
 APP_DOWNLOADS_DIR="%kernel.project_dir%/var/downloads"
 JWT_PASSPHRASE=${JWT_PASSPHRASE_VALUE}
 EOF
@@ -130,6 +142,8 @@ main() {
     REDIS_HOST="${REDIS_HOST:-redis}"
     REDIS_PASSWORD="${REDIS_PASSWORD:-123456}"
     REDIS_INTERNAL_PORT=6379
+
+    APP_DOMAIN_VALUE="${APP_DOMAIN:-change_me_please.tld}"
 
     APP_SECRET_VALUE="${APP_SECRET:-$(generate_secret)}"
     APP_SECRET_TEST_VALUE="${APP_SECRET_TEST:-$(generate_secret)}"

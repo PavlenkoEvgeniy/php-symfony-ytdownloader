@@ -2,6 +2,9 @@
 framework:
     secret: '%env(APP_SECRET)%'
 
+    # Caddy is the only public entry point and runs in the private Docker network (ADR-0007).
+    trusted_proxies: 'private_ranges'
+
     # Note that the session will be started ONLY if you read or write from it.
     session:
         handler_id: session.handler.redis
