@@ -22,6 +22,8 @@ final readonly class TelegramHookCommand
         private string $telegramBotToken,
         #[Autowire(env: 'string:TELEGRAM_HOST_URL')]
         private string $telegramHostUrl,
+        #[Autowire(env: 'string:TELEGRAM_WEBHOOK_SECRET')]
+        private string $telegramWebhookSecret,
         private HttpClientInterface $httpClient,
         private TranslatorInterface $translator,
     ) {
@@ -33,11 +35,16 @@ final readonly class TelegramHookCommand
 
         $url = \sprintf('https://api.telegram.org/bot%s/setWebhook', $this->telegramBotToken);
 
-        $response = $this->httpClient->request('POST', $url, [
-            'body' => [
-                'url' => $route,
-            ],
-        ]);
+        $body = [
+            'url'                   => $route,
+            'drop_pending_updates'  => 'true',
+        ];
+
+        if ('' !== $this->telegramWebhookSecret) {
+            $body['secret_token'] = $this->telegramWebhookSecret;
+        }
+
+        $response = $this->httpClient->request('POST', $url, ['body' => $body]);
 
         $result = $response->getContent(false);
 

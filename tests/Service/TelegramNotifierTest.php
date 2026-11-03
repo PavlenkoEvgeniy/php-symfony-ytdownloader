@@ -4,50 +4,37 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
-use App\Service\TelegramBotService;
+use App\Service\TelegramClientInterface;
 use App\Service\TelegramNotifier;
-use BotMan\BotMan\BotMan;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 final class TelegramNotifierTest extends TestCase
 {
     /**
-     * Verifies error notifications are sent to the given user.
+     * Verifies error notifications are sent to the given chat.
      */
     public function testNotifyErrorSendsMessage(): void
     {
-        $bot = $this->createMock(BotMan::class);
-        $bot->expects($this->once())
-            ->method('say')
-            ->with('error occurred', 'user-id');
+        $client = $this->createMock(TelegramClientInterface::class);
+        $client->expects($this->once())
+            ->method('sendMessage')
+            ->with(42, 'error occurred');
 
-        /** @phpstan-ignore-next-line */
-        $botService = $this->createMock(TelegramBotService::class);
-        $botService->expects($this->once())
-            ->method('getBot')
-            ->willReturn($bot);
-
-        $notifier = new TelegramNotifier($botService);
-        $notifier->notifyError('user-id', 'error occurred');
+        (new TelegramNotifier($client, $this->createStub(LoggerInterface::class)))->notifyError('42', 'error occurred');
     }
 
     /**
-     * Verifies completion notifications are sent to the given user.
+     * Verifies a failed notification does not escape to the caller.
      */
-    public function testNotifyFinishedSendsMessage(): void
+    public function testNotifyErrorSwallowsClientFailures(): void
     {
-        $bot = $this->createMock(BotMan::class);
-        $bot->expects($this->once())
-            ->method('say')
-            ->with('done', 'user-id');
+        $client = $this->createMock(TelegramClientInterface::class);
+        $client->method('sendMessage')->willThrowException(new \RuntimeException('telegram is down'));
 
-        /** @phpstan-ignore-next-line */
-        $botService = $this->createMock(TelegramBotService::class);
-        $botService->expects($this->once())
-            ->method('getBot')
-            ->willReturn($bot);
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())->method('error');
 
-        $notifier = new TelegramNotifier($botService);
-        $notifier->notifyFinished('user-id', 'done');
+        (new TelegramNotifier($client, $logger))->notifyError('42', 'error occurred');
     }
 }

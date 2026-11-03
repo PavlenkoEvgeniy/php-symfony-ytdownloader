@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\DownloadTask;
 use App\Entity\Source;
 use App\Repository\SourceRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,11 +25,18 @@ final readonly class SourceManager implements SourceManagerInterface
     }
 
     #[\Override]
-    public function createFromDownloadedFile(string $filename, string $path, float $size): Source
-    {
+    public function createFromDownloadedFile(
+        string $filename,
+        string $path,
+        float $size,
+        ?DownloadTask $downloadTask = null,
+        ?string $origin = null,
+    ): Source {
         $source = new Source()->setFilename($filename)
             ->setFilepath($path)
             ->setSize($size)
+            ->setDownloadTask($downloadTask)
+            ->setOrigin($origin)
         ;
 
         $this->entityManager->persist($source);

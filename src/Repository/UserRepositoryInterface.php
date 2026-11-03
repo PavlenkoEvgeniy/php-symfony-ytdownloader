@@ -10,5 +10,7 @@ interface UserRepositoryInterface
 {
     public function findOneByEmail(string $email): ?User;
 
+    public function findOneByTelegramUserId(int $telegramUserId): ?User;
+
     public function getTotalCount(): int;
 }

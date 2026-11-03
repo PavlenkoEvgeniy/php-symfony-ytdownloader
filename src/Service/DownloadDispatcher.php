@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\DownloadTask;
+use App\Entity\User;
 use App\Enum\AuditAction;
 use App\Enum\AuditActorType;
 use App\Enum\AuditChannel;
@@ -29,26 +30,40 @@ final readonly class DownloadDispatcher implements DownloadDispatcherInterface
      *
      * @throws ExceptionInterface
      */
-    public function dispatch(string $url, string $quality, string $telegramUserId = ''): DownloadTask
-    {
+    public function dispatch(
+        string $url,
+        string $quality,
+        ?User $user = null,
+        string $origin = DownloadTask::ORIGIN_UI,
+        ?int $telegramChatId = null,
+        ?string $title = null,
+    ): DownloadTask {
         $task = new DownloadTask()->setUrl($url)
             ->setQuality($quality)
+            ->setUser($user)
+            ->setOrigin($origin)
+            ->setTelegramChatId($telegramChatId)
+            ->setTitle($title)
         ;
 
         $this->entityManager->persist($task);
         $this->entityManager->flush();
 
+        $telegramUserId = null === $telegramChatId ? '' : (string) $telegramChatId;
+
         $this->messageBus->dispatch(new DownloadMessage($url, $quality, $telegramUserId, $task->getId()));
+
+        $isTelegram = DownloadTask::ORIGIN_TELEGRAM === $origin;
 
         $this->auditLogger->log(
             action: AuditAction::DOWNLOAD_REQUEST,
-            channel: '' !== $telegramUserId ? AuditChannel::TELEGRAM : null,
+            channel: $isTelegram ? AuditChannel::TELEGRAM : null,
             targetType: 'download_task',
             targetId: $task->getId(),
             targetLabel: $url,
             metadata: ['quality' => $quality],
-            actorType: '' !== $telegramUserId ? AuditActorType::TELEGRAM : null,
-            actorLabel: '' !== $telegramUserId ? $telegramUserId : null,
+            actorType: $isTelegram ? AuditActorType::TELEGRAM : null,
+            actorLabel: $isTelegram ? $telegramUserId : null,
         );
 
         return $task;

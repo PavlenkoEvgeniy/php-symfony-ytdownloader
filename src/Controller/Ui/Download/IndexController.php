@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Ui\Download;
 
+use App\Entity\User;
 use App\Form\DownloadForm;
 use App\Helper\Helper;
 use App\Service\DownloadDispatcherInterface;
@@ -14,6 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Route('/ui/download', name: 'ui_download_index', methods: [Request::METHOD_GET, Request::METHOD_POST])]
@@ -26,8 +28,11 @@ final class IndexController extends AbstractController
     ) {
     }
 
-    public function __invoke(Request $request, SessionInterface $session): Response|RedirectResponse
-    {
+    public function __invoke(
+        Request $request,
+        SessionInterface $session,
+        #[CurrentUser] ?User $user,
+    ): Response|RedirectResponse {
         $form = $this->createForm(DownloadForm::class);
         $form->handleRequest($request);
 
@@ -37,7 +42,7 @@ final class IndexController extends AbstractController
 
             $session->set('lastSelectedQuality', $quality);
 
-            $this->downloadDispatcher->dispatch($videoUrl, $quality);
+            $this->downloadDispatcher->dispatch($videoUrl, $quality, $user);
 
             $this->addFlash('success', $this->translator->trans('ui.download.video_queued'));
 

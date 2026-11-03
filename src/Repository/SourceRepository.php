@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Entity\DownloadTask;
 use App\Entity\Source;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -30,6 +31,24 @@ final class SourceRepository extends ServiceEntityRepository implements SourceRe
         ;
 
         return $source instanceof Source ? $source : null;
+    }
+
+    #[\Override]
+    /**
+     * @return Source[]
+     */
+    public function findByDownloadTask(DownloadTask $downloadTask): array
+    {
+        /** @var Source[] $sources */
+        $sources = $this->createQueryBuilder('s')
+            ->where('s.downloadTask = :downloadTask')
+            ->setParameter('downloadTask', $downloadTask)
+            ->orderBy('s.id')
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $sources;
     }
 
     #[\Override]

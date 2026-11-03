@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\DownloadTask;
 use App\Entity\Source;
 use App\Enum\DownloadOutcome;
-use BotMan\BotMan\Exceptions\Base\BotManException;
+use App\Repository\DownloadTaskRepositoryInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
@@ -20,23 +21,28 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
         private LoggerInterface $logger,
         private TelegramNotifierInterface $telegramNotifier,
         private TranslatorInterface $translator,
+        private DownloadTaskRepositoryInterface $downloadTaskRepository,
     ) {
     }
 
     #[\Override]
-    /**
-     * @throws BotManException
-     */
-    public function process(string $videoUrl, string $format, ?string $telegramUserId = null): DownloadOutcome
-    {
+    public function process(
+        string $videoUrl,
+        string $format,
+        ?string $telegramUserId = null,
+        ?int $taskId = null,
+    ): DownloadOutcome {
         $telegramUserId ??= '';
+        $downloadTask    = null === $taskId ? null : $this->downloadTaskRepository->findById($taskId);
+        $origin          = $downloadTask?->getOrigin();
+        $allowPlaylist   = !($downloadTask?->isTelegramOrigin() ?? false);
 
         $this->logManager->create('commenced', 'Started downloading.');
         $this->logManager->flush();
 
         [$downloadFormat, $mergeAsVideo] = $this->formatResolver->resolve($format);
 
-        $collection = $this->youtubeDlWrapper->download($videoUrl, $downloadFormat, $mergeAsVideo);
+        $collection = $this->youtubeDlWrapper->download($videoUrl, $downloadFormat, $mergeAsVideo, $allowPlaylist);
 
         $saved  = 0;
         $errors = 0;
@@ -59,10 +65,14 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
             $source   = $this->sourceManager->findByFilename($filename);
 
             if (!$source instanceof Source) {
-                $this->sourceManager->createFromDownloadedFile($filename, $path, $size);
+                $this->sourceManager->createFromDownloadedFile($filename, $path, $size, $downloadTask, $origin);
 
                 $this->logManager->create('success', \sprintf('File "%s" downloaded successfully.', $filename), $size);
                 $this->logger->info(\sprintf('File "%s" downloaded successfully.', $filename));
+            } elseif ($downloadTask instanceof DownloadTask && $downloadTask->isTelegramOrigin()) {
+                // The same file was downloaded before: hand it to the current task so it
+                // can be delivered and deleted after the file is sent to Telegram.
+                $source->setDownloadTask($downloadTask)->setOrigin($origin);
             }
 
             ++$saved;
@@ -84,18 +94,12 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
             $this->logManager->flush();
         }
 
-        if ('' !== $telegramUserId) {
-            if ($hasFiles) {
-                $this->telegramNotifier->notifyFinished(
-                    $telegramUserId,
-                    $this->translator->trans('telegram.download_finished'),
-                );
-            } else {
-                $this->telegramNotifier->notifyError(
-                    $telegramUserId,
-                    $this->translator->trans('telegram.download_error'),
-                );
-            }
+        // Successful Telegram downloads are delivered as files by TelegramDeliveryMessageHandler.
+        if ('' !== $telegramUserId && !$hasFiles) {
+            $this->telegramNotifier->notifyError(
+                $telegramUserId,
+                $this->translator->trans('telegram.download_error'),
+            );
         }
 
         return $hasFiles ? DownloadOutcome::SUCCESS : DownloadOutcome::ERROR;

@@ -19,12 +19,13 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
     }
 
     #[\Override]
-    public function download(string $videoUrl, string $downloadFormat, bool $mergeAsVideo): object
+    public function download(string $videoUrl, string $downloadFormat, bool $mergeAsVideo, bool $allowPlaylist = true): object
     {
         $options = [
             'paths'        => $this->downloadsDir,
             'print'        => 'after_move:filepath',
-            'yes-playlist' => true,
+            'yes-playlist' => $allowPlaylist,
+            'no-playlist'  => !$allowPlaylist,
         ];
 
         if ($mergeAsVideo) {

@@ -13,6 +13,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+#[ORM\UniqueConstraint(name: 'UNIQ_TELEGRAM_USER_ID', fields: ['telegramUserId'])]
 #[ORM\Table(name: '"user"')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
@@ -44,6 +45,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(name: 'avatar', type: Types::STRING, length: 255, nullable: true)]
     private ?string $avatar = null;
+
+    #[ORM\Column(name: 'telegram_user_id', type: Types::BIGINT, nullable: true)]
+    private ?int $telegramUserId = null;
+
+    #[ORM\Column(name: 'telegram_username', type: Types::STRING, length: 64, nullable: true)]
+    private ?string $telegramUsername = null;
+
+    #[ORM\Column(name: 'telegram_linked_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $telegramLinkedAt = null;
 
     public function __construct()
     {
@@ -155,6 +165,56 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getTelegramUserId(): ?int
+    {
+        return $this->telegramUserId;
+    }
+
+    public function setTelegramUserId(?int $telegramUserId): static
+    {
+        $this->telegramUserId = $telegramUserId;
+
+        return $this;
+    }
+
+    public function getTelegramUsername(): ?string
+    {
+        return $this->telegramUsername;
+    }
+
+    public function setTelegramUsername(?string $telegramUsername): static
+    {
+        $this->telegramUsername = $telegramUsername;
+
+        return $this;
+    }
+
+    public function getTelegramLinkedAt(): ?\DateTimeImmutable
+    {
+        return $this->telegramLinkedAt;
+    }
+
+    public function setTelegramLinkedAt(?\DateTimeImmutable $telegramLinkedAt): static
+    {
+        $this->telegramLinkedAt = $telegramLinkedAt;
+
+        return $this;
+    }
+
+    public function isTelegramLinked(): bool
+    {
+        return null !== $this->telegramUserId;
+    }
+
+    public function unlinkTelegram(): static
+    {
+        $this->telegramUserId   = null;
+        $this->telegramUsername = null;
+        $this->telegramLinkedAt = null;
+
+        return $this;
+    }
+
     public function getAvatarUrl(): ?string
     {
         if (null === $this->avatar || '' === $this->avatar) {
@@ -191,5 +251,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getCreatedAtOrFail(): \DateTimeImmutable
     {
         return $this->createdAt ?? throw PropertyIsNotSetException::forProperty('createdAt');
+    }
+
+    public function getTelegramUserIdOrFail(): int
+    {
+        return $this->telegramUserId ?? throw PropertyIsNotSetException::forProperty('telegramUserId');
     }
 }

@@ -21,3 +21,4 @@ framework:
 
         routing:
             App\Message\DownloadMessage: async
+            App\Message\TelegramDeliveryMessage: async

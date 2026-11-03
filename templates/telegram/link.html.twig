@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'telegram.link.title'|trans }}{% endblock %}
+
+{% block body %}
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="app-card p-4 p-lg-5">
+                <h1 class="page-title mb-3">{{ 'telegram.link.heading'|trans }}</h1>
+
+                {% if error %}
+                    <div class="alert alert-danger" role="alert">{{ error }}</div>
+                    <a class="btn btn-outline-secondary" href="{{ path('ui_profile_index') }}">{{ 'telegram.link.back_to_profile'|trans }}</a>
+                {% else %}
+                    <p class="text-muted-soft">{{ 'telegram.link.description'|trans({'%account%': account, '%email%': email}) }}</p>
+
+                    <form method="post" action="{{ path('telegram_link', {'token': token}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('telegram_link') }}">
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-gradient">{{ 'telegram.link.confirm'|trans }}</button>
+                            <a class="btn btn-outline-secondary" href="{{ path('ui_profile_index') }}">{{ 'telegram.link.cancel'|trans }}</a>
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

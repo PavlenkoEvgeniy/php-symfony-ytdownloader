@@ -10,6 +10,21 @@ services:
         # nginx stays reachable only on the Docker network.
         ports: !reset []
 
+    telegram-bot-api:
+        # Local Bot API server: raises the file upload limit to 2000 MB and keeps
+        # the bot token traffic inside the Docker network.
+        image: aiogram/telegram-bot-api:latest
+        container_name: ${PROJECT_NAME:-ytdownloader}-telegram-bot-api
+        restart: always
+        environment:
+            TELEGRAM_API_ID: ${TELEGRAM_API_ID:?TELEGRAM_API_ID is required}
+            TELEGRAM_API_HASH: ${TELEGRAM_API_HASH:?TELEGRAM_API_HASH is required}
+            TELEGRAM_LOCAL: '1'
+        volumes:
+            - telegram-bot-api-data:/var/lib/telegram-bot-api
+        networks:
+            - internal
+
     caddy:
         image: caddy:2-alpine
         container_name: ${PROJECT_NAME:-ytdownloader}-caddy
@@ -32,4 +47,6 @@ volumes:
     caddy-data:
         driver: local
     caddy-config:
+        driver: local
+    telegram-bot-api-data:
         driver: local

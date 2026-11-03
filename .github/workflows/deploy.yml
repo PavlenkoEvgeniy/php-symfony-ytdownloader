@@ -34,6 +34,8 @@ jobs:
     env:
       GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
       APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
+      TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+      TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
 
     steps:
       - name: Checkout code
@@ -49,13 +51,15 @@ jobs:
           script_stop: true
           # Image pull replaces the local build; allow a few minutes.
           command_timeout: 20m
-          # GHCR_TOKEN and APP_DOMAIN are provided by the job-level env mapping above.
-          envs: GHCR_TOKEN,APP_DOMAIN
+          # Values are provided by the job-level env mapping above.
+          envs: GHCR_TOKEN,APP_DOMAIN,TELEGRAM_API_ID,TELEGRAM_API_HASH
           script: |
             cd ${{ secrets.SSH_PROJECT_PATH }}
             export DOCKER_COMPOSE_FILES="docker/docker-compose.yml docker/docker-compose.prod.yml"
             # Caddy needs the public hostname; Docker Compose takes it from the shell.
             export APP_DOMAIN="${APP_DOMAIN:?APP_DOMAIN secret is not set}"
+            export TELEGRAM_API_ID="${TELEGRAM_API_ID:?TELEGRAM_API_ID secret is not set}"
+            export TELEGRAM_API_HASH="${TELEGRAM_API_HASH:?TELEGRAM_API_HASH secret is not set}"
             # workflow_dispatch: GITHUB_SHA is the branch head, so resolve the tag commit.
             export DEPLOY_TAG="${{ inputs.tag || github.ref_name }}"
             git stash

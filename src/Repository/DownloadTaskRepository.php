@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\DownloadTask;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
@@ -18,6 +19,108 @@ final class DownloadTaskRepository extends ServiceEntityRepository implements Do
         ManagerRegistry $registry,
     ) {
         parent::__construct($registry, DownloadTask::class);
+    }
+
+    #[\Override]
+    public function findById(int $id): ?DownloadTask
+    {
+        $task = $this->find($id);
+
+        return $task instanceof DownloadTask ? $task : null;
+    }
+
+    #[\Override]
+    /**
+     * @return DownloadTask[]
+     */
+    public function findActiveByUser(User $user, int $limit = 10): array
+    {
+        /** @var DownloadTask[] $tasks */
+        $tasks = $this->createQueryBuilder('t')
+            ->where('t.user = :user')
+            ->andWhere('t.status IN (:statuses)')
+            ->setParameter('user', $user)
+            ->setParameter('statuses', [
+                DownloadTask::STATUS_QUEUED,
+                DownloadTask::STATUS_PROCESSING,
+            ], ArrayParameterType::STRING)
+            ->orderBy('t.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $tasks;
+    }
+
+    #[\Override]
+    public function countActiveByUser(User $user): int
+    {
+        return (int) $this->createQueryBuilder('t')
+            ->select('COUNT(t.id)')
+            ->where('t.user = :user')
+            ->andWhere('t.status IN (:statuses)')
+            ->setParameter('user', $user)
+            ->setParameter('statuses', [
+                DownloadTask::STATUS_QUEUED,
+                DownloadTask::STATUS_PROCESSING,
+            ], ArrayParameterType::STRING)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    #[\Override]
+    /**
+     * @return DownloadTask[]
+     */
+    public function findQueuedByUser(User $user): array
+    {
+        /** @var DownloadTask[] $tasks */
+        $tasks = $this->createQueryBuilder('t')
+            ->where('t.user = :user')
+            ->andWhere('t.status = :status')
+            ->setParameter('user', $user)
+            ->setParameter('status', DownloadTask::STATUS_QUEUED)
+            ->orderBy('t.createdAt')
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $tasks;
+    }
+
+    #[\Override]
+    public function deleteQueuedByUser(User $user): int
+    {
+        return (int) $this->createQueryBuilder('t')
+            ->delete()
+            ->where('t.user = :user')
+            ->andWhere('t.status = :status')
+            ->setParameter('user', $user)
+            ->setParameter('status', DownloadTask::STATUS_QUEUED)
+            ->getQuery()
+            ->execute();
+    }
+
+    #[\Override]
+    public function findActiveByUserAndUrl(User $user, string $url): ?DownloadTask
+    {
+        $task = $this->createQueryBuilder('t')
+            ->where('t.user = :user')
+            ->andWhere('t.url = :url')
+            ->andWhere('t.status IN (:statuses)')
+            ->setParameter('user', $user)
+            ->setParameter('url', $url)
+            ->setParameter('statuses', [
+                DownloadTask::STATUS_QUEUED,
+                DownloadTask::STATUS_PROCESSING,
+            ], ArrayParameterType::STRING)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+
+        return $task instanceof DownloadTask ? $task : null;
     }
 
     #[\Override]

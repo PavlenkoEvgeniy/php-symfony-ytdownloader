@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Entity\DownloadTask;
 use App\Entity\Source;
 
 interface SourceRepositoryInterface
 {
     public function findOneByFilename(string $filename): ?Source;
+
+    /**
+     * @return Source[]
+     */
+    public function findByDownloadTask(DownloadTask $downloadTask): array;
 
     /**
      * @return Source[]

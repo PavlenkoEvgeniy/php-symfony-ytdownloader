@@ -55,6 +55,8 @@ security:
         - { path: ^/api/v1, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/api/v2, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/health, roles: PUBLIC_ACCESS }
+        - { path: ^/telegram/hook, roles: PUBLIC_ACCESS }
+        - { path: ^/telegram, roles: ROLE_USER }
         - { path: ^/ui, roles: ROLE_USER }
         - { path: ^/admin, roles: ROLE_ADMIN }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Service;
 
 use App\Entity\DownloadTask;
+use App\Entity\User;
 use App\Message\DownloadMessage;
 use App\Service\AuditLoggerInterface;
 use App\Service\DownloadDispatcher;
@@ -38,11 +39,23 @@ final class DownloadDispatcherTest extends TestCase
             });
 
         $dispatcher = new DownloadDispatcher($em, $bus, $this->createStub(AuditLoggerInterface::class));
-        $task       = $dispatcher->dispatch('https://youtube.com/watch?v=test', 'best', '42');
+        $user       = new User()->setEmail('test@test.local');
+        $task       = $dispatcher->dispatch(
+            'https://youtube.com/watch?v=test',
+            'best',
+            $user,
+            DownloadTask::ORIGIN_TELEGRAM,
+            42,
+            'Test video',
+        );
 
         $this->assertSame('https://youtube.com/watch?v=test', $task->getUrl());
         $this->assertSame('best', $task->getQuality());
         $this->assertSame(DownloadTask::STATUS_QUEUED, $task->getStatus());
+        $this->assertSame($user, $task->getUser());
+        $this->assertSame(DownloadTask::ORIGIN_TELEGRAM, $task->getOrigin());
+        $this->assertSame(42, $task->getTelegramChatId());
+        $this->assertSame('Test video', $task->getTitle());
         $this->assertSame('https://youtube.com/watch?v=test', $dispatched->url);
         $this->assertSame('best', $dispatched->quality);
         $this->assertSame('42', $dispatched->telegramUserId);

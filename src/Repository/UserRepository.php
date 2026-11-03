@@ -58,4 +58,17 @@ final class UserRepository extends ServiceEntityRepository implements PasswordUp
 
         return $user instanceof User ? $user : null;
     }
+
+    #[\Override]
+    public function findOneByTelegramUserId(int $telegramUserId): ?User
+    {
+        $user = $this->createQueryBuilder('u')
+            ->where('u.telegramUserId = :telegramUserId')
+            ->setParameter('telegramUserId', $telegramUserId)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+
+        return $user instanceof User ? $user : null;
+    }
 }

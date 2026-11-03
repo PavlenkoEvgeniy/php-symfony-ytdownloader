@@ -47,12 +47,14 @@ services:
         alias: App\Service\LogManager
     App\Service\DownloadMetricManagerInterface:
         alias: App\Service\DownloadMetricManager
-    App\Service\TelegramBotServiceInterface:
-        alias: App\Service\TelegramBotService
+    App\Service\TelegramClientInterface:
+        alias: App\Service\TelegramClient
     App\Service\TelegramNotifierInterface:
         alias: App\Service\TelegramNotifier
-    App\Service\TelegramMessageHandlerInterface:
-        alias: App\Service\TelegramMessageHandler
+    App\Service\TelegramUpdateHandlerInterface:
+        alias: App\Service\TelegramUpdateHandler
+    App\Service\YoutubeDlProbeInterface:
+        alias: App\Service\YoutubeDlProbe
     App\Service\RefreshTokenManagerInterface:
         alias: App\Service\RefreshTokenManager
     App\Service\FormatResolverInterface:
@@ -71,6 +73,20 @@ services:
         alias: App\Repository\RefreshTokenRepository
     App\Repository\AuditEventRepositoryInterface:
         alias: App\Repository\AuditEventRepository
+
+    # A separate yt-dlp client with a short timeout for the synchronous Telegram probe.
+    app.telegram.probe_yt_dlp_client:
+        class: P3s\YtDlp\YtDlpClient
+        arguments:
+            $binaryPath: '%yt_dlp.binary_path%'
+            $defaultArguments: '%yt_dlp.default_arguments%'
+            $workingDirectory: '%yt_dlp.working_directory%'
+            $timeout: 20
+            $environment: '%yt_dlp.environment%'
+
+    App\Service\YoutubeDlProbe:
+        arguments:
+            $ytDlpProbeClient: '@app.telegram.probe_yt_dlp_client'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

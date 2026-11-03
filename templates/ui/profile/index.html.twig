@@ -28,6 +28,21 @@
                     {{ 'ui.profile.back_to_downloads'|trans }}
                 </a>
             </div>
+
+            <div class="app-card mt-3 p-3">
+                <div class="fw-semibold mb-2">{{ 'telegram.profile.title'|trans }}</div>
+                {% if app.user.telegramUserId %}
+                    <div class="text-muted-soft small mb-3">
+                        {{ 'telegram.profile.linked'|trans({'%account%': app.user.telegramUsername ? '@' ~ app.user.telegramUsername : app.user.telegramUserId}) }}
+                    </div>
+                    <form method="post" action="{{ path('telegram_unlink') }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('telegram_unlink') }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">{{ 'telegram.profile.unlink'|trans }}</button>
+                    </form>
+                {% else %}
+                    <div class="text-muted-soft small">{{ 'telegram.profile.not_linked'|trans }}</div>
+                {% endif %}
+            </div>
         </div>
 
         <div class="col-lg-8">

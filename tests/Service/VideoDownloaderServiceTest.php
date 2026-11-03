@@ -6,6 +6,7 @@ namespace App\Tests\Service;
 
 use App\Entity\Log;
 use App\Enum\DownloadOutcome;
+use App\Repository\DownloadTaskRepositoryInterface;
 use App\Service\FormatResolver;
 use App\Service\LogManager;
 use App\Service\SourceManager;
@@ -44,7 +45,7 @@ final class VideoDownloaderServiceTest extends TestCase
         $collection  = $this->createVideoCollection([$video]);
         $youtubeDl->expects($this->once())
             ->method('download')
-            ->with('https://test.local', 'fmt', true)
+            ->with('https://test.local', 'fmt', true, true)
             ->willReturn($collection);
 
         $sourceManager->expects($this->once())
@@ -53,7 +54,7 @@ final class VideoDownloaderServiceTest extends TestCase
             ->willReturn(null);
         $sourceManager->expects($this->once())
             ->method('createFromDownloadedFile')
-            ->with('video.mp4', '/tmp', 123.4);
+            ->with('video.mp4', '/tmp', 123.4, null, null);
         $sourceManager->expects($this->once())
             ->method('flush');
 
@@ -72,9 +73,6 @@ final class VideoDownloaderServiceTest extends TestCase
             ->with($this->stringContains('video.mp4'));
         $logger->expects($this->never())->method('error');
 
-        $notifier->expects($this->once())
-            ->method('notifyFinished')
-            ->with('123', $this->stringContains('Downloading finished'));
         $notifier->expects($this->never())->method('notifyError');
 
         $service = new VideoDownloaderService(
@@ -85,6 +83,7 @@ final class VideoDownloaderServiceTest extends TestCase
             $logger,
             $notifier,
             $this->createTranslator(),
+            $this->createStub(DownloadTaskRepositoryInterface::class),
         );
 
         $outcome = $service->process('https://test.local', 'best', '123');
@@ -144,7 +143,6 @@ final class VideoDownloaderServiceTest extends TestCase
         $notifier->expects($this->once())
             ->method('notifyError')
             ->with('123', $this->stringContains('please try again'));
-        $notifier->expects($this->never())->method('notifyFinished');
 
         $service = new VideoDownloaderService(
             $youtubeDl,
@@ -154,6 +152,7 @@ final class VideoDownloaderServiceTest extends TestCase
             $logger,
             $notifier,
             $this->createTranslator(),
+            $this->createStub(DownloadTaskRepositoryInterface::class),
         );
 
         $outcome = $service->process('https://test.local', 'best', '123');
@@ -191,7 +190,7 @@ final class VideoDownloaderServiceTest extends TestCase
         $youtubeDl->expects($this->once())->method('download')->willReturn($collection);
 
         $sourceManager->expects($this->once())->method('findByFilename')->with('video.mp4')->willReturn(null);
-        $sourceManager->expects($this->once())->method('createFromDownloadedFile')->with('video.mp4', '/tmp', 100.0);
+        $sourceManager->expects($this->once())->method('createFromDownloadedFile')->with('video.mp4', '/tmp', 100.0, null, null);
         $sourceManager->expects($this->once())->method('flush');
 
         $logCalls = [];
@@ -207,7 +206,6 @@ final class VideoDownloaderServiceTest extends TestCase
         $logger->expects($this->once())->method('error');
         $logger->expects($this->once())->method('info');
 
-        $notifier->expects($this->once())->method('notifyFinished')->with('123', $this->stringContains('Downloading finished'));
         $notifier->expects($this->never())->method('notifyError');
 
         $service = new VideoDownloaderService(
@@ -218,6 +216,7 @@ final class VideoDownloaderServiceTest extends TestCase
             $logger,
             $notifier,
             $this->createTranslator(),
+            $this->createStub(DownloadTaskRepositoryInterface::class),
         );
 
         $outcome = $service->process('https://test.local', 'best', '123');
@@ -262,7 +261,6 @@ final class VideoDownloaderServiceTest extends TestCase
 
         $logger->expects($this->once())->method('error');
 
-        $notifier->expects($this->never())->method('notifyFinished');
         $notifier->expects($this->never())->method('notifyError');
 
         $service = new VideoDownloaderService(
@@ -273,6 +271,7 @@ final class VideoDownloaderServiceTest extends TestCase
             $logger,
             $notifier,
             $this->createTranslator(),
+            $this->createStub(DownloadTaskRepositoryInterface::class),
         );
 
         $this->assertSame(DownloadOutcome::ERROR, $service->process('https://test.local', 'best'));
@@ -313,7 +312,6 @@ final class VideoDownloaderServiceTest extends TestCase
         $logManager->expects($this->exactly(2))->method('flush');
 
         $logger->expects($this->never())->method('error');
-        $notifier->expects($this->never())->method('notifyFinished');
         $notifier->expects($this->never())->method('notifyError');
 
         $service = new VideoDownloaderService(
@@ -324,6 +322,7 @@ final class VideoDownloaderServiceTest extends TestCase
             $logger,
             $notifier,
             $this->createTranslator(),
+            $this->createStub(DownloadTaskRepositoryInterface::class),
         );
 
         $outcome = $service->process('https://test.local', 'best');

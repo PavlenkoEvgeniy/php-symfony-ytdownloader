@@ -4,30 +4,24 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use BotMan\BotMan\Exceptions\Base\BotManException;
+use Psr\Log\LoggerInterface;
 
 final readonly class TelegramNotifier implements TelegramNotifierInterface
 {
     public function __construct(
-        private TelegramBotServiceInterface $telegramBotService,
+        private TelegramClientInterface $telegramClient,
+        private LoggerInterface $logger,
     ) {
     }
 
     #[\Override]
-    /**
-     * @throws BotManException
-     */
     public function notifyError(string $telegramUserId, string $message): void
     {
-        $this->telegramBotService->getBot()->say($message, $telegramUserId);
-    }
-
-    #[\Override]
-    /**
-     * @throws BotManException
-     */
-    public function notifyFinished(string $telegramUserId, string $message): void
-    {
-        $this->telegramBotService->getBot()->say($message, $telegramUserId);
+        try {
+            $this->telegramClient->sendMessage((int) $telegramUserId, $message);
+        } catch (\Throwable $exception) {
+            // A failed notification must not change the download outcome.
+            $this->logger->error('Failed to send a Telegram notification', ['error' => $exception->getMessage()]);
+        }
     }
 }

@@ -11,4 +11,6 @@ interface DownloadTaskManagerInterface
     public function markSuccess(int $taskId): void;
 
     public function markError(int $taskId, ?string $errorMessage = null): void;
+
+    public function markDeliveryStatus(int $taskId, string $status, ?int $telegramMessageId = null): void;
 }

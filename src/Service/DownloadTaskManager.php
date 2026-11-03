@@ -49,6 +49,29 @@ final readonly class DownloadTaskManager implements DownloadTaskManagerInterface
         $this->markStatus($taskId, DownloadTask::STATUS_ERROR, $errorMessage);
     }
 
+    #[\Override]
+    public function markDeliveryStatus(int $taskId, string $status, ?int $telegramMessageId = null): void
+    {
+        /** @var DownloadTask|null $task */
+        $task = $this->entityManager->find(DownloadTask::class, $taskId);
+
+        if (!$task instanceof DownloadTask) {
+            return;
+        }
+
+        $task->setDeliveryStatus($status);
+
+        if (DownloadTask::DELIVERY_SENT === $status) {
+            $task->setDeliveredAt(new \DateTimeImmutable());
+        }
+
+        if (null !== $telegramMessageId) {
+            $task->setTelegramMessageId($telegramMessageId);
+        }
+
+        $this->entityManager->flush();
+    }
+
     private function markStatus(int $taskId, string $status, ?string $errorMessage = null): void
     {
         /** @var DownloadTask|null $task */

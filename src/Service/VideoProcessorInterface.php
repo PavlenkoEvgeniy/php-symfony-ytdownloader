@@ -8,5 +8,5 @@ use App\Enum\DownloadOutcome;
 
 interface VideoProcessorInterface
 {
-    public function process(string $videoUrl, string $format, ?string $telegramUserId = null): DownloadOutcome;
+    public function process(string $videoUrl, string $format, ?string $telegramUserId = null, ?int $taskId = null): DownloadOutcome;
 }

@@ -8,12 +8,14 @@ use App\Entity\DownloadTask;
 use App\Enum\DownloadOutcome;
 use App\Message\DownloadMessage;
 use App\MessageHandler\DownloadMessageHandler;
+use App\Repository\DownloadTaskRepositoryInterface;
 use App\Service\AuditLoggerInterface;
 use App\Service\DownloadTaskManager;
 use App\Service\VideoProcessorInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 final class DownloadMessageHandlerTest extends TestCase
 {
@@ -41,10 +43,22 @@ final class DownloadMessageHandlerTest extends TestCase
         $videoProcessor = $this->createMock(VideoProcessorInterface::class);
         $videoProcessor->expects($this->once())
             ->method('process')
-            ->with('https://test.local', 'best', '12345')
+            ->with('https://test.local', 'best', '12345', 7)
             ->willReturn(DownloadOutcome::SUCCESS);
 
-        $handler = new DownloadMessageHandler($videoProcessor, $taskManager, $this->createStub(AuditLoggerInterface::class));
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn(null);
+
+        $bus = $this->createMock(MessageBusInterface::class);
+        $bus->expects($this->never())->method('dispatch');
+
+        $handler = new DownloadMessageHandler(
+            $videoProcessor,
+            $taskManager,
+            $this->createStub(AuditLoggerInterface::class),
+            $taskRepository,
+            $bus,
+        );
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
 
@@ -73,10 +87,19 @@ final class DownloadMessageHandlerTest extends TestCase
         $videoProcessor = $this->createMock(VideoProcessorInterface::class);
         $videoProcessor->expects($this->once())
             ->method('process')
-            ->with('https://test.local', 'best', '12345')
+            ->with('https://test.local', 'best', '12345', 7)
             ->willReturn(DownloadOutcome::ERROR);
 
-        $handler = new DownloadMessageHandler($videoProcessor, new DownloadTaskManager($em), $this->createStub(AuditLoggerInterface::class));
+        $bus = $this->createMock(MessageBusInterface::class);
+        $bus->expects($this->never())->method('dispatch');
+
+        $handler = new DownloadMessageHandler(
+            $videoProcessor,
+            new DownloadTaskManager($em),
+            $this->createStub(AuditLoggerInterface::class),
+            $this->createStub(DownloadTaskRepositoryInterface::class),
+            $bus,
+        );
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
 
@@ -98,7 +121,13 @@ final class DownloadMessageHandlerTest extends TestCase
         $videoProcessor = $this->createMock(VideoProcessorInterface::class);
         $videoProcessor->expects($this->never())->method('process');
 
-        $handler = new DownloadMessageHandler($videoProcessor, new DownloadTaskManager($em), $this->createStub(AuditLoggerInterface::class));
+        $handler = new DownloadMessageHandler(
+            $videoProcessor,
+            new DownloadTaskManager($em),
+            $this->createStub(AuditLoggerInterface::class),
+            $this->createStub(DownloadTaskRepositoryInterface::class),
+            $this->createStub(MessageBusInterface::class),
+        );
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
     }
@@ -116,10 +145,16 @@ final class DownloadMessageHandlerTest extends TestCase
         $videoProcessor = $this->createMock(VideoProcessorInterface::class);
         $videoProcessor->expects($this->once())
             ->method('process')
-            ->with('https://test.local/2', 'audio', '')
+            ->with('https://test.local/2', 'audio', '', null)
             ->willReturn(DownloadOutcome::SUCCESS);
 
-        $handler = new DownloadMessageHandler($videoProcessor, new DownloadTaskManager($em), $this->createStub(AuditLoggerInterface::class));
+        $handler = new DownloadMessageHandler(
+            $videoProcessor,
+            new DownloadTaskManager($em),
+            $this->createStub(AuditLoggerInterface::class),
+            $this->createStub(DownloadTaskRepositoryInterface::class),
+            $this->createStub(MessageBusInterface::class),
+        );
 
         $handler->__invoke(new DownloadMessage('https://test.local/2', 'audio'));
     }

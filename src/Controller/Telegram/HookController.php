@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Telegram;
 
-use App\Service\TelegramBotServiceInterface;
-use App\Service\TelegramMessageHandlerInterface;
+use App\Service\TelegramUpdateHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -18,27 +17,39 @@ final class HookController extends AbstractController
 {
     public function __construct(
         private readonly LoggerInterface $logger,
-        private readonly TelegramBotServiceInterface $telegramBotService,
-        private readonly TelegramMessageHandlerInterface $telegramMessageHandler,
+        private readonly TelegramUpdateHandlerInterface $telegramUpdateHandler,
         #[Autowire(env: 'bool:TELEGRAM_BOT_ENABLED')]
         private readonly bool $telegramBotEnabled,
+        #[Autowire(env: 'string:TELEGRAM_WEBHOOK_SECRET')]
+        private readonly string $telegramWebhookSecret,
     ) {
     }
 
-    public function __invoke(): Response
+    public function __invoke(Request $request): Response
     {
         if (false === $this->telegramBotEnabled) {
             return new Response('Disabled', Response::HTTP_FORBIDDEN);
         }
 
-        $bot = $this->telegramBotService->getBot();
-        $bot->hears('/start', $this->telegramMessageHandler->onStart(...));
-        $bot->hears('(https://.*)', $this->telegramMessageHandler->onUrl(...));
+        $secret = (string) $request->headers->get('X-Telegram-Bot-Api-Secret-Token');
 
-        $bot->listen();
+        if ('' !== $this->telegramWebhookSecret && !\hash_equals($this->telegramWebhookSecret, $secret)) {
+            return new Response('Forbidden', Response::HTTP_FORBIDDEN);
+        }
 
-        $this->logger->info('Telegram hook received');
+        try {
+            $update = $request->toArray();
+        } catch (\Throwable) {
+            return new Response('Bad Request', Response::HTTP_BAD_REQUEST);
+        }
 
-        return new Response('Dispatched', Response::HTTP_OK);
+        try {
+            $this->telegramUpdateHandler->handle($update);
+        } catch (\Throwable $exception) {
+            // Return 200 so Telegram does not redeliver an update after a partial side effect.
+            $this->logger->error('Failed to handle a Telegram update', ['error' => $exception->getMessage()]);
+        }
+
+        return new Response('OK', Response::HTTP_OK);
     }
 }
