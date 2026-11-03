@@ -104,7 +104,7 @@ make restart
 Production terminates TLS in the `caddy` service from `docker/docker-compose.prod.yml`
 (ADR-0007). Caddy obtains and renews a Let's Encrypt certificate for `APP_DOMAIN`
 and proxies requests to the application nginx on the private Docker network; the
-nginx port is bound to loopback only.
+nginx port is not published in production (locally it stays on loopback).
 
 - `APP_DOMAIN` comes from the `APP_DOMAIN` GitHub secret during deploy (or from
   `docker/.env` when running the prod compose file by hand).

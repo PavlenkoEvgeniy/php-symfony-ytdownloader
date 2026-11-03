@@ -13,7 +13,8 @@ services:
         volumes:
             - ./../:/application
             - ./sourcefiles/nginx:/etc/nginx/conf.d
-        # Loopback only: production publishes 80/443 through Caddy (ADR-0007).
+        # Loopback for local development; the production override resets this binding
+        # and publishes 80/443 through Caddy instead (ADR-0007).
         ports:
             - 127.0.0.1:${NGINX_PORT}:80
 

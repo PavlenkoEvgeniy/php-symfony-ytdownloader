@@ -5,6 +5,11 @@ services:
         image: ghcr.io/pavlenkoevgeniy/php-symfony-ytdownloader/php-fpm:${PHP_FPM_IMAGE_TAG:?required}
         pull_policy: always
 
+    webserver:
+        # Caddy owns host ports 80/443 (ADR-0007); reset the base compose binding so
+        # nginx stays reachable only on the Docker network.
+        ports: !reset []
+
     caddy:
         image: caddy:2-alpine
         container_name: ${PROJECT_NAME:-ytdownloader}-caddy

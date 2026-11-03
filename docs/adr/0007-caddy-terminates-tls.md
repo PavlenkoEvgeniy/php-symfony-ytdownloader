@@ -8,8 +8,10 @@ work is a prerequisite for the bot rather than a cosmetic improvement.
 We added a `caddy:2-alpine` service to the production compose override. Caddy
 binds ports 80 and 443, obtains and renews a Let's Encrypt certificate for
 `APP_DOMAIN` automatically, and proxies to `webserver:80` over the private
-Docker network. The application nginx is now published on loopback only
-(`127.0.0.1:${NGINX_PORT}:80`), so it cannot be reached directly from outside.
+Docker network. The production override resets the application nginx port
+binding, so the app server cannot be reached directly from outside; in local
+development the base compose file still exposes it on loopback
+(`127.0.0.1:${NGINX_PORT}:80`).
 The application trusts private-range proxies, which lets Symfony read
 `X-Forwarded-Proto` and mark sessions with `cookie_secure`.
 
