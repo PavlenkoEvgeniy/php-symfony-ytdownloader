@@ -102,8 +102,24 @@ jobs:
             exit 0
           fi
 
-          gh release create "$tag" \
-            --repo "${{ github.repository }}" \
-            --title "Release version ${tag#v}" \
-            --generate-notes \
-            --verify-tag
+          # GitHub occasionally returns 5xx for release calls; the deploy itself
+          # has already succeeded, so retry instead of failing the whole run.
+          for attempt in 1 2 3 4 5; do
+            if gh release create "$tag" \
+              --repo "${{ github.repository }}" \
+              --title "Release version ${tag#v}" \
+              --generate-notes \
+              --verify-tag; then
+              exit 0
+            fi
+
+            if gh release view "$tag" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+              echo "Release $tag was created despite the error."
+              exit 0
+            fi
+
+            echo "Release attempt $attempt failed; retrying in 15s."
+            sleep 15
+          done
+
+          exit 1
