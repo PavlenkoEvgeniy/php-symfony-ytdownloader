@@ -116,10 +116,19 @@ Certificates and ACME account state persist in the `caddy-data` and `caddy-confi
 volumes, so `make restart` does not reissue them.
 
 ## 🤖 Telegram bot
+
 1. **Initialize**:
       - Enable the bot in `.env.local`: `TELEGRAM_BOT_ENABLED=true`
       - Set your bot token: `TELEGRAM_BOT_TOKEN=change_me_please`
       - Set the public host URL: `TELEGRAM_HOST_URL=https://<APP_DOMAIN>`
+      - Set a webhook secret: `TELEGRAM_WEBHOOK_SECRET=<random hex>`. The hook
+        rejects requests without the matching
+        `X-Telegram-Bot-Api-Secret-Token` header.
+      - For files up to 2 GB, run the local Bot API server from
+        `docker/docker-compose.prod.yml` (`telegram-bot-api`), set
+        `TELEGRAM_API_BASE_URL=http://telegram-bot-api:8081` and
+        `TELEGRAM_MAX_UPLOAD_MB=2000` (ADR-0008). Without it the bot falls back
+        to the cloud API and its 50 MB upload limit.
       - Register the webhook:
          ```bash
          make telegram-bot-hook
@@ -128,10 +137,22 @@ volumes, so `make restart` does not reissue them.
          ```bash
          make telegram-bot-unhook
          ```
-2. **Commands**:
+2. **Linking**: `/login` sends a one-time link to `/telegram/link`; the user
+   signs in with the normal web form and confirms. The profile page shows the
+   linked account and has an Unlink button. Without a link the bot does nothing.
+3. **Commands**:
       ```
-      /start - start bot
+      /start  - start bot
+      /login  - link a site account
+      /logout - unlink and cancel queued downloads
+      /cancel - cancel queued downloads
+      /status - list active downloads
+      /help   - commands
       ```
+4. **Downloads**: send an `https://` link, choose `Best`, `Moderate`, `Poor`
+   or `Audio`. Pure playlists/channels are rejected. The file is delivered to
+   the requester's chat and then deleted from the server and the library.
+   Failed deliveries keep the file and send a link to the web library.
 
 ## 🔐 REST API v1 (JWT)
 

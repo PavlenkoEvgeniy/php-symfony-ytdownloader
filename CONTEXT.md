@@ -64,6 +64,20 @@ _Avoid_: retry, purge
 The lifetime sum of bytes downloaded into the library. Deleting sources never reduces it.
 _Avoid_: storage size, total size (the counter is not derived from the stored sources)
 
+### Telegram
+
+**Telegram Link**:
+The persistent association between a User and a Telegram account, created by the
+one-time web link issued by `/login`. It is not a session; it lasts until
+`/logout` or until the account is unlinked from the profile.
+_Avoid_: telegram login, telegram session
+
+**Telegram Delivery**:
+Sending a downloaded file to the requester's Telegram chat. A successful delivery
+deletes the file and its Source; a failed delivery keeps them and points the
+requester to the web library.
+_Avoid_: notification, upload
+
 ### Users
 
 **Avatar**:
