@@ -16,7 +16,9 @@
 
 ## 📸 Preview
 
-<img src="docs/preview/1.jpg" alt="Login page" height="300"> <img src="docs/preview/2.jpg" alt="Index page" height="300"> <img src="docs/preview/3.jpg" alt="Downloads page" height="300"> <img src="docs/preview/4.jpg" alt="Admin dashboard" height="300"> <img src="docs/preview/5.jpg" alt="Admin menu" height="300"> <img src="docs/preview/6.jpg" alt="Admin menu" height="300">
+**📱 Mobile (light)**:
+
+<img src="docs/preview/mobile-light-login.jpg" alt="Mobile login (light)" height="300"> <img src="docs/preview/mobile-light-downloads.jpg" alt="Mobile downloads (light)" height="300"> <img src="docs/preview/mobile-light-library.jpg" alt="Mobile library (light)" height="300"> <img src="docs/preview/mobile-light-profile.jpg" alt="Mobile profile (light)" height="300">
 
 **📱 Mobile (dark)**:
 
