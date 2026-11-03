@@ -158,8 +158,8 @@ docker exec ytdownloader-php-fpm php bin/console app:library:prune --dry-run
 2. **Linking**: `/login` sends a one-time link to `/telegram/link`; the user
    signs in with the normal web form and confirms. The profile page shows the
    linked account and has an Unlink button. Without a link the bot does nothing.
-3. **Commands**: the bot shows a persistent reply keyboard with these
-   commands under the input field.
+3. **Commands**: the bot shows a collapsible reply keyboard with these
+   commands under the input field (use the keyboard icon to hide it).
       ```
       /start  - start bot
       /login  - link a site account

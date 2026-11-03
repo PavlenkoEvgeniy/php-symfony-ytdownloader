@@ -18,7 +18,7 @@ use Psr\Log\LoggerInterface;
 final class TelegramUpdateHandlerTest extends TestCase
 {
     /**
-     * Verifies /help sends the persistent command menu.
+     * Verifies /help sends the collapsible command menu.
      */
     public function testHelpSendsMainMenu(): void
     {
@@ -40,7 +40,7 @@ final class TelegramUpdateHandlerTest extends TestCase
                         ['/status', '/help'],
                     ] === $labels
                         && true === $markup['resize_keyboard']
-                        && true === $markup['is_persistent'];
+                        && false === $markup['is_persistent'];
                 }),
             );
 
