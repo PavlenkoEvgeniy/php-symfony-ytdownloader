@@ -146,7 +146,8 @@ volumes, so `make restart` does not reissue them.
 2. **Linking**: `/login` sends a one-time link to `/telegram/link`; the user
    signs in with the normal web form and confirms. The profile page shows the
    linked account and has an Unlink button. Without a link the bot does nothing.
-3. **Commands**:
+3. **Commands**: the bot shows a persistent reply keyboard with these
+   commands under the input field.
       ```
       /start  - start bot
       /login  - link a site account
