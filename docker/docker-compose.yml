@@ -60,8 +60,10 @@ services:
             POSTGRES_PASSWORD: ${DB_PASSWORD}
         volumes:
             - ./../database:/var/lib/postgresql/data
+        # Loopback only: the app connects over the Docker network; host access is
+        # for local tools and SSH tunnels.
         ports:
-            - ${DB_PORT}:5432
+            - 127.0.0.1:${DB_PORT}:5432
         networks:
             - internal
 
@@ -72,8 +74,9 @@ services:
         command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
         volumes:
             - redis-data:/data
+        # Loopback only, same as PostgreSQL.
         ports:
-            - ${REDIS_PORT}:6379
+            - 127.0.0.1:${REDIS_PORT}:6379
         networks:
             - internal
 
