@@ -195,8 +195,44 @@
     box-shadow: 0 10px 24px -12px var(--app-primary);
 }
 
+.app-navbar-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.75rem;
+}
+
+.app-navbar-user {
+    display: flex;
+    gap: 0.35rem;
+    order: 2;
+    margin-left: auto;
+}
+
 .app-nav-links {
+    display: flex;
     gap: 0.15rem;
+    order: 3;
+    flex: 0 0 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.app-nav-links::-webkit-scrollbar {
+    display: none;
+}
+
+@media (min-width: 992px) {
+    .app-nav-links {
+        order: 2;
+        flex: 0 1 auto;
+        margin-left: 0.5rem;
+        overflow: visible;
+    }
+
+    .app-navbar-user {
+        order: 3;
+    }
 }
 
 .app-nav-link {
@@ -646,12 +682,16 @@
     padding: 2rem;
 }
 
+.auth-header {
+    text-align: center;
+}
+
 .auth-brand {
-    display: inline-block;
-    margin-bottom: 1rem;
-    font-size: 1.05rem;
+    display: block;
+    margin-bottom: 0.75rem;
+    font-size: 1.9rem;
     font-weight: 800;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
     background: linear-gradient(135deg, var(--app-primary), var(--app-primary-2));
     -webkit-background-clip: text;
     background-clip: text;
@@ -751,8 +791,8 @@
 /* ------------------------------------------------------------------ */
 
 @media (max-width: 575.98px) {
-    .app-brand span:last-child {
-        display: none;
+    .app-brand {
+        font-size: 0.95rem;
     }
 
     .stat-card {
