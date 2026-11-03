@@ -437,7 +437,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
     }
 
     /**
-     * Persistent reply keyboard shown under the input field.
+     * Collapsible reply keyboard shown under the input field.
      *
      * @return array<string, mixed>
      */
@@ -450,7 +450,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
                 [['text' => '/status'], ['text' => '/help']],
             ],
             'resize_keyboard'         => true,
-            'is_persistent'           => true,
+            'is_persistent'           => false,
             'input_field_placeholder' => 'Send a video link or choose a command',
         ];
     }
