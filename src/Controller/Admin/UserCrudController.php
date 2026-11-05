@@ -54,6 +54,24 @@ final class UserCrudController extends AbstractCrudController
         yield EmailField::new('email', $this->trans('admin.field.email', 'Email'))
             ->setRequired(true);
 
+        yield TextField::new('telegramUsername', $this->trans('admin.field.telegram', 'Telegram'))
+            ->onlyOnDetail()
+            ->formatValue(function (mixed $value, ?User $entity): string {
+                if (!$entity instanceof User || !$entity->isTelegramLinked()) {
+                    return $this->trans('admin.field.telegram_not_linked', 'Not linked');
+                }
+
+                $account = \is_string($value) && '' !== $value
+                    ? \sprintf('@%s', $value)
+                    : (string) $entity->getTelegramUserId();
+
+                return $this->trans(
+                    'admin.field.telegram_linked',
+                    \sprintf('Linked as %s', $account),
+                    ['%account%' => $account],
+                );
+            });
+
         yield BooleanField::new('isEnabled', $this->trans('admin.field.enabled', 'Enabled'))
             ->renderAsSwitch();
 
@@ -139,8 +157,11 @@ final class UserCrudController extends AbstractCrudController
         };
     }
 
-    private function trans(string $key, string $fallback): string
+    /**
+     * @param array<string, string> $parameters
+     */
+    private function trans(string $key, string $fallback, array $parameters = []): string
     {
-        return $this->translator?->trans($key) ?? $fallback;
+        return $this->translator?->trans($key, $parameters) ?? $fallback;
     }
 }

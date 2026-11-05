@@ -140,6 +140,32 @@ final class UserCrudControllerFunctionalTest extends WebTestCase
         $this->assertTrue($this->passwordHasher->isPasswordValid($updated, 'NewPassword123!'));
     }
 
+    /**
+     * Verifies the admin user card shows the Telegram link status.
+     */
+    public function testDetailPageShowsTelegramLinkStatus(): void
+    {
+        $email                 = \sprintf('crud-telegram-%s@test.local', \bin2hex(\random_bytes(4)));
+        $this->createdEmails[] = $email;
+
+        $user = new User();
+
+        $user->setEmail($email)
+            ->setPassword($this->passwordHasher->hashPassword($user, 'Password123!'))
+            ->setRoles(['ROLE_USER'])
+            ->setTelegramUserId(12_345)
+            ->setTelegramUsername('telegram_user')
+        ;
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
+
+        $this->loginAsAdmin();
+
+        $this->client->request(Request::METHOD_GET, \sprintf('/admin/user/%d', $user->getId()));
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorTextContains('body', 'Linked as @telegram_user');
+    }
+
     private function loginAsAdmin(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
