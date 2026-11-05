@@ -32,3 +32,41 @@ shown as not linked. The information SHALL be read-only.
 
 - **WHEN** an administrator edits a User
 - **THEN** the Telegram Link status is not an editable form field
+
+### Requirement: Audit outcome is shown as text
+
+The admin Audit Event list and card SHALL show whether the action succeeded as
+Yes or No text, not as a switch.
+
+#### Scenario: Successful event
+
+- **WHEN** an administrator views an Audit Event whose action succeeded
+- **THEN** the outcome is shown as Yes
+
+#### Scenario: Failed event
+
+- **WHEN** an administrator views an Audit Event whose action failed
+- **THEN** the outcome is shown as No
+
+### Requirement: Opening a user shows the user card
+
+The admin Users list SHALL open the user card (detail view) when an administrator
+clicks a user, not the edit form.
+
+#### Scenario: Clicking a user row
+
+- **WHEN** an administrator clicks a user in the Users list
+- **THEN** the user card opens
+- **AND** the edit form is not opened
+
+### Requirement: Long audit values stay inside the mobile card
+
+On a narrow screen the admin Audit Event list SHALL wrap long unbroken values
+inside their card instead of letting them overflow the card.
+
+#### Scenario: Long target URL on a phone
+
+- **WHEN** an administrator opens the Audit Event list on a narrow screen
+- **AND** an event has a long unbroken target or actor value
+- **THEN** the value wraps within the card
+- **AND** it does not extend beyond the card border

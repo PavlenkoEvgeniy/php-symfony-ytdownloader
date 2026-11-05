@@ -154,6 +154,46 @@ final class SourceControllerTest extends WebTestCase
     }
 
     /**
+     * Verifies the file name links to the Source details page.
+     */
+    public function testFileNameLinksToShowPage(): void
+    {
+        $source = $this->createSourceWithFile('file-name-link.mp4');
+        $this->loginAsAdmin();
+
+        $crawler = $this->client->request(Request::METHOD_GET, '/ui/source');
+
+        $this->assertResponseIsSuccessful();
+
+        $link = $crawler->filter(\sprintf('a.file-name[href="/ui/source/%d"]', $source->getId()));
+
+        $this->assertCount(1, $link);
+        $this->assertSame('file-name-link.mp4', \trim((string) $link->text()));
+    }
+
+    /**
+     * Verifies the details page offers a confirmed delete action.
+     */
+    public function testShowPageOffersConfirmedDelete(): void
+    {
+        $source = $this->createSourceWithFile('show-delete.mp4');
+        $this->loginAsAdmin();
+
+        $crawler = $this->client->request(Request::METHOD_GET, \sprintf('/ui/source/%d', $source->getId()));
+
+        $this->assertResponseIsSuccessful();
+
+        $formSelector = \sprintf('form[action="/ui/source/delete/%d"]', $source->getId());
+        $form         = $crawler->filter($formSelector);
+
+        $this->assertCount(1, $form);
+        $this->assertStringContainsString('confirm(', (string) $form->attr('onsubmit'));
+        $this->assertSelectorExists($formSelector . ' input[name="_token"]');
+        $this->assertSelectorExists($formSelector . ' button[type="submit"]');
+        $this->assertSelectorTextContains($formSelector . ' button', 'Delete');
+    }
+
+    /**
      * Verifies downloading a file requires authentication.
      */
     public function testDownloadRequiresAuthentication(): void

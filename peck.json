@@ -99,7 +99,8 @@
             "unzip",
             "igbinary",
             "musl",
-            "ci"
+            "ci",
+            "stylesheet"
         ],
         "paths": [
             "vendor"

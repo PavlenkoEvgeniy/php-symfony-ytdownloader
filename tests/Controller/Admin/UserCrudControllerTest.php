@@ -6,6 +6,7 @@ namespace App\Tests\Controller\Admin;
 
 use App\Controller\Admin\UserCrudController;
 use App\Entity\User;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
@@ -25,6 +26,18 @@ final class UserCrudControllerTest extends TestCase
     public function testGetEntityFqcn(): void
     {
         $this->assertSame(User::class, UserCrudController::getEntityFqcn());
+    }
+
+    /**
+     * Verifies the Users list row opens the user card.
+     */
+    public function testConfigureCrudUsesDetailAsDefaultRowAction(): void
+    {
+        $controller = new UserCrudController($this->createStub(UserPasswordHasherInterface::class));
+
+        $dto = $controller->configureCrud(Crud::new())->getAsDto();
+
+        $this->assertSame(Action::DETAIL, $dto->getDefaultRowAction());
     }
 
     /**

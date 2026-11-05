@@ -8,8 +8,10 @@ use App\Controller\Admin\AuditEventCrudController;
 use App\Entity\AuditEvent;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
+use EasyCorp\Bundle\EasyAdminBundle\Dto\AssetDto;
 use PHPUnit\Framework\TestCase;
 
 final class AuditEventCrudControllerTest extends TestCase
@@ -78,6 +80,35 @@ final class AuditEventCrudControllerTest extends TestCase
         $targetFormat = $this->formatCallable($this->field($fields, 'targetLabel'));
         $this->assertSame('-', $targetFormat(null));
         $this->assertSame('video.mp4', $targetFormat('video.mp4'));
+    }
+
+    /**
+     * Verifies the outcome is displayed as text instead of a switch.
+     */
+    public function testSuccessFieldIsRenderedAsText(): void
+    {
+        $fields  = \iterator_to_array((new AuditEventCrudController())->configureFields(Crud::PAGE_INDEX));
+        $success = $this->field($fields, 'success');
+
+        $reflection = new \ReflectionObject($success);
+        $dto        = $reflection->getProperty('dto')->getValue($success);
+
+        $this->assertFalse($dto->getCustomOption('renderAsSwitch'));
+    }
+
+    /**
+     * Verifies the audit page loads the mobile wrapping stylesheet.
+     */
+    public function testConfigureAssetsAddsAuditStylesheet(): void
+    {
+        $assets = (new AuditEventCrudController())->configureAssets(Assets::new())->getAsDto();
+
+        $paths = \array_map(
+            static fn (AssetDto $asset): string => $asset->getValue(),
+            $assets->getCssAssets(),
+        );
+
+        $this->assertContains('styles/admin-audit-event.css', $paths);
     }
 
     /**

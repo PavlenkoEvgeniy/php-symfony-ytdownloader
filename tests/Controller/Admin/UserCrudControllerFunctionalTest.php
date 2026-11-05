@@ -141,6 +141,37 @@ final class UserCrudControllerFunctionalTest extends WebTestCase
     }
 
     /**
+     * Verifies clicking a user in the list opens the user card.
+     */
+    public function testIndexRowLinksToUserCard(): void
+    {
+        $email                 = \sprintf('crud-row-%s@test.local', \bin2hex(\random_bytes(4)));
+        $this->createdEmails[] = $email;
+
+        $user = new User();
+
+        $user->setEmail($email)
+            ->setPassword($this->passwordHasher->hashPassword($user, 'Password123!'))
+            ->setRoles(['ROLE_USER'])
+        ;
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
+
+        $this->loginAsAdmin();
+
+        $crawler = $this->client->request(Request::METHOD_GET, '/admin/user');
+        $this->assertResponseIsSuccessful();
+
+        $row = $crawler->filter(\sprintf('tr[data-id="%d"]', $user->getId()));
+        $this->assertCount(1, $row);
+
+        $url = (string) $row->attr('data-default-action-url');
+
+        $this->assertStringContainsString(\sprintf('/admin/user/%d', $user->getId()), $url);
+        $this->assertStringNotContainsString('/edit', $url);
+    }
+
+    /**
      * Verifies the admin user card shows the Telegram link status.
      */
     public function testDetailPageShowsTelegramLinkStatus(): void

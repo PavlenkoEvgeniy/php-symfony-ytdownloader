@@ -57,6 +57,7 @@ final class AuditEventCrudControllerFunctionalTest extends WebTestCase
             $this->assertResponseIsSuccessful();
             $this->assertSelectorTextContains('body', 'rendered-video.mp4');
             $this->assertSelectorTextContains('body', 'File deleted');
+            $this->assertSelectorExists('link[rel="stylesheet"][href*="admin-audit-event"]');
 
             $this->client->request(Request::METHOD_GET, \sprintf('/admin/audit-event/%d', $event->getId()));
             $this->assertResponseIsSuccessful();

@@ -97,7 +97,7 @@
                                             {% endif %}
                                         </span>
                                         <span>
-                                            <span class="file-name" title="{{ source.filename }}">{{ source.filename }}</span>
+                                            <a class="file-name" href="{{ path('ui_source_show', {'id': source.id}) }}" title="{{ source.filename }}">{{ source.filename }}</a>
                                             <span class="file-meta">{{ extension|upper }}{% if source.description %} · {{ source.description }}{% endif %}</span>
                                         </span>
                                     </div>
