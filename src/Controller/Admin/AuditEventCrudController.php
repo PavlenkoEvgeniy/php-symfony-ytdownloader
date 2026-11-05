@@ -9,6 +9,7 @@ use App\Enum\AuditAction;
 use App\Enum\AuditChannel;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
@@ -41,6 +42,14 @@ final class AuditEventCrudController extends AbstractCrudController
     {
         return parent::configureActions($actions)
             ->disable(Action::NEW, Action::EDIT, Action::DELETE);
+    }
+
+    #[\Override]
+    public function configureAssets(Assets $assets): Assets
+    {
+        return parent::configureAssets($assets)
+            ->addCssFile('styles/admin-audit-event.css')
+        ;
     }
 
     #[\Override]
@@ -81,7 +90,8 @@ final class AuditEventCrudController extends AbstractCrudController
         yield TextField::new('targetLabel', $this->trans('admin.field.target', 'Target'))
             ->formatValue(static fn (?string $value): string => $value ?? '-');
         yield TextField::new('ip', $this->trans('admin.field.ip', 'IP'));
-        yield BooleanField::new('success', $this->trans('admin.field.success', 'Success'));
+        yield BooleanField::new('success', $this->trans('admin.field.success', 'Success'))
+            ->renderAsSwitch(false);
         yield TextField::new('actorType', $this->trans('admin.field.actor_type', 'Actor type'))->onlyOnDetail();
         yield TextField::new('targetType', $this->trans('admin.field.target_type', 'Target type'))->onlyOnDetail();
         yield TextField::new('userAgent', $this->trans('admin.field.user_agent', 'User agent'))->onlyOnDetail();

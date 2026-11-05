@@ -25,3 +25,29 @@ cleanup run, leaving Sources and files referenced by a Source untouched.
 
 - **WHEN** a file is younger than the TTL and may still be written by a worker
 - **THEN** the cleanup does not delete it
+
+### Requirement: File name opens the Source details
+
+Clicking a file name in the Library SHALL open the details page of that Source.
+
+#### Scenario: Clicking a file name
+
+- **WHEN** a user clicks a file name in the Library
+- **THEN** the details page of that Source opens
+
+### Requirement: Delete from the Source details page
+
+The Source details page SHALL offer a delete action that asks for confirmation
+before deleting the file and its Source.
+
+#### Scenario: Deleting from the details page
+
+- **WHEN** a user clicks Delete on the Source details page
+- **THEN** the user is asked to confirm
+- **AND** after confirmation the file and its Source are deleted
+- **AND** the user returns to the Library
+
+#### Scenario: Cancelling the confirmation
+
+- **WHEN** a user dismisses the confirmation
+- **THEN** the Source is not deleted

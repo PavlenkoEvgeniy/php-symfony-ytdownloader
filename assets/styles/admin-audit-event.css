@@ -1,0 +1,7 @@
+/* Long unbroken values (video URLs) overflow the audit cards on narrow screens. */
+@media (max-width: 767px) {
+    .datagrid td,
+    .datagrid td a {
+        overflow-wrap: anywhere;
+    }
+}
