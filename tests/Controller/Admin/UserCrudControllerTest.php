@@ -116,6 +116,54 @@ final class UserCrudControllerTest extends TestCase
     }
 
     /**
+     * Verifies the detail page formats the Telegram link status.
+     */
+    public function testConfigureFieldsForDetailFormatsTelegramLinkStatus(): void
+    {
+        $controller = new UserCrudController($this->createStub(UserPasswordHasherInterface::class));
+
+        $fields = \iterator_to_array($controller->configureFields(Crud::PAGE_DETAIL));
+
+        $telegramField = null;
+        foreach ($fields as $field) {
+            if ('telegramUsername' === $this->getFieldProperty($field)) {
+                $telegramField = $field;
+                break;
+            }
+        }
+
+        $this->assertNotNull($telegramField, 'telegram field not found');
+
+        $formatter = $this->getFieldFormatValue($telegramField);
+
+        $linked = new User();
+
+        $linked->setEmail('linked@test.local')
+            ->setTelegramUserId(12_345)
+            ->setTelegramUsername('linked_user')
+        ;
+
+        $withoutUsername = new User();
+
+        $withoutUsername->setEmail('no-username@test.local')->setTelegramUserId(54_321);
+
+        $unlinked = new User();
+
+        $unlinked->setEmail('unlinked@test.local');
+
+        $this->assertSame('Linked as @linked_user', $formatter('linked_user', $linked));
+        $this->assertSame('Linked as 54321', $formatter(null, $withoutUsername));
+        $this->assertSame('Not linked', $formatter(null, $unlinked));
+        $this->assertSame('Not linked', $formatter(null, null));
+
+        $this->assertTrue($this->isFieldDisplayedOn($telegramField, Crud::PAGE_DETAIL));
+
+        foreach ([Crud::PAGE_INDEX, Crud::PAGE_EDIT, Crud::PAGE_NEW] as $pageName) {
+            $this->assertFalse($this->isFieldDisplayedOn($telegramField, $pageName), $pageName);
+        }
+    }
+
+    /**
      * Verifies the hash closure leaves the entity untouched for invalid forms or empty passwords.
      */
     public function testHashPasswordClosureDoesNothingWhenFormInvalidOrPasswordNull(): void
@@ -237,6 +285,28 @@ final class UserCrudControllerTest extends TestCase
         $dto  = $prop->getValue($field);
 
         return $dto->getCustomOption($option);
+    }
+
+    private function isFieldDisplayedOn(object $field, string $pageName): bool
+    {
+        $ref  = new \ReflectionObject($field);
+        $prop = $ref->getProperty('dto');
+        $dto  = $prop->getValue($field);
+
+        return $dto->isDisplayedOn($pageName);
+    }
+
+    private function getFieldFormatValue(object $field): \Closure
+    {
+        $ref  = new \ReflectionObject($field);
+        $prop = $ref->getProperty('dto');
+        $dto  = $prop->getValue($field);
+
+        $callable = $dto->getFormatValueCallable();
+
+        $this->assertInstanceOf(\Closure::class, $callable);
+
+        return $callable;
     }
 
     private function getHashPasswordClosure(UserCrudController $controller): \Closure
