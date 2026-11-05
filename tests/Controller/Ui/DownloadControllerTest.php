@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller\Ui;
 
+use App\Exception\InsufficientDiskSpaceException;
 use App\Repository\DownloadSettingsRepositoryInterface;
 use App\Repository\DownloadTaskRepositoryInterface;
 use App\Repository\UserRepository;
+use App\Service\DiskSpacePolicy;
+use App\Service\DiskSpacePolicyInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -258,6 +261,44 @@ final class DownloadControllerTest extends WebTestCase
             $this->assertSelectorNotExists('a[href="/ui/download"]');
         } finally {
             $this->setWebIntakeEnabled(true);
+        }
+    }
+
+    /**
+     * Verifies a download submission is rejected while the disk is under pressure.
+     */
+    public function testDownloadPostIsRejectedUnderDiskPressure(): void
+    {
+        $user = $this->userRepository->findOneByEmail('admin@admin.local');
+        $this->client->loginUser($user);
+
+        $policy = $this->createStub(DiskSpacePolicyInterface::class);
+        $policy->method('isLow')->willReturn(true);
+        $policy->method('assertCanAccept')->willThrowException(InsufficientDiskSpaceException::create(0.0, 1));
+
+        $this->client->disableReboot();
+        $this->getContainer()->set(DiskSpacePolicy::class, $policy);
+
+        try {
+            $before = $this->countTasks();
+
+            $crawler = $this->client->request(Request::METHOD_GET, '/ui/download');
+            $this->assertResponseIsSuccessful();
+            $this->assertSelectorTextContains('div.alert-warning', 'Free disk space is below the minimum');
+
+            $form = $crawler->filter('form')->form([
+                'download_form[link]'    => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'download_form[quality]' => 'best',
+            ]);
+
+            $this->client->submit($form);
+
+            $this->assertResponseRedirects('/ui/source');
+            $this->client->followRedirect();
+            $this->assertSelectorTextContains('div.alert-danger', 'Not enough free disk space to accept new downloads.');
+            $this->assertSame($before, $this->countTasks());
+        } finally {
+            $this->client->enableReboot();
         }
     }
 

@@ -83,6 +83,7 @@ jobs:
             make stop
             # Only safe while the stack is stopped (see the Makefile cache-purge comment).
             make cache-purge
+            make log-purge
             make restart
             # Remove old images, stopped containers and build cache; volumes are kept.
             make docker-prune

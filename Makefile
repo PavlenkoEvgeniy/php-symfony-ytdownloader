@@ -41,6 +41,7 @@ help:
 	@echo "37. docker-prune ......... Remove unused images, containers and build cache."
 	@echo "38. openspec ........................... Run the OpenSpec CLI (ARGS=...)."
 	@echo "39. openspec-validate ............... Validate all OpenSpec specs and changes."
+	@echo "40. log-purge ...................................... Delete stale var/log files."
 	@echo "+------------------------------------------------------------------------------+"
 
 env-setup:
@@ -159,10 +160,14 @@ cache-clear:
 cache-purge:
 	rm -rf ./var/cache/
 
+log-purge:
+	rm -rf ./var/log/*
+
 # Clean the host after a deploy. Named volumes (Redis data) are kept because
 # `docker system prune` does not remove volumes unless --volumes is passed.
 docker-prune:
 	docker system prune --all -f
+	docker builder prune --all -f
 
 cache-warmup:
 	docker exec -u www-data -e HOME=/tmp ytdownloader-php-fpm php bin/console cache:warmup

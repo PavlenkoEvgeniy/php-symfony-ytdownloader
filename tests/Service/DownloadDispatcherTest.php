@@ -7,8 +7,10 @@ namespace App\Tests\Service;
 use App\Entity\DownloadTask;
 use App\Entity\User;
 use App\Exception\DownloadIntakeDisabledException;
+use App\Exception\InsufficientDiskSpaceException;
 use App\Message\DownloadMessage;
 use App\Service\AuditLoggerInterface;
+use App\Service\DiskSpacePolicyInterface;
 use App\Service\DownloadDispatcher;
 use App\Service\DownloadIntakePolicyInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -45,6 +47,7 @@ final class DownloadDispatcherTest extends TestCase
             $bus,
             $this->createStub(AuditLoggerInterface::class),
             $this->createStub(DownloadIntakePolicyInterface::class),
+            $this->createStub(DiskSpacePolicyInterface::class),
         );
         $user       = new User()->setEmail('test@test.local');
         $task       = $dispatcher->dispatch(
@@ -84,9 +87,43 @@ final class DownloadDispatcherTest extends TestCase
         $policy = $this->createStub(DownloadIntakePolicyInterface::class);
         $policy->method('assertAccepts')->willThrowException(DownloadIntakeDisabledException::create());
 
-        $dispatcher = new DownloadDispatcher($em, $bus, $this->createStub(AuditLoggerInterface::class), $policy);
+        $dispatcher = new DownloadDispatcher(
+            $em,
+            $bus,
+            $this->createStub(AuditLoggerInterface::class),
+            $policy,
+            $this->createStub(DiskSpacePolicyInterface::class),
+        );
 
         $this->expectException(DownloadIntakeDisabledException::class);
+
+        $dispatcher->dispatch('https://youtube.com/watch?v=test', 'best');
+    }
+
+    /**
+     * Verifies a rejected disk-space guard persists nothing and dispatches no message.
+     */
+    public function testDispatchRejectsWhenDiskSpacePolicyThrows(): void
+    {
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->expects($this->never())->method('persist');
+        $em->expects($this->never())->method('flush');
+
+        $bus = $this->createMock(MessageBusInterface::class);
+        $bus->expects($this->never())->method('dispatch');
+
+        $diskPolicy = $this->createStub(DiskSpacePolicyInterface::class);
+        $diskPolicy->method('assertCanAccept')->willThrowException(InsufficientDiskSpaceException::create(0.0, 1));
+
+        $dispatcher = new DownloadDispatcher(
+            $em,
+            $bus,
+            $this->createStub(AuditLoggerInterface::class),
+            $this->createStub(DownloadIntakePolicyInterface::class),
+            $diskPolicy,
+        );
+
+        $this->expectException(InsufficientDiskSpaceException::class);
 
         $dispatcher->dispatch('https://youtube.com/watch?v=test', 'best');
     }

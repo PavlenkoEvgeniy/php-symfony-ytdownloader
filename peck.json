@@ -84,7 +84,8 @@
             "rewinddir",
             "closedir",
             "json",
-            "openspec"
+            "openspec",
+            "runbook"
         ],
         "paths": [
             "vendor"

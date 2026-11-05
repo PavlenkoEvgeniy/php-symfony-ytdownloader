@@ -133,6 +133,17 @@ Downloaded counter is not reduced. Files whose task is still `queued` or
 docker exec ytdownloader-php-fpm php bin/console app:library:prune --dry-run
 ```
 
+## 💾 Disk space
+
+The download volume is checked before every new task; while free space is below
+`MIN_FREE_DISK_MB` (5 GB by default) the UI, REST API v1/v2 (507) and Telegram bot
+reject new downloads. Orphan files are pruned hourly by the `downloads-prune`
+supervisor program, and `make docker-prune` now removes the unused build cache.
+Stale `var/log` files are purged on deploy.
+
+Manual cleanup and the list of volumes that must never be deleted:
+[docs/runbook/disk-space.md](docs/runbook/disk-space.md).
+
 ## 🤖 Telegram bot
 
 1. **Initialize**:

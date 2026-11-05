@@ -33,6 +33,8 @@ services:
         alias: App\Service\DownloadDispatcher
     App\Service\DownloadIntakePolicyInterface:
         alias: App\Service\DownloadIntakePolicy
+    App\Service\DiskSpacePolicyInterface:
+        alias: App\Service\DiskSpacePolicy
     App\Service\QueueStatsServiceInterface:
         alias: App\Service\QueueStatsService
     App\Service\OrphanFilePrunerInterface:
