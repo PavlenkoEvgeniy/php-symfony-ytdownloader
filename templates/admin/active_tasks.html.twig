@@ -77,7 +77,7 @@
         </div>
     {% endif %}
 
-    <div class="table-responsive">
+    <div class="table-responsive d-none d-lg-block">
         <table class="table table-striped">
             <thead>
             <tr>
@@ -112,5 +112,44 @@
             {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    {# The seven-column table is unreadable on phones: show one card per task instead. #}
+    <div class="d-lg-none">
+        {% for task in tasks %}
+            <div class="card mb-2">
+                <div class="card-body p-3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                        <span class="fw-semibold">#{{ task.id }}</span>
+                        <span class="badge bg-{{ task.status == 'queued' ? 'secondary' : (task.status == 'processing' ? 'primary' : 'danger') }}">{{ ('admin.status.' ~ task.status)|trans }}</span>
+                    </div>
+
+                    <div class="small text-muted mb-1">
+                        {{ ('form.quality.' ~ task.quality)|trans }}
+                        {% if task.createdAt %}· {{ task.createdAt|date('Y-m-d H:i') }}{% endif %}
+                    </div>
+
+                    <div class="small mb-2">
+                        <span class="text-muted">{{ 'admin.active_tasks.url'|trans }}:</span>
+                        <a class="text-break" href="{{ task.url }}" target="_blank" rel="noopener noreferrer">{{ task.url }}</a>
+                    </div>
+
+                    {% if task.errorMessage %}
+                        <div class="small text-danger text-break">
+                            <span class="fw-semibold">{{ 'admin.active_tasks.error'|trans }}:</span>
+                            {{ task.errorMessage }}
+                        </div>
+                    {% endif %}
+
+                    <div class="small text-muted mt-2">
+                        {{ 'admin.active_tasks.attempts'|trans }}: {{ task.attempts }}
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="card">
+                <div class="card-body text-center text-muted">{{ 'admin.active_tasks.no_active'|trans }}</div>
+            </div>
+        {% endfor %}
     </div>
 {% endblock %}

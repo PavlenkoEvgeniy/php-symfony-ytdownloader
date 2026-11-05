@@ -324,6 +324,37 @@ final class DashboardControllerTest extends WebTestCase
     }
 
     /**
+     * Verifies the active tasks page renders mobile cards next to the desktop table.
+     */
+    public function testActiveTasksPageRendersMobileCards(): void
+    {
+        $url  = 'https://www.youtube.com/watch?v=' . \str_repeat('a', 300);
+        $task = new DownloadTask();
+
+        $task->setUrl($url)
+            ->setQuality('best')
+            ->setStatus(DownloadTask::STATUS_ERROR)
+            ->setErrorMessage('ERROR: test failure');
+        $this->entityManager->persist($task);
+        $this->entityManager->flush();
+
+        try {
+            $user = $this->userRepository->findOneByEmail('admin@admin.local');
+            $this->client->loginUser($user);
+
+            $this->client->request(Request::METHOD_GET, '/admin/active-tasks');
+
+            $this->assertResponseIsSuccessful();
+            $this->assertSelectorExists('div.table-responsive.d-none.d-lg-block');
+            $this->assertSelectorExists('div.d-lg-none .card');
+            $this->assertSelectorTextContains('div.d-lg-none .card', $url);
+        } finally {
+            $this->entityManager->remove($task);
+            $this->entityManager->flush();
+        }
+    }
+
+    /**
      * Verifies the active tasks page shows a recently persisted download task.
      */
     public function testActiveTasksPageListsRecentTask(): void
