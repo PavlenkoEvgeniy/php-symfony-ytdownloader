@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace App\Tests\MessageHandler;
 
 use App\Entity\DownloadTask;
+use App\Entity\User;
+use App\Enum\AuditAction;
+use App\Enum\AuditActorType;
+use App\Enum\AuditChannel;
 use App\Enum\DownloadOutcome;
 use App\Message\DownloadMessage;
 use App\MessageHandler\DownloadMessageHandler;
@@ -157,5 +161,112 @@ final class DownloadMessageHandlerTest extends TestCase
         );
 
         $handler->__invoke(new DownloadMessage('https://test.local/2', 'audio'));
+    }
+
+    /**
+     * Verifies a Telegram download is audited under the task user's email.
+     */
+    public function testInvokeAuditsTelegramDownloadUnderUserEmail(): void
+    {
+        $user = new User()->setEmail('telegram@test.local');
+
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+            ->setTelegramChatId(12_345)
+            ->setUser($user);
+
+        $connection = $this->createStub(Connection::class);
+        $connection->method('executeStatement')->willReturn(1);
+
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('getConnection')->willReturn($connection);
+        $em->method('find')->willReturn($task);
+        $em->method('flush');
+
+        $videoProcessor = $this->createStub(VideoProcessorInterface::class);
+        $videoProcessor->method('process')->willReturn(DownloadOutcome::ERROR);
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn($task);
+
+        $auditLogger = $this->createMock(AuditLoggerInterface::class);
+        $auditLogger->expects($this->once())
+            ->method('log')
+            ->with(
+                AuditAction::DOWNLOAD_FAILURE,
+                AuditChannel::TELEGRAM,
+                'download_task',
+                7,
+                'https://test.local',
+                false,
+                ['quality' => 'best', 'telegram_chat_id' => 12_345],
+                null,
+                null,
+                $user,
+            );
+
+        $handler = new DownloadMessageHandler(
+            $videoProcessor,
+            new DownloadTaskManager($em),
+            $auditLogger,
+            $taskRepository,
+            $this->createStub(MessageBusInterface::class),
+        );
+
+        $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
+    }
+
+    /**
+     * Verifies a Telegram download without a task user falls back to the chat id.
+     */
+    public function testInvokeAuditsTelegramFallbackWithoutTaskUser(): void
+    {
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+            ->setTelegramChatId(12_345);
+
+        $connection = $this->createStub(Connection::class);
+        $connection->method('executeStatement')->willReturn(1);
+
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('getConnection')->willReturn($connection);
+        $em->method('find')->willReturn($task);
+        $em->method('flush');
+
+        $videoProcessor = $this->createStub(VideoProcessorInterface::class);
+        $videoProcessor->method('process')->willReturn(DownloadOutcome::ERROR);
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn($task);
+
+        $auditLogger = $this->createMock(AuditLoggerInterface::class);
+        $auditLogger->expects($this->once())
+            ->method('log')
+            ->with(
+                AuditAction::DOWNLOAD_FAILURE,
+                AuditChannel::TELEGRAM,
+                'download_task',
+                7,
+                'https://test.local',
+                false,
+                ['quality' => 'best', 'telegram_chat_id' => 12_345],
+                AuditActorType::TELEGRAM,
+                '12345',
+                null,
+            );
+
+        $handler = new DownloadMessageHandler(
+            $videoProcessor,
+            new DownloadTaskManager($em),
+            $auditLogger,
+            $taskRepository,
+            $this->createStub(MessageBusInterface::class),
+        );
+
+        $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
     }
 }

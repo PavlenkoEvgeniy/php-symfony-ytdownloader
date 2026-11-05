@@ -101,6 +101,35 @@ final class AuditLoggerTest extends TestCase
     }
 
     /**
+     * Verifies an explicitly passed user is used instead of the token context.
+     */
+    public function testUsesExplicitActorOverRequestContext(): void
+    {
+        $user = new User();
+        $user->setEmail('telegram@test.local');
+
+        $logger = $this->createCapturingLogger(
+            $this->createStub(TokenStorageInterface::class),
+            $this->createStack($this->createRequest('/telegram/hook')),
+        );
+
+        $logger->log(
+            action: AuditAction::DOWNLOAD_SUCCESS,
+            channel: AuditChannel::TELEGRAM,
+            metadata: ['telegram_chat_id' => 42],
+            actor: $user,
+        );
+
+        $event = $this->requireLastEvent();
+
+        $this->assertSame('user', $event->getActorType());
+        $this->assertSame('telegram@test.local', $event->getActorLabel());
+        $this->assertNull($event->getActorId());
+        $this->assertSame('telegram', $event->getChannel());
+        $this->assertSame(['telegram_chat_id' => 42], $event->getMetadata());
+    }
+
+    /**
      * Verifies the channel is derived from the request path.
      */
     public function testResolvesChannelFromRequestPath(): void

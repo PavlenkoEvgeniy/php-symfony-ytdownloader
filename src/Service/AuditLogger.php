@@ -39,9 +39,10 @@ final readonly class AuditLogger implements AuditLoggerInterface
         array $metadata = [],
         ?AuditActorType $actorType = null,
         ?string $actorLabel = null,
+        ?User $actor = null,
     ): void {
         $request                                            = $this->requestStack->getMainRequest();
-        [$resolvedActorType, $actorId, $resolvedActorLabel] = $this->resolveActor($actorType, $actorLabel);
+        [$resolvedActorType, $actorId, $resolvedActorLabel] = $this->resolveActor($actor, $actorType, $actorLabel);
 
         $event = new AuditEvent(
             occurredAt: new \DateTimeImmutable(),
@@ -76,8 +77,12 @@ final readonly class AuditLogger implements AuditLoggerInterface
     /**
      * @return array{AuditActorType, int|null, string|null}
      */
-    private function resolveActor(?AuditActorType $actorType, ?string $actorLabel): array
+    private function resolveActor(?User $actor, ?AuditActorType $actorType, ?string $actorLabel): array
     {
+        if ($actor instanceof User) {
+            return [AuditActorType::USER, $actor->getId(), $actor->getEmail()];
+        }
+
         if ($actorType instanceof AuditActorType) {
             return [$actorType, null, $actorLabel];
         }

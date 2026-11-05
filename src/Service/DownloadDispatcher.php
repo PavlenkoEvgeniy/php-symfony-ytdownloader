@@ -64,6 +64,14 @@ final readonly class DownloadDispatcher implements DownloadDispatcherInterface
         $this->messageBus->dispatch(new DownloadMessage($url, $quality, $telegramUserId, $task->getId()));
 
         $isTelegram = DownloadTask::ORIGIN_TELEGRAM === $origin;
+        $actor      = $isTelegram ? $user : null;
+        $actorType  = $isTelegram && !$actor instanceof User ? AuditActorType::TELEGRAM : null;
+        $actorLabel = $isTelegram && !$actor instanceof User ? $telegramUserId : null;
+        $metadata   = ['quality' => $quality];
+
+        if ($isTelegram && null !== $telegramChatId) {
+            $metadata['telegram_chat_id'] = $telegramChatId;
+        }
 
         $this->auditLogger->log(
             action: AuditAction::DOWNLOAD_REQUEST,
@@ -71,9 +79,10 @@ final readonly class DownloadDispatcher implements DownloadDispatcherInterface
             targetType: 'download_task',
             targetId: $task->getId(),
             targetLabel: $url,
-            metadata: ['quality' => $quality],
-            actorType: $isTelegram ? AuditActorType::TELEGRAM : null,
-            actorLabel: $isTelegram ? $telegramUserId : null,
+            metadata: $metadata,
+            actorType: $actorType,
+            actorLabel: $actorLabel,
+            actor: $actor,
         );
 
         return $task;

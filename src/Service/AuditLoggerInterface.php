@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\User;
 use App\Enum\AuditAction;
 use App\Enum\AuditActorType;
 use App\Enum\AuditChannel;
@@ -23,5 +24,6 @@ interface AuditLoggerInterface
         array $metadata = [],
         ?AuditActorType $actorType = null,
         ?string $actorLabel = null,
+        ?User $actor = null,
     ): void;
 }

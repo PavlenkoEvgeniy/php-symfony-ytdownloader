@@ -96,6 +96,25 @@ deletes the file and its Source; a failed delivery keeps them and points the
 requester to the web library.
 _Avoid_: notification, upload
 
+### Audit
+
+**Audit Event**:
+An immutable record of an action that matters for security or operations: what
+happened, who did it, through which Channel, on what target, and whether it
+succeeded. Read in the Admin Panel; it is not download progress.
+_Avoid_: log (a Log is the downloader's progress output, not an Audit Event)
+
+**Actor**:
+The User who performed an audited action, identified by email; the System or an
+anonymous request when no User is involved. A Telegram account is an identity
+linked to the Actor, not the Actor itself.
+_Avoid_: telegram user, chat id, user number
+
+**Channel**:
+The surface an audited action arrived through: the UI, REST API v1/v2, Telegram,
+the Admin Panel or the System for background work.
+_Avoid_: source, origin (Origin already means where a Download Task was created)
+
 ### Users
 
 **Avatar**:

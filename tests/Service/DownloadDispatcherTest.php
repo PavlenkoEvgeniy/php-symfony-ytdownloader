@@ -6,6 +6,9 @@ namespace App\Tests\Service;
 
 use App\Entity\DownloadTask;
 use App\Entity\User;
+use App\Enum\AuditAction;
+use App\Enum\AuditActorType;
+use App\Enum\AuditChannel;
 use App\Exception\DownloadIntakeDisabledException;
 use App\Exception\InsufficientDiskSpaceException;
 use App\Message\DownloadMessage;
@@ -126,5 +129,85 @@ final class DownloadDispatcherTest extends TestCase
         $this->expectException(InsufficientDiskSpaceException::class);
 
         $dispatcher->dispatch('https://youtube.com/watch?v=test', 'best');
+    }
+
+    /**
+     * Verifies a Telegram request is audited under the linked user's email.
+     */
+    public function testDispatchAuditsTelegramActorWithUserEmail(): void
+    {
+        $user = new User()->setEmail('telegram@test.local');
+
+        $bus = $this->createStub(MessageBusInterface::class);
+        $bus->method('dispatch')
+            ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
+
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->expects($this->once())->method('persist');
+        $em->expects($this->once())->method('flush');
+
+        $auditLogger = $this->createMock(AuditLoggerInterface::class);
+        $auditLogger->expects($this->once())
+            ->method('log')
+            ->with(
+                AuditAction::DOWNLOAD_REQUEST,
+                AuditChannel::TELEGRAM,
+                'download_task',
+                null,
+                'https://youtube.com/watch?v=test',
+                true,
+                ['quality' => 'best', 'telegram_chat_id' => 42],
+                null,
+                null,
+                $user,
+            );
+
+        $dispatcher = new DownloadDispatcher(
+            $em,
+            $bus,
+            $auditLogger,
+            $this->createStub(DownloadIntakePolicyInterface::class),
+            $this->createStub(DiskSpacePolicyInterface::class),
+        );
+
+        $dispatcher->dispatch('https://youtube.com/watch?v=test', 'best', $user, DownloadTask::ORIGIN_TELEGRAM, 42);
+    }
+
+    /**
+     * Verifies a Telegram request without a user keeps the chat id as the actor.
+     */
+    public function testDispatchAuditsTelegramFallbackWithoutUser(): void
+    {
+        $bus = $this->createStub(MessageBusInterface::class);
+        $bus->method('dispatch')
+            ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
+
+        $em = $this->createStub(EntityManagerInterface::class);
+
+        $auditLogger = $this->createMock(AuditLoggerInterface::class);
+        $auditLogger->expects($this->once())
+            ->method('log')
+            ->with(
+                AuditAction::DOWNLOAD_REQUEST,
+                AuditChannel::TELEGRAM,
+                'download_task',
+                null,
+                'https://youtube.com/watch?v=test',
+                true,
+                ['quality' => 'best', 'telegram_chat_id' => 42],
+                AuditActorType::TELEGRAM,
+                '42',
+                null,
+            );
+
+        $dispatcher = new DownloadDispatcher(
+            $em,
+            $bus,
+            $auditLogger,
+            $this->createStub(DownloadIntakePolicyInterface::class),
+            $this->createStub(DiskSpacePolicyInterface::class),
+        );
+
+        $dispatcher->dispatch('https://youtube.com/watch?v=test', 'best', null, DownloadTask::ORIGIN_TELEGRAM, 42);
     }
 }

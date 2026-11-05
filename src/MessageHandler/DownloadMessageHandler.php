@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\MessageHandler;
 
 use App\Entity\DownloadTask;
+use App\Entity\User;
 use App\Enum\AuditAction;
 use App\Enum\AuditActorType;
 use App\Enum\AuditChannel;
@@ -58,16 +59,37 @@ final readonly class DownloadMessageHandler
             }
         }
 
-        if (null !== $taskId && DownloadOutcome::SUCCESS === $outcome) {
-            $task = $this->downloadTaskRepository->findById($taskId);
+        $isTelegram = '' !== $message->telegramUserId;
+        $task       = null !== $taskId && $isTelegram ? $this->downloadTaskRepository->findById($taskId) : null;
 
-            if ($task instanceof DownloadTask && $task->isTelegramOrigin()) {
-                $this->downloadTaskManager->markDeliveryStatus($taskId, DownloadTask::DELIVERY_PENDING);
-                $this->messageBus->dispatch(new TelegramDeliveryMessage($taskId));
+        if ($task instanceof DownloadTask && DownloadOutcome::SUCCESS === $outcome && $task->isTelegramOrigin()) {
+            $this->downloadTaskManager->markDeliveryStatus($task->getIdOrFail(), DownloadTask::DELIVERY_PENDING);
+            $this->messageBus->dispatch(new TelegramDeliveryMessage($task->getIdOrFail()));
+        }
+
+        $actor    = $isTelegram && $task instanceof DownloadTask ? $task->getUser() : null;
+        $metadata = ['quality' => $message->quality];
+
+        if ($isTelegram) {
+            $telegramChatId = $task instanceof DownloadTask
+                ? $task->getTelegramChatId()
+                : (int) $message->telegramUserId;
+
+            if (null !== $telegramChatId) {
+                $metadata['telegram_chat_id'] = $telegramChatId;
             }
         }
 
-        $isTelegram = '' !== $message->telegramUserId;
+        if (!$isTelegram) {
+            $actorType  = AuditActorType::SYSTEM;
+            $actorLabel = null;
+        } elseif ($actor instanceof User) {
+            $actorType  = null;
+            $actorLabel = null;
+        } else {
+            $actorType  = AuditActorType::TELEGRAM;
+            $actorLabel = $message->telegramUserId;
+        }
 
         $this->auditLogger->log(
             action: DownloadOutcome::SUCCESS === $outcome ? AuditAction::DOWNLOAD_SUCCESS : AuditAction::DOWNLOAD_FAILURE,
@@ -76,9 +98,10 @@ final readonly class DownloadMessageHandler
             targetId: $taskId,
             targetLabel: $message->url,
             success: DownloadOutcome::SUCCESS === $outcome,
-            metadata: ['quality' => $message->quality],
-            actorType: $isTelegram ? AuditActorType::TELEGRAM : AuditActorType::SYSTEM,
-            actorLabel: $isTelegram ? $message->telegramUserId : null,
+            metadata: $metadata,
+            actorType: $actorType,
+            actorLabel: $actorLabel,
+            actor: $actor,
         );
     }
 }
