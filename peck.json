@@ -98,7 +98,8 @@
             "pgsql",
             "unzip",
             "igbinary",
-            "musl"
+            "musl",
+            "ci"
         ],
         "paths": [
             "vendor"
