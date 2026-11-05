@@ -1,0 +1,41 @@
+schema: spec-driven
+
+context: |
+  PHP 8.4 + Symfony 7.4 video/audio downloader; PostgreSQL, Redis, Doctrine Messenger
+  (Doctrine transport, not a broker), EasyAdmin 4, JWT auth (v1/v2), Telegram bot.
+
+  All project commands run in Docker via `make`; do not install or run tools on the host.
+  Tests: `make test` (PHPUnit; the test DB is rebuilt). Lint: `make lint`
+  (php-cs-fixer, PHPStan 6, Psalm 4, peck). Code rules live in `.ai/` (when present)
+  and `$TASKS_DIR/_code-style`; they are out of scope for OpenSpec: this project
+  describes behavior, not PHP style.
+
+  Source of truth:
+  - `CONTEXT.md` — ubiquitous language only.
+  - `docs/adr/` — durable architectural decisions.
+  - `README.md` — user-facing documentation.
+  - GitHub issues — intake and motivation; link them from proposals.
+  - `$TASKS_DIR/ytdownloader/` — session journal; for OpenSpec work it links to the
+    change and records decisions, while `changes/<id>/tasks.md` is the canonical plan.
+
+rules:
+  proposal:
+    - Link the GitHub issue (or state that there is none) and the affected capability.
+    - State explicitly what is out of scope.
+  specs:
+    - Write in English.
+    - Every requirement must be testable; use WHEN/THEN scenarios.
+    - Use terms from CONTEXT.md; do not put file names or implementation details in specs.
+  design:
+    - Link the relevant ADRs; record only decisions specific to this change.
+  tasks:
+    - One verifiable step per task; include the validation/test task.
+
+operations:
+  apply:
+    guidance:
+      - Run `make lint` and `make test` before opening a PR.
+      - The plan lives in tasks.md; the session journal only links to it.
+  archive:
+    guidance:
+      - Run `openspec validate --all --strict` before archiving.

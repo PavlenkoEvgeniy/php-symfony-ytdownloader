@@ -39,6 +39,8 @@ help:
 	@echo "35. security-check .......... Check Composer packages for known security issues."
 	@echo "36. pull ............................ Pull prebuilt php-fpm image (prod deploy)."
 	@echo "37. docker-prune ......... Remove unused images, containers and build cache."
+	@echo "38. openspec ........................... Run the OpenSpec CLI (ARGS=...)."
+	@echo "39. openspec-validate ............... Validate all OpenSpec specs and changes."
 	@echo "+------------------------------------------------------------------------------+"
 
 env-setup:
@@ -78,6 +80,15 @@ worker-start:
 DOCKER_COMPOSE_FILES ?= docker/docker-compose.yml
 DOCKER_COMPOSE_UP_ARGS ?=
 DOCKER_COMPOSE_DOWN_ARGS ?=
+
+# OpenSpec is Node-only; run it in a pinned Node 22 container as the host user
+# so generated files are owned by the developer, not root.
+OPENSPEC_VERSION ?= 1.16.0
+OPENSPEC_RUN = docker run --rm --user "$$(id -u):$$(id -g)" \
+	-e HOME=/tmp -e npm_config_cache=/tmp/npm-cache \
+	-e OPENSPEC_TELEMETRY=0 -e OPENSPEC_NO_UPDATE_CHECK=1 \
+	-v "$$(pwd)":/work -w /work node:22-alpine \
+	npx --yes @fission-ai/openspec@$(OPENSPEC_VERSION)
 
 docker-compose-up:
 	docker compose $(foreach file,$(DOCKER_COMPOSE_FILES),-f $(file)) up -d $(DOCKER_COMPOSE_UP_ARGS)
@@ -180,3 +191,11 @@ telegram-bot-hook:
 
 telegram-bot-unhook:
 	docker exec ytdownloader-php-fpm php bin/console app:telegram-unhook
+
+.PHONY: openspec openspec-validate
+
+openspec:
+	$(OPENSPEC_RUN) $(ARGS)
+
+openspec-validate:
+	$(OPENSPEC_RUN) validate --all --strict

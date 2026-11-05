@@ -83,7 +83,8 @@
             "readdir",
             "rewinddir",
             "closedir",
-            "json"
+            "json",
+            "openspec"
         ],
         "paths": [
             "vendor"
