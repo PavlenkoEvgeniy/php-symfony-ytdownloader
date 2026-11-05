@@ -619,6 +619,8 @@ a.file-name:focus {
     flex-wrap: wrap;
     gap: 0.35rem;
     margin-top: 0.55rem;
+    position: relative;
+    z-index: 2;
 }
 
 .file-actions form {

@@ -169,6 +169,12 @@ final class SourceControllerTest extends WebTestCase
 
         $this->assertCount(1, $link);
         $this->assertSame('file-name-link.mp4', \trim((string) $link->text()));
+        $this->assertStringContainsString('stretched-link', (string) $link->attr('class'));
+
+        $row = $link->closest('tr');
+
+        $this->assertInstanceOf(Crawler::class, $row);
+        $this->assertStringContainsString('position-relative', (string) $row->attr('class'));
     }
 
     /**
