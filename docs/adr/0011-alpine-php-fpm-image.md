@@ -10,8 +10,10 @@ The Docker PHP and Alpine's `php84-*` packages are the same PHP 8.4.27, so the
 image installs the Alpine extension packages and copies their modules into the
 Docker PHP extension directory instead of compiling them. This avoids the PECL
 network (`pecl.php.net` timed out during the build) and the build toolchain, and
-keeps the image small. `msgpack` is enabled before `redis` because the Alpine
-redis build references `php_msgpack_serialize`. `zip` is not copied: the Alpine
+keeps the image small. `igbinary` and `msgpack` are enabled before `redis`
+because the Alpine redis build references `igbinary_serialize` and
+`php_msgpack_serialize`; `musl-locales` provides the `locale` command that
+aspell/peck expects. `zip` is not copied: the Alpine
 build links against a pcre2 symbol the Docker PHP does not export, and Composer
 falls back to the `unzip` binary, which is installed. `mbstring` is already
 built into the base image, and the non-PDO `pgsql` extension is not needed

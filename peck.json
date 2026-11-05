@@ -96,7 +96,9 @@
             "pecl",
             "php84",
             "pgsql",
-            "unzip"
+            "unzip",
+            "igbinary",
+            "musl"
         ],
         "paths": [
             "vendor"

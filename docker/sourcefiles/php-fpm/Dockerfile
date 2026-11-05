@@ -3,6 +3,9 @@ FROM php:8.4-fpm-alpine
 
 WORKDIR "/application"
 
+# musl-locales provides the locale command that aspell/peck expects.
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+
 COPY --from=composer /usr/bin/composer /usr/local/bin/composer
 
 # Runtime tools: ffmpeg/yt-dlp for media, Chromium for cookies, aspell for the
@@ -13,6 +16,7 @@ RUN apk add --no-cache \
     aspell \
     aspell-en \
     supervisor \
+    musl-locales \
     git \
     unzip \
     curl \
@@ -38,10 +42,11 @@ RUN apk add --no-cache \
         php84-gd \
         php84-intl \
         php84-pecl-msgpack \
+        php84-pecl-igbinary \
         php84-pecl-redis \
     && EXTENSION_DIR="$(php -r 'echo ini_get("extension_dir");')" \
     && cp /usr/lib/php84/modules/*.so "${EXTENSION_DIR}/" \
-    && docker-php-ext-enable msgpack pdo_pgsql exif pcntl bcmath gd intl redis
+    && docker-php-ext-enable igbinary msgpack pdo_pgsql exif pcntl bcmath gd intl redis
 
 # Install Xdebug only when requested.
 ARG XDEBUG_INSTALL=false
