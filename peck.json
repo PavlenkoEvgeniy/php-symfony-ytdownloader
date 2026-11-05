@@ -85,7 +85,18 @@
             "closedir",
             "json",
             "openspec",
-            "runbook"
+            "runbook",
+            "alpine",
+            "apk",
+            "chromium",
+            "ffmpeg",
+            "aspell",
+            "pcre2",
+            "msgpack",
+            "pecl",
+            "php84",
+            "pgsql",
+            "unzip"
         ],
         "paths": [
             "vendor"
