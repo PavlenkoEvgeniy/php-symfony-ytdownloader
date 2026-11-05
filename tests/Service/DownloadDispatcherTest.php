@@ -6,9 +6,11 @@ namespace App\Tests\Service;
 
 use App\Entity\DownloadTask;
 use App\Entity\User;
+use App\Exception\DownloadIntakeDisabledException;
 use App\Message\DownloadMessage;
 use App\Service\AuditLoggerInterface;
 use App\Service\DownloadDispatcher;
+use App\Service\DownloadIntakePolicyInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Messenger\Envelope;
@@ -38,7 +40,12 @@ final class DownloadDispatcherTest extends TestCase
                 return new Envelope($message);
             });
 
-        $dispatcher = new DownloadDispatcher($em, $bus, $this->createStub(AuditLoggerInterface::class));
+        $dispatcher = new DownloadDispatcher(
+            $em,
+            $bus,
+            $this->createStub(AuditLoggerInterface::class),
+            $this->createStub(DownloadIntakePolicyInterface::class),
+        );
         $user       = new User()->setEmail('test@test.local');
         $task       = $dispatcher->dispatch(
             'https://youtube.com/watch?v=test',
@@ -60,5 +67,27 @@ final class DownloadDispatcherTest extends TestCase
         $this->assertSame('best', $dispatched->quality);
         $this->assertSame('42', $dispatched->telegramUserId);
         $this->assertSame($task->getId(), $dispatched->taskId);
+    }
+
+    /**
+     * Verifies a rejected intake persists nothing and dispatches no message.
+     */
+    public function testDispatchRejectsWhenIntakePolicyThrows(): void
+    {
+        $em = $this->createMock(EntityManagerInterface::class);
+        $em->expects($this->never())->method('persist');
+        $em->expects($this->never())->method('flush');
+
+        $bus = $this->createMock(MessageBusInterface::class);
+        $bus->expects($this->never())->method('dispatch');
+
+        $policy = $this->createStub(DownloadIntakePolicyInterface::class);
+        $policy->method('assertAccepts')->willThrowException(DownloadIntakeDisabledException::create());
+
+        $dispatcher = new DownloadDispatcher($em, $bus, $this->createStub(AuditLoggerInterface::class), $policy);
+
+        $this->expectException(DownloadIntakeDisabledException::class);
+
+        $dispatcher->dispatch('https://youtube.com/watch?v=test', 'best');
     }
 }

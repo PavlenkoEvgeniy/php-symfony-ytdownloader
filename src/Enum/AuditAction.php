@@ -19,6 +19,7 @@ enum AuditAction: string
     case QUEUE_PURGE              = 'admin.queue_purged';
     case QUEUE_RESET              = 'admin.queue_reset';
     case ORPHANS_PRUNE            = 'admin.orphans_pruned';
+    case SETTINGS_UPDATE          = 'admin.settings_updated';
     case TELEGRAM_DELIVERED       = 'telegram.delivered';
     case TELEGRAM_DELIVERY_FAILED = 'telegram.delivery_failed';
     case LIBRARY_PRUNE            = 'admin.library_pruned';

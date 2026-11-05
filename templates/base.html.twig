@@ -68,9 +68,10 @@
 </head>
 <body class="app-body">
 {% if app.user %}
+    {% set webIntakeEnabled = web_intake_enabled() %}
     <nav class="app-navbar">
         <div class="container app-navbar-inner py-2">
-            <a class="app-brand" href="{{ path('ui_download_index') }}">
+            <a class="app-brand" href="{{ path(webIntakeEnabled ? 'ui_download_index' : 'ui_source_index') }}">
                 <span class="app-brand-mark">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 3v12m0 0 4-4m-4 4-4-4"/>
@@ -81,10 +82,12 @@
             </a>
 
             <div class="app-nav-links align-items-center">
-                <a class="app-nav-link {{ app.request.attributes.get('_route') == 'ui_download_index' ? 'is-active' }}" href="{{ path('ui_download_index') }}">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
-                    {{ 'ui.nav.downloads'|trans }}
-                </a>
+                {% if webIntakeEnabled %}
+                    <a class="app-nav-link {{ app.request.attributes.get('_route') == 'ui_download_index' ? 'is-active' }}" href="{{ path('ui_download_index') }}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
+                        {{ 'ui.nav.downloads'|trans }}
+                    </a>
+                {% endif %}
                 <a class="app-nav-link {{ app.request.attributes.get('_route') starts with 'ui_source' ? 'is-active' }}" href="{{ path('ui_source_index') }}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2Z"/><path d="M4 6v12c0 1.1 3.6 2 8 2s8-.9 8-2V6"/><path d="M4 12c0 1.1 3.6 2 8 2s8-.9 8-2"/></svg>
                     {{ 'ui.nav.library'|trans }}

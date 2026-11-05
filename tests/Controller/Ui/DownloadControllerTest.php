@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller\Ui;
 
+use App\Repository\DownloadSettingsRepositoryInterface;
+use App\Repository\DownloadTaskRepositoryInterface;
 use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,12 +16,18 @@ use Symfony\Component\HttpFoundation\Response;
 final class DownloadControllerTest extends WebTestCase
 {
     private UserRepository $userRepository;
+    private DownloadSettingsRepositoryInterface $settingsRepository;
+    private DownloadTaskRepositoryInterface $downloadTaskRepository;
+    private EntityManagerInterface $entityManager;
     private KernelBrowser $client;
 
     public function setUp(): void
     {
-        $this->client         = static::createClient();
-        $this->userRepository = $this->getContainer()->get(UserRepository::class);
+        $this->client                 = static::createClient();
+        $this->userRepository         = $this->getContainer()->get(UserRepository::class);
+        $this->settingsRepository     = $this->getContainer()->get(DownloadSettingsRepositoryInterface::class);
+        $this->downloadTaskRepository = $this->getContainer()->get(DownloadTaskRepositoryInterface::class);
+        $this->entityManager          = $this->getContainer()->get(EntityManagerInterface::class);
     }
 
     /**
@@ -181,5 +190,88 @@ final class DownloadControllerTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $content = $this->client->getResponse()->getContent() ?: '';
         $this->assertStringContainsString('Statistics', $content);
+    }
+
+    /**
+     * Verifies the download page redirects to the library when the web intake is off.
+     */
+    public function testIndexRedirectsToLibraryWhenWebIntakeDisabled(): void
+    {
+        $user = $this->userRepository->findOneByEmail('admin@admin.local');
+        $this->client->loginUser($user);
+
+        $this->setWebIntakeEnabled(false);
+
+        try {
+            $this->client->request(Request::METHOD_GET, '/ui/download');
+
+            $this->assertResponseRedirects('/ui/source');
+
+            $this->client->followRedirect();
+            $this->assertSelectorTextContains('div.alert-warning', 'New downloads through the web are disabled.');
+        } finally {
+            $this->setWebIntakeEnabled(true);
+        }
+    }
+
+    /**
+     * Verifies a direct POST creates no task when the web intake is off.
+     */
+    public function testDownloadPostCreatesNoTaskWhenWebIntakeDisabled(): void
+    {
+        $user = $this->userRepository->findOneByEmail('admin@admin.local');
+        $this->client->loginUser($user);
+
+        $this->setWebIntakeEnabled(false);
+
+        try {
+            $before = $this->countTasks();
+
+            $this->client->request(Request::METHOD_POST, '/ui/download', [
+                'download_form' => [
+                    'link'    => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                    'quality' => 'best',
+                ],
+            ]);
+
+            $this->assertResponseRedirects('/ui/source');
+            $this->assertSame($before, $this->countTasks());
+        } finally {
+            $this->setWebIntakeEnabled(true);
+        }
+    }
+
+    /**
+     * Verifies the library hides the "Add new download" entry point when the intake is off.
+     */
+    public function testLibraryHidesAddDownloadButtonWhenWebIntakeDisabled(): void
+    {
+        $user = $this->userRepository->findOneByEmail('admin@admin.local');
+        $this->client->loginUser($user);
+
+        $this->setWebIntakeEnabled(false);
+
+        try {
+            $this->client->request(Request::METHOD_GET, '/ui/source');
+
+            $this->assertResponseIsSuccessful();
+            $this->assertSelectorNotExists('a[href="/ui/download"]');
+        } finally {
+            $this->setWebIntakeEnabled(true);
+        }
+    }
+
+    private function setWebIntakeEnabled(bool $enabled): void
+    {
+        $settings = $this->settingsRepository->getSettings();
+        $settings->setWebIntakeEnabled($enabled);
+
+        $this->entityManager->persist($settings);
+        $this->entityManager->flush();
+    }
+
+    private function countTasks(): int
+    {
+        return \array_sum($this->downloadTaskRepository->getStatusCounts());
     }
 }

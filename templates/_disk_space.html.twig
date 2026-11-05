@@ -1,0 +1,12 @@
+{# Disk usage block shared by the download page and the admin panel. #}
+<div class="d-flex justify-content-between align-items-baseline mb-2">
+    <span class="text-muted">{{ 'ui.download.used'|trans }}</span>
+    <strong>{{ diskSpace.used }} <span class="text-muted fw-normal">/ {{ diskSpace.total }}</span></strong>
+</div>
+<div class="progress mb-3" role="progressbar" aria-label="{{ 'ui.download.used'|trans }}" aria-valuenow="{{ diskSpace.usedPercentage }}" aria-valuemin="0" aria-valuemax="100">
+    <div class="progress-bar" style="width: {{ diskSpace.usedPercentage }}%"></div>
+</div>
+<div class="d-flex justify-content-between small text-muted">
+    <span>{{ 'ui.download.free'|trans }} {{ diskSpace.free }}</span>
+    <span>{{ diskSpace.freePercentage }}%</span>
+</div>

@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Enum\AuditAction;
 use App\Enum\AuditActorType;
 use App\Enum\AuditChannel;
+use App\Exception\DownloadIntakeDisabledException;
 use App\Message\DownloadMessage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
@@ -20,15 +21,18 @@ final readonly class DownloadDispatcher implements DownloadDispatcherInterface
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $messageBus,
         private AuditLoggerInterface $auditLogger,
+        private DownloadIntakePolicyInterface $intakePolicy,
     ) {
     }
 
     #[\Override]
     /**
-     * Persists the task so it is visible as "queued" and only then
-     * dispatches the message, so every dispatch has a matching task row.
+     * Rejects the request when its surface may not create a task, persists the
+     * task so it is visible as "queued", and only then dispatches the message,
+     * so every dispatch has a matching task row.
      *
      * @throws ExceptionInterface
+     * @throws DownloadIntakeDisabledException
      */
     public function dispatch(
         string $url,
@@ -38,6 +42,8 @@ final readonly class DownloadDispatcher implements DownloadDispatcherInterface
         ?int $telegramChatId = null,
         ?string $title = null,
     ): DownloadTask {
+        $this->intakePolicy->assertAccepts($origin);
+
         $task = new DownloadTask()->setUrl($url)
             ->setQuality($quality)
             ->setUser($user)
