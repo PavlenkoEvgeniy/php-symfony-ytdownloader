@@ -353,3 +353,21 @@ jobs:
                 echo "❌ Tests failed! Please review the errors above."
                 echo "====================================================="
             fi
+
+  specs:
+    runs-on: ubuntu-latest
+    env:
+      OPENSPEC_VERSION: '1.16.0'
+      OPENSPEC_TELEMETRY: '0'
+      OPENSPEC_NO_UPDATE_CHECK: '1'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate OpenSpec
+        run: npx --yes @fission-ai/openspec@${OPENSPEC_VERSION} validate --all --strict
