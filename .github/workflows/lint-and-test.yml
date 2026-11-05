@@ -43,7 +43,7 @@ jobs:
             type=raw,value=ci-latest,enable={{is_default_branch}}
 
       - name: Build and push php-fpm image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         if: github.event_name != 'pull_request'
         with:
           context: docker/sourcefiles/php-fpm
