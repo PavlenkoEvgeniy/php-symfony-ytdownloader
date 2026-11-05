@@ -35,4 +35,18 @@ final class HelperTest extends TestCase
     {
         $this->assertEquals(Helper::formatBytes($bytes, $precision), $expected);
     }
+
+    /**
+     * Verifies free-space figures are reported for the requested path.
+     */
+    public function testGetFreeSpaceUsesGivenPath(): void
+    {
+        $space = Helper::getFreeSpace(\sys_get_temp_dir());
+
+        $this->assertArrayHasKey('free', $space);
+        $this->assertArrayHasKey('used', $space);
+        $this->assertArrayHasKey('total', $space);
+        $this->assertGreaterThanOrEqual(0.0, $space['usedPercentage']);
+        $this->assertLessThanOrEqual(100.0, $space['usedPercentage']);
+    }
 }

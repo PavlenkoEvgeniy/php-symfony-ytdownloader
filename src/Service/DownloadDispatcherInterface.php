@@ -6,12 +6,14 @@ namespace App\Service;
 
 use App\Entity\DownloadTask;
 use App\Entity\User;
+use App\Exception\DownloadIntakeDisabledException;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 
 interface DownloadDispatcherInterface
 {
     /**
      * @throws ExceptionInterface
+     * @throws DownloadIntakeDisabledException
      */
     public function dispatch(
         string $url,

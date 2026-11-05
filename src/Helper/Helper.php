@@ -22,10 +22,10 @@ final class Helper
     /**
      * @return array<string, string|float>
      */
-    public static function getFreeSpace(): array
+    public static function getFreeSpace(string $path = '/'): array
     {
-        $free  = \disk_free_space('/') ?: 0.0;
-        $total = \disk_total_space('/') ?: 0.0;
+        $free  = \disk_free_space($path) ?: 0.0;
+        $total = \disk_total_space($path) ?: 0.0;
         $used  = $total - $free;
 
         return [

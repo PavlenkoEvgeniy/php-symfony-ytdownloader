@@ -134,6 +134,7 @@ final class DashboardControllerTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('body', 'Active Tasks');
+        $this->assertSelectorTextContains('body', 'Disk Space');
     }
 
     /**

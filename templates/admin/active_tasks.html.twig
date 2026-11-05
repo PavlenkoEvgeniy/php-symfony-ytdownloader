@@ -30,6 +30,15 @@
         {% endif %}
     </div>
 
+    <div class="card mt-3">
+        <div class="card-header">
+            <i class="fa-solid fa-hard-drive"></i> {{ 'admin.disk_space.title'|trans }}
+        </div>
+        <div class="card-body">
+            {% include '_disk_space.html.twig' %}
+        </div>
+    </div>
+
     {% if orphans is not empty %}
         <div class="card mt-3">
             <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">

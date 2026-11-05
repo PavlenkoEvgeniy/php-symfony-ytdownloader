@@ -18,17 +18,7 @@
         <div class="col-lg-5">
             <div class="app-card p-4 h-100">
                 <h2 class="section-title mt-0">{{ 'ui.download.disk_space'|trans }}</h2>
-                <div class="d-flex justify-content-between align-items-baseline mb-2">
-                    <span class="text-muted-soft">{{ 'ui.download.used'|trans }}</span>
-                    <strong>{{ diskSpace.used }} <span class="text-muted-soft fw-normal">/ {{ diskSpace.total }}</span></strong>
-                </div>
-                <div class="progress mb-3" role="progressbar" aria-label="{{ 'ui.download.used'|trans }}" aria-valuenow="{{ diskSpace.usedPercentage }}" aria-valuemin="0" aria-valuemax="100">
-                    <div class="progress-bar" style="width: {{ diskSpace.usedPercentage }}%"></div>
-                </div>
-                <div class="d-flex justify-content-between small text-muted-soft">
-                    <span>{{ 'ui.download.free'|trans }} {{ diskSpace.free }}</span>
-                    <span>{{ diskSpace.freePercentage }}%</span>
-                </div>
+                {% include '_disk_space.html.twig' %}
             </div>
         </div>
     </div>

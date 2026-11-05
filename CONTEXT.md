@@ -37,6 +37,14 @@ Deleting a file also deletes its Source; the Total Downloaded counter is not
 reduced, and files of queued or processing tasks are skipped.
 _Avoid_: cleanup, purge (Purge deletes queued tasks), prune (Prune deletes orphan files)
 
+**Library**:
+The set of Sources available to a user for download. The Library stays available when the Web Download Intake is disabled.
+_Avoid_: files, storage (storage is the disk; the Library is what is in it)
+
+**Web Download Intake**:
+Accepting new Download Tasks from the web surface — the UI download form and the REST API — as opposed to the Telegram surface. Disabling it rejects new requests while the Library stays available; already accepted tasks are not revoked.
+_Avoid_: site downloads, web downloads (both collide with downloading a finished file from the Library)
+
 ### Admin Panel
 
 **Admin Panel**:

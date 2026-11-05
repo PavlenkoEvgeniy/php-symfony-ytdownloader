@@ -31,6 +31,8 @@ services:
         alias: App\Service\VideoDownloaderService
     App\Service\DownloadDispatcherInterface:
         alias: App\Service\DownloadDispatcher
+    App\Service\DownloadIntakePolicyInterface:
+        alias: App\Service\DownloadIntakePolicy
     App\Service\QueueStatsServiceInterface:
         alias: App\Service\QueueStatsService
     App\Service\OrphanFilePrunerInterface:
@@ -69,6 +71,8 @@ services:
         alias: App\Repository\UserRepository
     App\Repository\DownloadTaskRepositoryInterface:
         alias: App\Repository\DownloadTaskRepository
+    App\Repository\DownloadSettingsRepositoryInterface:
+        alias: App\Repository\DownloadSettingsRepository
     App\Repository\DownloadMetricRepositoryInterface:
         alias: App\Repository\DownloadMetricRepository
     App\Repository\RefreshTokenRepositoryInterface:

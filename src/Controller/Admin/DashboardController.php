@@ -7,6 +7,7 @@ namespace App\Controller\Admin;
 use App\Entity\User;
 use App\Enum\AuditAction;
 use App\Enum\AuditChannel;
+use App\Helper\Helper;
 use App\Repository\DownloadTaskRepositoryInterface;
 use App\Service\AuditLoggerInterface;
 use App\Service\OrphanFilePrunerInterface;
@@ -23,6 +24,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Config\UserMenu;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use OskarStark\Twig\ReadableFilesizeExtension;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -52,11 +54,14 @@ final class DashboardController extends AbstractDashboardController
         QueueStatsServiceInterface $queueStatsService,
         DownloadTaskRepositoryInterface $downloadTaskRepository,
         OrphanFilePrunerInterface $orphanFilePruner,
+        #[Autowire(env: 'string:resolve:APP_DOWNLOADS_DIR')]
+        string $downloadsDir,
     ): Response {
         return $this->render('admin/active_tasks.html.twig', [
-            'stats'   => $queueStatsService->getStats(),
-            'tasks'   => $downloadTaskRepository->getRecentActiveTasks(),
-            'orphans' => $orphanFilePruner->findOrphans(),
+            'stats'     => $queueStatsService->getStats(),
+            'tasks'     => $downloadTaskRepository->getRecentActiveTasks(),
+            'orphans'   => $orphanFilePruner->findOrphans(),
+            'diskSpace' => Helper::getFreeSpace($downloadsDir),
         ]);
     }
 
@@ -213,6 +218,7 @@ final class DashboardController extends AbstractDashboardController
         yield MenuItem::linkTo(SourceCrudController::class, $this->translator->trans('admin.menu.sources'), 'fa-regular fa-file-video');
         yield MenuItem::linkTo(LogCrudController::class, $this->translator->trans('admin.menu.logs'), 'fa-solid fa-book');
         yield MenuItem::linkTo(AuditEventCrudController::class, $this->translator->trans('admin.menu.audit'), 'fa-solid fa-clipboard-list');
+        yield MenuItem::linkTo(SettingsController::class, $this->translator->trans('admin.menu.settings'), 'fa-solid fa-gear');
         yield MenuItem::linkToUrl($this->translator->trans('admin.menu.back_to_downloads'), 'fa-solid fa-arrow-left', $this->generateUrl('ui_download_index'));
     }
 

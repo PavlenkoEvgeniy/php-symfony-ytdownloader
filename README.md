@@ -233,6 +233,10 @@ Content-Type: application/json
 }
 ```
 
+When an admin turns off the web download intake in **Admin → Settings**, this endpoint
+returns `403 Forbidden` (`application/problem+json`) and creates no task. The Telegram bot
+keeps working, and already downloaded files stay available through the source endpoints.
+
 ### 6) List downloaded files
 
 ```
@@ -334,6 +338,10 @@ Content-Type: application/json
    "quality": "best"  // best|moderate|poor|audio
 }
 ```
+
+When an admin turns off the web download intake in **Admin → Settings**, this endpoint
+returns `403 Forbidden` (`application/problem+json`) and creates no task. The Telegram bot
+keeps working, and already downloaded files stay available through the source endpoints.
 
 ### 7) List downloaded files
 

@@ -3,15 +3,18 @@
 {% block title %}{{ 'ui.source.index_title'|trans }}{% endblock %}
 
 {% block body %}
+    {% set webIntakeEnabled = web_intake_enabled() %}
     <header class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div>
             <h1 class="page-title">{{ 'ui.source.heading'|trans }}</h1>
             <p class="page-subtitle">{{ 'ui.source.files_count'|trans({'%files%': pagination.totalItemCount}) }}</p>
         </div>
         <div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-gradient" href="{{ path('ui_download_index') }}">
-                {{ 'ui.source.add_download'|trans }}
-            </a>
+            {% if webIntakeEnabled %}
+                <a class="btn btn-gradient" href="{{ path('ui_download_index') }}">
+                    {{ 'ui.source.add_download'|trans }}
+                </a>
+            {% endif %}
             {% if pagination is not empty %}
                 {{ include('ui/source/_delete_all_form.html.twig') }}
             {% endif %}
@@ -134,7 +137,9 @@
             </span>
             <h2>{{ 'ui.source.no_records'|trans }}</h2>
             <p>{{ 'ui.source.empty_hint'|trans }}</p>
-            <a class="btn btn-gradient mt-2" href="{{ path('ui_download_index') }}">{{ 'ui.source.add_download'|trans }}</a>
+            {% if webIntakeEnabled %}
+                <a class="btn btn-gradient mt-2" href="{{ path('ui_download_index') }}">{{ 'ui.source.add_download'|trans }}</a>
+            {% endif %}
         </div>
     {% endif %}
 
