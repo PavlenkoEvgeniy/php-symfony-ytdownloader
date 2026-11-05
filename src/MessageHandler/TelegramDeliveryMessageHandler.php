@@ -8,7 +8,6 @@ use App\Entity\DownloadTask;
 use App\Entity\Source;
 use App\Entity\User;
 use App\Enum\AuditAction;
-use App\Enum\AuditActorType;
 use App\Enum\AuditChannel;
 use App\Message\TelegramDeliveryMessage;
 use App\Repository\DownloadTaskRepositoryInterface;
@@ -100,7 +99,7 @@ final readonly class TelegramDeliveryMessageHandler
 
             try {
                 $lastMessageId = $this->sendWithRetries($chatId, $path, $this->caption($task, $source));
-                $this->deleteSource($source, $path, $chatId);
+                $this->deleteSource($source, $path, $user, $chatId);
                 ++$sent;
             } catch (\Throwable $exception) {
                 ++$failed;
@@ -124,9 +123,8 @@ final readonly class TelegramDeliveryMessageHandler
             targetId: $task->getIdOrFail(),
             targetLabel: $task->getUrlOrFail(),
             success: DownloadTask::DELIVERY_SENT === $status,
-            metadata: ['sent' => $sent, 'failed' => $failed],
-            actorType: AuditActorType::TELEGRAM,
-            actorLabel: (string) $chatId,
+            metadata: ['sent' => $sent, 'failed' => $failed, 'telegram_chat_id' => $chatId],
+            actor: $user,
         );
 
         if (DownloadTask::DELIVERY_FAILED === $status) {
@@ -176,7 +174,7 @@ final readonly class TelegramDeliveryMessageHandler
         return $this->telegramClient->sendDocument($chatId, $path, $caption);
     }
 
-    private function deleteSource(Source $source, string $path, int $chatId): void
+    private function deleteSource(Source $source, string $path, User $user, int $chatId): void
     {
         if (!@\unlink($path)) {
             $this->logger->error('Failed to delete a delivered file', ['path' => $path]);
@@ -188,9 +186,8 @@ final readonly class TelegramDeliveryMessageHandler
             targetType: 'source',
             targetId: $source->getId(),
             targetLabel: $source->getFilename(),
-            metadata: ['reason' => 'telegram_delivery'],
-            actorType: AuditActorType::TELEGRAM,
-            actorLabel: (string) $chatId,
+            metadata: ['reason' => 'telegram_delivery', 'telegram_chat_id' => $chatId],
+            actor: $user,
         );
 
         $this->entityManager->remove($source);
