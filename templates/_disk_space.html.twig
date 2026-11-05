@@ -1,4 +1,7 @@
 {# Disk usage block shared by the download page and the admin panel. #}
+{% if diskSpaceLow is defined and diskSpaceLow %}
+    <div class="alert alert-warning py-2 mb-3">{{ 'ui.download.disk_low'|trans }}</div>
+{% endif %}
 <div class="d-flex justify-content-between align-items-baseline mb-2">
     <span class="text-muted">{{ 'ui.download.used'|trans }}</span>
     <strong>{{ diskSpace.used }} <span class="text-muted fw-normal">/ {{ diskSpace.total }}</span></strong>

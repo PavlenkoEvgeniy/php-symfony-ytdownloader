@@ -10,6 +10,7 @@ use App\Enum\AuditAction;
 use App\Enum\AuditActorType;
 use App\Enum\AuditChannel;
 use App\Exception\DownloadIntakeDisabledException;
+use App\Exception\InsufficientDiskSpaceException;
 use App\Message\DownloadMessage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
@@ -22,6 +23,7 @@ final readonly class DownloadDispatcher implements DownloadDispatcherInterface
         private MessageBusInterface $messageBus,
         private AuditLoggerInterface $auditLogger,
         private DownloadIntakePolicyInterface $intakePolicy,
+        private DiskSpacePolicyInterface $diskSpacePolicy,
     ) {
     }
 
@@ -33,6 +35,7 @@ final readonly class DownloadDispatcher implements DownloadDispatcherInterface
      *
      * @throws ExceptionInterface
      * @throws DownloadIntakeDisabledException
+     * @throws InsufficientDiskSpaceException
      */
     public function dispatch(
         string $url,
@@ -43,6 +46,7 @@ final readonly class DownloadDispatcher implements DownloadDispatcherInterface
         ?string $title = null,
     ): DownloadTask {
         $this->intakePolicy->assertAccepts($origin);
+        $this->diskSpacePolicy->assertCanAccept();
 
         $task = new DownloadTask()->setUrl($url)
             ->setQuality($quality)

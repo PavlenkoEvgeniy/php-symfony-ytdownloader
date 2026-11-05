@@ -10,6 +10,7 @@ use App\Enum\AuditChannel;
 use App\Helper\Helper;
 use App\Repository\DownloadTaskRepositoryInterface;
 use App\Service\AuditLoggerInterface;
+use App\Service\DiskSpacePolicyInterface;
 use App\Service\OrphanFilePrunerInterface;
 use App\Service\QueuePurgeServiceInterface;
 use App\Service\QueueResetServiceInterface;
@@ -54,14 +55,16 @@ final class DashboardController extends AbstractDashboardController
         QueueStatsServiceInterface $queueStatsService,
         DownloadTaskRepositoryInterface $downloadTaskRepository,
         OrphanFilePrunerInterface $orphanFilePruner,
+        DiskSpacePolicyInterface $diskSpacePolicy,
         #[Autowire(env: 'string:resolve:APP_DOWNLOADS_DIR')]
         string $downloadsDir,
     ): Response {
         return $this->render('admin/active_tasks.html.twig', [
-            'stats'     => $queueStatsService->getStats(),
-            'tasks'     => $downloadTaskRepository->getRecentActiveTasks(),
-            'orphans'   => $orphanFilePruner->findOrphans(),
-            'diskSpace' => Helper::getFreeSpace($downloadsDir),
+            'stats'        => $queueStatsService->getStats(),
+            'tasks'        => $downloadTaskRepository->getRecentActiveTasks(),
+            'orphans'      => $orphanFilePruner->findOrphans(),
+            'diskSpaceLow' => $diskSpacePolicy->isLow(),
+            'diskSpace'    => Helper::getFreeSpace($downloadsDir),
         ]);
     }
 

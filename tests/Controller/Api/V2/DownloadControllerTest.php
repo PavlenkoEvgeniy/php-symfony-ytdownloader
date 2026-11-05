@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller\Api\V2;
 
+use App\Exception\InsufficientDiskSpaceException;
 use App\Repository\DownloadSettingsRepositoryInterface;
 use App\Repository\DownloadTaskRepositoryInterface;
+use App\Service\DiskSpacePolicy;
+use App\Service\DiskSpacePolicyInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -100,6 +103,43 @@ final class DownloadControllerTest extends WebTestCase
             $this->assertSame($before, $this->countTasks());
         } finally {
             $this->setWebIntakeEnabled(true);
+        }
+    }
+
+    /**
+     * Verifies the create endpoint is rejected with 507 when the disk is under pressure.
+     */
+    public function testCreateIsRejectedUnderDiskPressure(): void
+    {
+        $token = $this->loginAndGetToken('admin@admin.local', 'admin123456');
+
+        $policy = $this->createStub(DiskSpacePolicyInterface::class);
+        $policy->method('assertCanAccept')->willThrowException(InsufficientDiskSpaceException::create(0.0, 1));
+
+        $this->client->disableReboot();
+        $this->getContainer()->set(DiskSpacePolicy::class, $policy);
+
+        try {
+            $before = $this->countTasks();
+
+            $this->client->jsonRequest(Request::METHOD_POST, '/api/v2/download/create', [
+                'url'     => 'https://test.local',
+                'quality' => 'moderate',
+            ], [
+                'HTTP_AUTHORIZATION' => \sprintf('Bearer %s', $token),
+            ]);
+
+            $this->assertResponseStatusCodeSame(Response::HTTP_INSUFFICIENT_STORAGE);
+
+            $response = $this->client->getResponse();
+            $this->assertStringStartsWith('application/problem+json', (string) $response->headers->get('Content-Type'));
+
+            $data = \json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+            $this->assertSame(Response::HTTP_INSUFFICIENT_STORAGE, $data['status']);
+            $this->assertSame('Insufficient Storage', $data['title']);
+            $this->assertSame($before, $this->countTasks());
+        } finally {
+            $this->client->enableReboot();
         }
     }
 

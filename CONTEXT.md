@@ -45,6 +45,10 @@ _Avoid_: files, storage (storage is the disk; the Library is what is in it)
 Accepting new Download Tasks from the web surface — the UI download form and the REST API — as opposed to the Telegram surface. Disabling it rejects new requests while the Library stays available; already accepted tasks are not revoked.
 _Avoid_: site downloads, web downloads (both collide with downloading a finished file from the Library)
 
+**Disk Pressure**:
+The state when free space in the download volume is below the configured minimum; new Download Tasks are rejected while it lasts, and already accepted tasks are not affected.
+_Avoid_: full disk, no space (the condition is a threshold, not zero)
+
 ### Admin Panel
 
 **Admin Panel**:

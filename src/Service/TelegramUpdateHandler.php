@@ -6,6 +6,7 @@ namespace App\Service;
 
 use App\Entity\DownloadTask;
 use App\Entity\User;
+use App\Exception\InsufficientDiskSpaceException;
 use App\Repository\DownloadTaskRepositoryInterface;
 use App\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -371,6 +372,10 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
                 $chatId,
                 $title,
             );
+        } catch (InsufficientDiskSpaceException) {
+            $this->telegramClient->answerCallbackQuery($callbackId, 'Not enough free disk space. Try again later.');
+
+            return;
         } catch (\Throwable $exception) {
             $this->logger->error('Failed to queue a Telegram download', ['url' => $url, 'error' => $exception->getMessage()]);
             $this->telegramClient->answerCallbackQuery($callbackId, 'Could not queue the download.');
