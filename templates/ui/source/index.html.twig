@@ -84,7 +84,7 @@
                     {% for source in pagination %}
                         {% set extension = source.filename|split('.')|last|lower %}
                         {% set isAudio = extension in ['mp3', 'm4a', 'aac', 'opus', 'ogg', 'wav', 'flac'] %}
-                        <tr>
+                        <tr class="position-relative">
                             <td class="d-none d-sm-table-cell text-muted-soft">{{ startingNumber + loop.index0 }}</td>
                             <td class="ps-3">
                                 <div class="file-entry">
@@ -97,7 +97,7 @@
                                             {% endif %}
                                         </span>
                                         <span>
-                                            <a class="file-name" href="{{ path('ui_source_show', {'id': source.id}) }}" title="{{ source.filename }}">{{ source.filename }}</a>
+                                            <a class="file-name stretched-link" href="{{ path('ui_source_show', {'id': source.id}) }}" title="{{ source.filename }}">{{ source.filename }}</a>
                                             <span class="file-meta">{{ extension|upper }}{% if source.description %} · {{ source.description }}{% endif %}</span>
                                         </span>
                                     </div>
