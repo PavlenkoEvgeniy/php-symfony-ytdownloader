@@ -175,7 +175,7 @@ cache-warmup:
 lint: cs-fix phpstan psalm peck
 
 yt-dlp-update:
-	docker exec ytdownloader-php-fpm pip install --upgrade yt-dlp --break-system-packages
+	docker exec ytdownloader-php-fpm python3 -m pip install --upgrade yt-dlp --break-system-packages
 
 bash: docker-php
 
