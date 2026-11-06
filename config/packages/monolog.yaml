@@ -50,16 +50,18 @@ when@test:
 when@prod:
     monolog:
         handlers:
+            # Docker captures stderr in `docker logs`; the container has no
+            # syslog daemon, so the old syslog handler silently dropped errors.
             main:
-                type: syslog
+                type: stream
                 channels: ['!deprecation', '!developers']
-                ident: '%env(MONOLOG_IDENT)%'
+                path: 'php://stderr'
                 formatter: monolog.formatter.loggly
                 level: '%env(MONOLOG_LEVEL)%'
             developers:
-                type: syslog
+                type: stream
                 channels: ['developers']
-                ident: '%env(MONOLOG_DEVELOPERS_IDENT)%'
+                path: 'php://stderr'
                 formatter: monolog.formatter.loggly
                 level: '%env(MONOLOG_DEVELOPERS_LEVEL)%'
             deprecation:

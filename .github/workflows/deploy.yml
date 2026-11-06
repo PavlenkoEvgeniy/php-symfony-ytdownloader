@@ -85,6 +85,8 @@ jobs:
             make cache-purge
             make log-purge
             make restart
+            # Doctrine pools live in Redis and do not die with the filesystem cache.
+            make doctrine-cache-clear
             # Remove old images, stopped containers and build cache; volumes are kept.
             make docker-prune
 
