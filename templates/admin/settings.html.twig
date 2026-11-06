@@ -3,28 +3,40 @@
 {% block content_title %}{{ 'admin.settings.title'|trans }}{% endblock %}
 
 {% block main %}
-    <div class="card">
-        <div class="card-body">
-            <p class="mb-3">
-                <span class="fw-semibold">{{ 'admin.settings.progress_current'|trans }}:</span>
-                {% if settings.progressIntervalMinutes > 0 %}
-                    {{ 'admin.settings.progress_every'|trans({'%minutes%': settings.progressIntervalMinutes}) }}
-                {% else %}
-                    {{ 'admin.settings.progress_disabled'|trans }}
-                {% endif %}
-            </p>
+    {{ form_start(form) }}
+        <div class="card mb-3">
+            <div class="card-header">
+                <i class="fa-solid fa-globe"></i> {{ 'admin.settings.web_intake_section'|trans }}
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">{{ 'admin.settings.web_intake_hint'|trans }}</p>
 
-            <p class="text-muted">{{ 'admin.settings.web_intake_hint'|trans }}</p>
-
-            {{ form_start(form) }}
-                <div class="form-check form-switch mb-3">
+                <div class="form-check form-switch mb-0">
                     {{ form_widget(form.webIntakeEnabled, {'attr': {'class': 'form-check-input', 'role': 'switch'}}) }}
                     {{ form_label(form.webIntakeEnabled, null, {'label_attr': {'class': 'form-check-label'}}) }}
                     {{ form_errors(form.webIntakeEnabled) }}
                 </div>
-                {{ form_row(form.progressIntervalMinutes) }}
-                {{ form_row(form.save) }}
-            {{ form_end(form) }}
+            </div>
         </div>
-    </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <i class="fa-solid fa-paper-plane"></i> {{ 'admin.settings.telegram_progress_section'|trans }}
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info py-2 mb-3" role="status">
+                    <span class="fw-semibold">{{ 'admin.settings.progress_current'|trans }}:</span>
+                    {% if settings.progressIntervalMinutes > 0 %}
+                        {{ 'admin.settings.progress_every'|trans({'%minutes%': settings.progressIntervalMinutes}) }}
+                    {% else %}
+                        {{ 'admin.settings.progress_disabled'|trans }}
+                    {% endif %}
+                </div>
+
+                {{ form_row(form.progressIntervalMinutes) }}
+            </div>
+        </div>
+
+        {{ form_row(form.save) }}
+    {{ form_end(form) }}
 {% endblock %}

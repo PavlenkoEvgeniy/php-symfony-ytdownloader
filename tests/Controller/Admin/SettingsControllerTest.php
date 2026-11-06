@@ -53,6 +53,8 @@ final class SettingsControllerTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('body', 'Accept new downloads from the web');
+        $this->assertSelectorTextContains('body', 'Web download intake');
+        $this->assertSelectorTextContains('body', 'Telegram download progress');
 
         $field = $crawler->filter('input[name="download_settings_form[progressIntervalMinutes]"]');
         $this->assertCount(1, $field);
