@@ -81,8 +81,18 @@ final class UserCrudController extends AbstractCrudController
                 );
             });
 
+        yield BooleanField::new('telegramLinked', $this->trans('admin.field.telegram', 'Telegram'))
+            ->onlyOnIndex()
+            ->setVirtual(true)
+            ->setSortable(false)
+            ->renderAsSwitch(false);
+
         yield BooleanField::new('isEnabled', $this->trans('admin.field.enabled', 'Enabled'))
-            ->renderAsSwitch();
+            ->renderAsSwitch()
+            ->setCustomOption(
+                'confirm',
+                $this->trans('admin.field.enabled_confirm', 'Change the enabled status of this user?'),
+            );
 
         yield ChoiceField::new('roles', $this->trans('admin.field.roles', 'Roles'))
             ->setChoices([
