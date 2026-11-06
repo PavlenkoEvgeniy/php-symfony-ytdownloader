@@ -39,12 +39,13 @@ when@prod:
         orm:
             auto_generate_proxy_classes: false
             proxy_dir: '%kernel.build_dir%/doctrine/orm/Proxies'
+            # Array caches live for one request. A Redis query cache outlived a
+            # deploy and kept serving the pre-migration SQL for a changed entity,
+            # leaving the new property uninitialized (settings page 500).
             query_cache_driver:
-                type: pool
-                pool: doctrine.system_cache_pool
+                type: array
             result_cache_driver:
-                type: pool
-                pool: doctrine.result_cache_pool
+                type: array
 
     framework:
         cache:

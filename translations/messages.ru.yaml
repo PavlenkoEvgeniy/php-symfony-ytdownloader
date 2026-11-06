@@ -249,6 +249,8 @@ admin.settings.progress_interval_hint: 'Как часто бот сообщае�
 admin.settings.progress_current: 'Текущий интервал прогресса в Telegram'
 admin.settings.progress_every: 'каждые %minutes% мин.'
 admin.settings.progress_disabled: 'отключён'
+admin.settings.web_intake_section: 'Загрузки через сайт'
+admin.settings.telegram_progress_section: 'Прогресс в Telegram'
 admin.settings.save: 'Сохранить'
 admin.status.queued: 'в очереди'
 admin.status.processing: 'в обработке'

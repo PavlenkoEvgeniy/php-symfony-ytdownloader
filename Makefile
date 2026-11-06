@@ -169,6 +169,10 @@ docker-prune:
 	docker system prune --all -f
 	docker builder prune --all -f
 
+doctrine-cache-clear:
+	docker exec ytdownloader-php-fpm php bin/console cache:pool:clear doctrine.system_cache_pool --env=prod
+	docker exec ytdownloader-php-fpm php bin/console cache:pool:clear doctrine.result_cache_pool --env=prod
+
 cache-warmup:
 	docker exec -u www-data -e HOME=/tmp ytdownloader-php-fpm php bin/console cache:warmup
 
@@ -197,7 +201,7 @@ telegram-bot-hook:
 telegram-bot-unhook:
 	docker exec ytdownloader-php-fpm php bin/console app:telegram-unhook
 
-.PHONY: openspec openspec-validate
+.PHONY: openspec openspec-validate doctrine-cache-clear
 
 openspec:
 	$(OPENSPEC_RUN) $(ARGS)
