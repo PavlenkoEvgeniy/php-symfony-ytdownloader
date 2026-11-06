@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="{{ app.request.locale }}">
+<html lang="{{ app.request.locale }}" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
         // Theme switcher: auto/dark/light persisted in localStorage, applied
-        // before the stylesheets load to avoid a flash of the light theme.
+        // before the stylesheets load to avoid a flash of the default theme.
+        // Dark is the default when no preference has been saved.
         (function () {
             const storageKey = 'ytdownloader-theme';
             const modes = ['auto', 'dark', 'light'];
@@ -13,9 +14,9 @@
             function readMode() {
                 try {
                     const stored = localStorage.getItem(storageKey);
-                    return modes.includes(stored) ? stored : 'auto';
+                    return modes.includes(stored) ? stored : 'dark';
                 } catch (e) {
-                    return 'auto';
+                    return 'dark';
                 }
             }
 

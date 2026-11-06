@@ -92,6 +92,7 @@ final class ProfileControllerTest extends WebTestCase
         $this->assertStringContainsString("'ytdownloader-theme'", $content);
         $this->assertStringContainsString('dataset.bsTheme', $content);
         $this->assertStringContainsString('prefers-color-scheme', $content);
+        $this->assertStringContainsString('data-bs-theme="dark"', $content);
     }
 
     /**
