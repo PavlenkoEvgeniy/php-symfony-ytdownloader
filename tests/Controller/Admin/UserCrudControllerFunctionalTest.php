@@ -172,6 +172,73 @@ final class UserCrudControllerFunctionalTest extends WebTestCase
     }
 
     /**
+     * Verifies the users list shows the Telegram link status as Yes or No.
+     */
+    public function testIndexShowsTelegramLinkStatus(): void
+    {
+        $linkedEmail   = \sprintf('crud-list-linked-%s@test.local', \bin2hex(\random_bytes(4)));
+        $unlinkedEmail = \sprintf('crud-list-unlinked-%s@test.local', \bin2hex(\random_bytes(4)));
+
+        $this->createdEmails[] = $linkedEmail;
+        $this->createdEmails[] = $unlinkedEmail;
+
+        $linked = new User();
+
+        $linked->setEmail($linkedEmail)
+            ->setPassword($this->passwordHasher->hashPassword($linked, 'Password123!'))
+            ->setRoles(['ROLE_USER'])
+            ->setTelegramUserId(12_345)
+            ->setTelegramUsername('telegram_user')
+        ;
+
+        $unlinked = new User();
+
+        $unlinked->setEmail($unlinkedEmail)
+            ->setPassword($this->passwordHasher->hashPassword($unlinked, 'Password123!'))
+            ->setRoles(['ROLE_USER'])
+        ;
+
+        $this->entityManager->persist($linked);
+        $this->entityManager->persist($unlinked);
+        $this->entityManager->flush();
+
+        $this->loginAsAdmin();
+
+        $crawler = $this->client->request(Request::METHOD_GET, '/admin/user');
+        $this->assertResponseIsSuccessful();
+
+        $linkedCell = $crawler
+            ->filter(\sprintf('tr[data-id="%d"] td[data-column="telegramLinked"]', $linked->getId()))
+            ->first()
+            ->text()
+        ;
+        $unlinkedCell = $crawler
+            ->filter(\sprintf('tr[data-id="%d"] td[data-column="telegramLinked"]', $unlinked->getId()))
+            ->first()
+            ->text()
+        ;
+
+        $this->assertSame('Yes', \trim($linkedCell));
+        $this->assertSame('No', \trim($unlinkedCell));
+    }
+
+    /**
+     * Verifies the inline Enabled toggle asks for confirmation before changing.
+     */
+    public function testEnabledToggleAsksForConfirmation(): void
+    {
+        $this->loginAsAdmin();
+
+        $crawler = $this->client->request(Request::METHOD_GET, '/admin/user');
+        $this->assertResponseIsSuccessful();
+
+        $toggle = $crawler->filter('td[data-column="isEnabled"] input[type="checkbox"]')->first();
+
+        $this->assertCount(1, $toggle);
+        $this->assertStringContainsString('confirm(', (string) $toggle->attr('onclick'));
+    }
+
+    /**
      * Verifies the admin user card shows the Telegram link status.
      */
     public function testDetailPageShowsTelegramLinkStatus(): void
