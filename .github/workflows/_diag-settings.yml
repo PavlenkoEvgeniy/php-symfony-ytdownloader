@@ -16,11 +16,13 @@ jobs:
                   script_stop: false
                   script: |
                       cd ${{ secrets.SSH_PROJECT_PATH }}
-                      echo "=== VERSION ==="
-                      git describe --tags --always
-                      echo "=== SETTINGS ROW ==="
-                      docker exec ytdownloader-pgsql sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT id, web_intake_enabled, progress_interval_minutes FROM download_settings;"' 2>&1 | head -5
-                      echo "=== PROD LOG (last errors) ==="
-                      docker exec ytdownloader-php-fpm sh -c 'grep -E "CRITICAL|ERROR|Uncaught" /application/var/log/prod.log | tail -5' 2>&1 | sed -E 's#https?://[^ "]+#<url>#g; s#[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+#<email>#g' | cut -c1-600
-                      echo "=== CONTAINER LOG (last errors) ==="
-                      docker logs ytdownloader-php-fpm --tail 300 2>&1 | grep -Ei 'fatal|error|exception|settings' | tail -10 | cut -c1-600
+                      echo "=== PHP-FPM LOG ==="
+                      docker logs ytdownloader-php-fpm --tail 3000 2>&1 | grep -E 'Fatal|Uncaught|PHP message|Twig|settings|CRITICAL' | tail -30 | cut -c1-800
+                      echo "=== NGINX ACCESS (settings) ==="
+                      docker exec ytdownloader-webserver sh -c 'tail -n 3000 /var/log/nginx/application.access.log 2>/dev/null | grep "/admin/settings" | tail -10' 2>&1 | cut -c1-400
+                      echo "=== NGINX ERROR ==="
+                      docker exec ytdownloader-webserver sh -c 'tail -n 100 /var/log/nginx/error.log 2>/dev/null' 2>&1 | cut -c1-800
+                      echo "=== PHP ERROR LOG (webserver) ==="
+                      docker exec ytdownloader-webserver sh -c 'tail -n 100 /var/log/nginx/application_php_errors.log 2>/dev/null' 2>&1 | cut -c1-800
+                      echo "=== PHP ERROR LOG (php-fpm) ==="
+                      docker exec ytdownloader-php-fpm sh -c 'tail -n 100 /var/log/nginx/application_php_errors.log 2>/dev/null' 2>&1 | cut -c1-800
