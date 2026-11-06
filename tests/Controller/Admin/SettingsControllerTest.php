@@ -62,7 +62,7 @@ final class SettingsControllerTest extends WebTestCase
         $this->assertSelectorTextContains('body', 'Current Telegram progress interval: every 5 minute(s)');
         $this->assertSelectorExists('div.form-check.form-switch input[role="switch"]');
 
-        $switch = $crawler->filter('.settings-switch input[role="switch"]');
+        $switch = $crawler->filter('div.form-check.form-switch input[role="switch"]');
         $this->assertCount(1, $switch);
         $this->assertStringContainsString('confirm(', (string) $switch->attr('onclick'));
     }
