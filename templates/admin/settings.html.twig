@@ -3,6 +3,11 @@
 {% block content_title %}{{ 'admin.settings.title'|trans }}{% endblock %}
 
 {% block main %}
+    <style>
+        .settings-intake .form-check { padding-left: 0; }
+        .settings-intake .form-check-input { margin-left: 0; margin-right: .5rem; }
+    </style>
+
     {% set web_intake_confirm = 'admin.settings.web_intake_confirm'|trans %}
 
     {{ form_start(form) }}
@@ -13,11 +18,13 @@
             <div class="card-body">
                 <p class="text-muted mb-3">{{ 'admin.settings.web_intake_hint'|trans }}</p>
 
-                {{ form_widget(form.webIntakeEnabled, {'attr': {
-                    'role': 'switch',
-                    'onclick': 'return confirm(' ~ (web_intake_confirm|json_encode) ~ ')',
-                }}) }}
-                {{ form_errors(form.webIntakeEnabled) }}
+                <div class="settings-intake">
+                    {{ form_widget(form.webIntakeEnabled, {'attr': {
+                        'role': 'switch',
+                        'onclick': 'return confirm(' ~ (web_intake_confirm|json_encode) ~ ')',
+                    }}) }}
+                    {{ form_errors(form.webIntakeEnabled) }}
+                </div>
             </div>
         </div>
 

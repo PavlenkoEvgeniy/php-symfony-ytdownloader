@@ -27,7 +27,7 @@ final class DownloadSettingsForm extends AbstractType
         $builder
             ->add('webIntakeEnabled', CheckboxType::class, [
                 'label'      => $this->translator->trans('admin.settings.web_intake'),
-                'label_attr' => ['class' => 'form-check-label checkbox-switch'],
+                'label_attr' => ['class' => 'checkbox-switch'],
                 'required'   => false,
             ])
             ->add('progressIntervalMinutes', IntegerType::class, [
