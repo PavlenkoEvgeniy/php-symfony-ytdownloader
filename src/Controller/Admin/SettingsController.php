@@ -67,7 +67,8 @@ final class SettingsController extends AbstractController
         }
 
         return $this->render('admin/settings.html.twig', [
-            'form' => $form,
+            'form'     => $form,
+            'settings' => $settings,
         ]);
     }
 
