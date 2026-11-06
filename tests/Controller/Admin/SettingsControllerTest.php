@@ -46,12 +46,18 @@ final class SettingsControllerTest extends WebTestCase
      */
     public function testPageRendersForAdmin(): void
     {
+        $this->setProgressInterval(5);
         $this->loginAsAdmin();
 
-        $this->client->request(Request::METHOD_GET, '/admin/settings');
+        $crawler = $this->client->request(Request::METHOD_GET, '/admin/settings');
 
         $this->assertResponseIsSuccessful();
         $this->assertSelectorTextContains('body', 'Accept new downloads from the web');
+
+        $field = $crawler->filter('input[name="download_settings_form[progressIntervalMinutes]"]');
+        $this->assertCount(1, $field);
+        $this->assertSame('5', $field->attr('value'));
+        $this->assertSelectorTextContains('body', 'Current Telegram progress interval: every 5 minute(s)');
     }
 
     /**
@@ -106,6 +112,8 @@ final class SettingsControllerTest extends WebTestCase
         $this->client->submit($form);
 
         $this->assertResponseRedirects('/admin/settings');
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('body', 'Current Telegram progress interval: disabled');
         $this->assertSame(0, $this->currentSettings()->getProgressIntervalMinutes());
 
         $event = $this->latestSettingsEvent();

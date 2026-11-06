@@ -5,6 +5,15 @@
 {% block main %}
     <div class="card">
         <div class="card-body">
+            <p class="mb-3">
+                <span class="fw-semibold">{{ 'admin.settings.progress_current'|trans }}:</span>
+                {% if settings.progressIntervalMinutes > 0 %}
+                    {{ 'admin.settings.progress_every'|trans({'%minutes%': settings.progressIntervalMinutes}) }}
+                {% else %}
+                    {{ 'admin.settings.progress_disabled'|trans }}
+                {% endif %}
+            </p>
+
             <p class="text-muted">{{ 'admin.settings.web_intake_hint'|trans }}</p>
 
             {{ form_start(form) }}
