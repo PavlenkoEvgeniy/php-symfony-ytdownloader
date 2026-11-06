@@ -6,6 +6,7 @@ namespace App\Service;
 
 use App\Entity\DownloadTask;
 use App\Entity\User;
+use App\Enum\AuditChannel;
 use App\Exception\InsufficientDiskSpaceException;
 use App\Repository\DownloadTaskRepositoryInterface;
 use App\Repository\UserRepositoryInterface;
@@ -24,6 +25,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         private UserRepositoryInterface $userRepository,
         private DownloadTaskRepositoryInterface $downloadTaskRepository,
         private DownloadDispatcherInterface $downloadDispatcher,
+        private DownloadRetryServiceInterface $downloadRetryService,
         private TelegramClientInterface $telegramClient,
         private YoutubeDlProbeInterface $probe,
         #[Autowire(service: 'cache.app')]
@@ -329,6 +331,12 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             return;
         }
 
+        if (1 === \preg_match('/^retry:(\d+)$/', $data, $retryMatches)) {
+            $this->handleRetry((int) $retryMatches[1], $callbackId, $chatId, $userId);
+
+            return;
+        }
+
         if (1 !== \preg_match('/^dl:([a-f0-9]{32}):(best|moderate|poor|audio)$/', $data, $matches)) {
             $this->telegramClient->answerCallbackQuery($callbackId, 'Unknown action.');
 
@@ -394,6 +402,33 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         } catch (\Throwable $exception) {
             $this->logger->info('Failed to edit the Telegram quality message', ['error' => $exception->getMessage()]);
         }
+    }
+
+    private function handleRetry(int $taskId, string $callbackId, int $chatId, int $userId): void
+    {
+        $user = $this->resolveUser($chatId, $userId);
+
+        if (!$user instanceof User) {
+            return;
+        }
+
+        $task = $this->downloadTaskRepository->findById($taskId);
+
+        if (!$task instanceof DownloadTask
+            || $task->getUser()?->getId() !== $user->getId()
+            || DownloadTask::STATUS_ERROR !== $task->getStatus()
+        ) {
+            $this->telegramClient->answerCallbackQuery($callbackId, 'This download cannot be retried.');
+
+            return;
+        }
+
+        $retried = $this->downloadRetryService->reDownload($taskId, $user, AuditChannel::TELEGRAM);
+
+        $this->telegramClient->answerCallbackQuery(
+            $callbackId,
+            $retried ? 'Queued again.' : 'This download cannot be retried.',
+        );
     }
 
     private function resolveUser(int $chatId, int $userId): ?User

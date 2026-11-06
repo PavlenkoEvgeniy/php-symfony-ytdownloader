@@ -6,5 +6,14 @@ namespace App\Service;
 
 interface YoutubeDlWrapperInterface
 {
-    public function download(string $videoUrl, string $downloadFormat, bool $mergeAsVideo, bool $allowPlaylist = true): object;
+    /**
+     * @param (\Closure(int): void)|null $onProgress
+     */
+    public function download(
+        string $videoUrl,
+        string $downloadFormat,
+        bool $mergeAsVideo,
+        bool $allowPlaylist = true,
+        ?\Closure $onProgress = null,
+    ): object;
 }

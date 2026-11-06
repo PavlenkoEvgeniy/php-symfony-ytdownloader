@@ -8,8 +8,10 @@ interface TelegramClientInterface
 {
     /**
      * @param array<string, mixed>|null $replyMarkup
+     *
+     * @return int Telegram message id
      */
-    public function sendMessage(int $chatId, string $text, ?array $replyMarkup = null): void;
+    public function sendMessage(int $chatId, string $text, ?array $replyMarkup = null): int;
 
     /**
      * @param array<string, mixed>|null $replyMarkup

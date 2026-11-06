@@ -20,7 +20,7 @@ final readonly class TelegramClient implements TelegramClientInterface
     }
 
     #[\Override]
-    public function sendMessage(int $chatId, string $text, ?array $replyMarkup = null): void
+    public function sendMessage(int $chatId, string $text, ?array $replyMarkup = null): int
     {
         $payload = [
             'chat_id' => (string) $chatId,
@@ -31,7 +31,9 @@ final readonly class TelegramClient implements TelegramClientInterface
             $payload['reply_markup'] = $replyMarkup;
         }
 
-        $this->request('sendMessage', $payload);
+        $result = $this->request('sendMessage', $payload);
+
+        return (int) ($result['message_id'] ?? 0);
     }
 
     #[\Override]

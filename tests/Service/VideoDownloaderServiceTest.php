@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
+use App\Entity\DownloadTask;
 use App\Entity\Log;
+use App\Enum\DownloadFailureKind;
 use App\Enum\DownloadOutcome;
 use App\Repository\DownloadTaskRepositoryInterface;
+use App\Service\DownloadFailureClassifierInterface;
+use App\Service\DownloadProgressNotifierInterface;
 use App\Service\FormatResolver;
 use App\Service\LogManager;
+use App\Service\ProgressReporterInterface;
 use App\Service\SourceManager;
-use App\Service\TelegramNotifier;
 use App\Service\VideoDownloaderService;
 use App\Service\YoutubeDlWrapper;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class VideoDownloaderServiceTest extends TestCase
 {
@@ -33,19 +36,17 @@ final class VideoDownloaderServiceTest extends TestCase
         /** @phpstan-ignore-next-line */
         $logManager     = $this->createMock(LogManager::class);
         $logger         = $this->createMock(LoggerInterface::class);
-        /** @phpstan-ignore-next-line */
-        $notifier       = $this->createMock(TelegramNotifier::class);
 
         $formatResolver->expects($this->once())
             ->method('resolve')
             ->with('best')
             ->willReturn(['fmt', true]);
 
-        $video       = $this->createSuccessfulVideo('video.mp4', '/tmp', 123.4);
-        $collection  = $this->createVideoCollection([$video]);
+        $video      = $this->createSuccessfulVideo('video.mp4', '/tmp', 123.4);
+        $collection = $this->createVideoCollection([$video]);
         $youtubeDl->expects($this->once())
             ->method('download')
-            ->with('https://test.local', 'fmt', true, true)
+            ->with('https://test.local', 'fmt', true, true, null)
             ->willReturn($collection);
 
         $sourceManager->expects($this->once())
@@ -73,22 +74,11 @@ final class VideoDownloaderServiceTest extends TestCase
             ->with($this->stringContains('video.mp4'));
         $logger->expects($this->never())->method('error');
 
-        $notifier->expects($this->never())->method('notifyError');
+        $result = $this->service($youtubeDl, $formatResolver, $sourceManager, $logManager, $logger)
+            ->process('https://test.local', 'best', '123')
+        ;
 
-        $service = new VideoDownloaderService(
-            $youtubeDl,
-            $formatResolver,
-            $sourceManager,
-            $logManager,
-            $logger,
-            $notifier,
-            $this->createTranslator(),
-            $this->createStub(DownloadTaskRepositoryInterface::class),
-        );
-
-        $outcome = $service->process('https://test.local', 'best', '123');
-
-        $this->assertSame(DownloadOutcome::SUCCESS, $outcome);
+        $this->assertSame(DownloadOutcome::SUCCESS, $result->outcome);
         $this->assertSame([
             ['commenced', 'Started downloading.', null],
             ['success', 'File "video.mp4" downloaded successfully.', 123.4],
@@ -97,9 +87,9 @@ final class VideoDownloaderServiceTest extends TestCase
     }
 
     /**
-     * Verifies a failed download logs the error and notifies the user.
+     * Verifies a failed download is logged and returns its reason.
      */
-    public function testProcessNotifiesErrorAndStopsWhenDownloadFails(): void
+    public function testProcessReturnsReasonWhenDownloadFails(): void
     {
         /** @phpstan-ignore-next-line */
         $youtubeDl      = $this->createMock(YoutubeDlWrapper::class);
@@ -110,8 +100,6 @@ final class VideoDownloaderServiceTest extends TestCase
         /** @phpstan-ignore-next-line */
         $logManager     = $this->createMock(LogManager::class);
         $logger         = $this->createMock(LoggerInterface::class);
-        /** @phpstan-ignore-next-line */
-        $notifier       = $this->createMock(TelegramNotifier::class);
 
         $formatResolver->method('resolve')->willReturn(['fmt', true]);
 
@@ -140,24 +128,13 @@ final class VideoDownloaderServiceTest extends TestCase
             ->with($this->stringContains('Error during downloading'));
         $logger->expects($this->never())->method('info');
 
-        $notifier->expects($this->once())
-            ->method('notifyError')
-            ->with('123', $this->stringContains('please try again'));
+        $result = $this->service($youtubeDl, $formatResolver, $sourceManager, $logManager, $logger)
+            ->process('https://test.local', 'best', '123')
+        ;
 
-        $service = new VideoDownloaderService(
-            $youtubeDl,
-            $formatResolver,
-            $sourceManager,
-            $logManager,
-            $logger,
-            $notifier,
-            $this->createTranslator(),
-            $this->createStub(DownloadTaskRepositoryInterface::class),
-        );
-
-        $outcome = $service->process('https://test.local', 'best', '123');
-
-        $this->assertSame(DownloadOutcome::ERROR, $outcome);
+        $this->assertSame(DownloadOutcome::ERROR, $result->outcome);
+        $this->assertSame('download failed', $result->errorMessage);
+        $this->assertSame(DownloadFailureKind::PERMANENT, $result->failureKind);
         $this->assertSame([
             ['commenced', 'Started downloading.', null],
             ['error', 'Error during downloading: download failed', null],
@@ -178,8 +155,6 @@ final class VideoDownloaderServiceTest extends TestCase
         /** @phpstan-ignore-next-line */
         $logManager     = $this->createMock(LogManager::class);
         $logger         = $this->createMock(LoggerInterface::class);
-        /** @phpstan-ignore-next-line */
-        $notifier       = $this->createMock(TelegramNotifier::class);
 
         $formatResolver->method('resolve')->willReturn(['fmt', true]);
 
@@ -206,75 +181,17 @@ final class VideoDownloaderServiceTest extends TestCase
         $logger->expects($this->once())->method('error');
         $logger->expects($this->once())->method('info');
 
-        $notifier->expects($this->never())->method('notifyError');
+        $result = $this->service($youtubeDl, $formatResolver, $sourceManager, $logManager, $logger)
+            ->process('https://test.local', 'best', '123')
+        ;
 
-        $service = new VideoDownloaderService(
-            $youtubeDl,
-            $formatResolver,
-            $sourceManager,
-            $logManager,
-            $logger,
-            $notifier,
-            $this->createTranslator(),
-            $this->createStub(DownloadTaskRepositoryInterface::class),
-        );
-
-        $outcome = $service->process('https://test.local', 'best', '123');
-
-        $this->assertSame(DownloadOutcome::SUCCESS, $outcome);
+        $this->assertTrue($result->isSuccess());
         $this->assertSame([
             ['commenced', 'Started downloading.', null],
             ['success', 'File "video.mp4" downloaded successfully.', 100.0],
             ['error', 'Error during downloading: second item failed', null],
             ['finished', 'Finished downloading.', null],
         ], $logCalls);
-    }
-
-    /**
-     * Verifies a failed download returns an error without notifying when no user id is given.
-     */
-    public function testProcessReturnsErrorWithoutNotifyingWhenNoTelegramUser(): void
-    {
-        /** @phpstan-ignore-next-line */
-        $youtubeDl      = $this->createMock(YoutubeDlWrapper::class);
-        /** @phpstan-ignore-next-line */
-        $formatResolver = $this->createStub(FormatResolver::class);
-        /** @phpstan-ignore-next-line */
-        $sourceManager  = $this->createMock(SourceManager::class);
-        /** @phpstan-ignore-next-line */
-        $logManager     = $this->createMock(LogManager::class);
-        $logger         = $this->createMock(LoggerInterface::class);
-        /** @phpstan-ignore-next-line */
-        $notifier       = $this->createMock(TelegramNotifier::class);
-
-        $formatResolver->method('resolve')->willReturn(['fmt', true]);
-
-        $collection = $this->createVideoCollection([$this->createErroredVideo('download failed')]);
-        $youtubeDl->expects($this->once())->method('download')->willReturn($collection);
-
-        $sourceManager->expects($this->never())->method('findByFilename');
-        $sourceManager->expects($this->never())->method('createFromDownloadedFile');
-        $sourceManager->expects($this->once())->method('flush');
-
-        $logManager->expects($this->exactly(2))->method('create');
-        $logManager->expects($this->exactly(2))->method('flush');
-
-        $logger->expects($this->once())->method('error');
-
-        $notifier->expects($this->never())->method('notifyError');
-
-        $service = new VideoDownloaderService(
-            $youtubeDl,
-            $formatResolver,
-            $sourceManager,
-            $logManager,
-            $logger,
-            $notifier,
-            $this->createTranslator(),
-            $this->createStub(DownloadTaskRepositoryInterface::class),
-        );
-
-        $this->assertSame(DownloadOutcome::ERROR, $service->process('https://test.local', 'best'));
     }
 
     /**
@@ -291,8 +208,6 @@ final class VideoDownloaderServiceTest extends TestCase
         /** @phpstan-ignore-next-line */
         $logManager     = $this->createMock(LogManager::class);
         $logger         = $this->createMock(LoggerInterface::class);
-        /** @phpstan-ignore-next-line */
-        $notifier       = $this->createMock(TelegramNotifier::class);
 
         $formatResolver->method('resolve')->willReturn(['fmt', true]);
         $youtubeDl->method('download')->willReturn($this->createVideoCollection([]));
@@ -312,7 +227,61 @@ final class VideoDownloaderServiceTest extends TestCase
         $logManager->expects($this->exactly(2))->method('flush');
 
         $logger->expects($this->never())->method('error');
-        $notifier->expects($this->never())->method('notifyError');
+
+        $result = $this->service($youtubeDl, $formatResolver, $sourceManager, $logManager, $logger)
+            ->process('https://test.local', 'best')
+        ;
+
+        $this->assertSame(DownloadOutcome::ERROR, $result->outcome);
+        $this->assertStringContainsString('no files were downloaded', (string) $result->errorMessage);
+        $this->assertSame([
+            ['commenced', 'Started downloading.', null],
+            ['error', 'Error during downloading: no files were downloaded.', null],
+        ], $logCalls);
+    }
+
+    /**
+     * Verifies a Telegram download receives a progress callback backed by the notifier.
+     */
+    public function testTelegramDownloadReportsProgress(): void
+    {
+        /** @phpstan-ignore-next-line */
+        $youtubeDl      = $this->createStub(YoutubeDlWrapper::class);
+        /** @phpstan-ignore-next-line */
+        $formatResolver = $this->createStub(FormatResolver::class);
+        /** @phpstan-ignore-next-line */
+        $sourceManager  = $this->createStub(SourceManager::class);
+        /** @phpstan-ignore-next-line */
+        $logManager     = $this->createStub(LogManager::class);
+        $logger         = $this->createStub(LoggerInterface::class);
+
+        $formatResolver->method('resolve')->willReturn(['fmt', true]);
+
+        $task = new DownloadTask();
+        $task->setUrl('https://test.local')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+            ->setTelegramChatId(12_345)
+            ->setTitle('My video');
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn($task);
+
+        $reporter = $this->createMock(ProgressReporterInterface::class);
+        $reporter->expects($this->once())->method('report')->with(50);
+
+        $progressNotifier = $this->createMock(DownloadProgressNotifierInterface::class);
+        $progressNotifier->expects($this->once())
+            ->method('start')
+            ->with(12_345, 'My video')
+            ->willReturn($reporter);
+
+        $youtubeDl->method('download')->willReturnCallback(
+            function (string $url, string $format, bool $merge, bool $playlist, ?\Closure $onProgress): object {
+                $onProgress?->__invoke(50);
+
+                return $this->createVideoCollection([]);
+            },
+        );
 
         $service = new VideoDownloaderService(
             $youtubeDl,
@@ -320,18 +289,39 @@ final class VideoDownloaderServiceTest extends TestCase
             $sourceManager,
             $logManager,
             $logger,
-            $notifier,
-            $this->createTranslator(),
-            $this->createStub(DownloadTaskRepositoryInterface::class),
+            $taskRepository,
+            $progressNotifier,
+            $this->classifier(),
         );
 
-        $outcome = $service->process('https://test.local', 'best');
+        $service->process('https://test.local', 'best', '12345', 7);
+    }
 
-        $this->assertSame(DownloadOutcome::ERROR, $outcome);
-        $this->assertSame([
-            ['commenced', 'Started downloading.', null],
-            ['error', 'Error during downloading: no files were downloaded.', null],
-        ], $logCalls);
+    private function service(
+        YoutubeDlWrapper $youtubeDl,
+        FormatResolver $formatResolver,
+        SourceManager $sourceManager,
+        LogManager $logManager,
+        LoggerInterface $logger,
+    ): VideoDownloaderService {
+        return new VideoDownloaderService(
+            $youtubeDl,
+            $formatResolver,
+            $sourceManager,
+            $logManager,
+            $logger,
+            $this->createStub(DownloadTaskRepositoryInterface::class),
+            $this->createStub(DownloadProgressNotifierInterface::class),
+            $this->classifier(),
+        );
+    }
+
+    private function classifier(): DownloadFailureClassifierInterface
+    {
+        $classifier = $this->createStub(DownloadFailureClassifierInterface::class);
+        $classifier->method('classify')->willReturn(DownloadFailureKind::PERMANENT);
+
+        return $classifier;
     }
 
     private function createSuccessfulVideo(string $basename, string $path, float $size): object
@@ -416,17 +406,5 @@ final class VideoDownloaderServiceTest extends TestCase
                 return $this->videos;
             }
         };
-    }
-
-    private function createTranslator(): TranslatorInterface
-    {
-        $translator = $this->createStub(TranslatorInterface::class);
-        $translator->method('trans')->willReturnCallback(static fn (string $id): string => match ($id) {
-            'telegram.download_finished' => 'Downloading finished. You can find your file in the downloads directory. To download please visit the website.',
-            'telegram.download_error'    => 'Error during downloading: please try again with another link.',
-            default                      => $id,
-        });
-
-        return $translator;
     }
 }

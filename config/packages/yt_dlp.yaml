@@ -1,0 +1,4 @@
+# Downloads may legitimately run for hours; the package default of 5 minutes
+# interrupted normal long videos. The Telegram probe overrides this with 20 s.
+yt_dlp:
+    timeout: 21600

@@ -39,7 +39,7 @@ interface DownloadTaskRepositoryInterface
      */
     public function findProcessingTasks(): array;
 
-    public function resetProcessing(): int;
+    public function resetTask(int $taskId): bool;
 
     /**
      * @return array<string, int>

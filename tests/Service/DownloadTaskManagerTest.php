@@ -21,8 +21,9 @@ final class DownloadTaskManagerTest extends TestCase
         $connection->expects($this->once())
             ->method('executeStatement')
             ->with(
-                'UPDATE download_task SET status = :processing, started_at = NOW(), attempts = attempts + 1
-             WHERE id = :id AND status = :queued',
+                'UPDATE download_task
+                SET status = :processing, started_at = NOW(), attempts = attempts + 1, error_message = NULL
+              WHERE id = :id AND status IN (:queued, :processing)',
                 [
                     'id'         => 1,
                     'processing' => DownloadTask::STATUS_PROCESSING,

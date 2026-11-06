@@ -25,10 +25,15 @@ class DownloadSettings
     #[ORM\Column(name: 'web_intake_enabled', type: Types::BOOLEAN, options: ['default' => true])]
     private bool $webIntakeEnabled;
 
+    #[ORM\Column(name: 'progress_interval_minutes', type: Types::INTEGER, options: ['default' => 5])]
+    private int $progressIntervalMinutes;
+
     public function __construct(
         bool $webIntakeEnabled = true,
+        int $progressIntervalMinutes = 5,
     ) {
-        $this->webIntakeEnabled = $webIntakeEnabled;
+        $this->webIntakeEnabled        = $webIntakeEnabled;
+        $this->progressIntervalMinutes = $progressIntervalMinutes;
     }
 
     public function getWebIntakeEnabled(): bool
@@ -39,6 +44,18 @@ class DownloadSettings
     public function setWebIntakeEnabled(bool $webIntakeEnabled): static
     {
         $this->webIntakeEnabled = $webIntakeEnabled;
+
+        return $this;
+    }
+
+    public function getProgressIntervalMinutes(): int
+    {
+        return $this->progressIntervalMinutes;
+    }
+
+    public function setProgressIntervalMinutes(?int $progressIntervalMinutes): static
+    {
+        $this->progressIntervalMinutes = $progressIntervalMinutes ?? 5;
 
         return $this;
     }

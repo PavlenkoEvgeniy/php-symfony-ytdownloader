@@ -209,6 +209,51 @@ final class DashboardControllerTest extends WebTestCase
     }
 
     /**
+     * Verifies the retry action queues an error task again as a fresh request.
+     */
+    public function testRetryTaskQueuesErrorTaskAgain(): void
+    {
+        $task = new DownloadTask();
+
+        $task->setUrl('https://youtube.com/watch?v=retry-test')
+            ->setQuality('best')
+            ->setStatus(DownloadTask::STATUS_ERROR)
+            ->setErrorMessage('video not found')
+        ;
+        $this->entityManager->persist($task);
+        $this->entityManager->flush();
+
+        $user = $this->userRepository->findOneByEmail('admin@admin.local');
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request(Request::METHOD_GET, '/admin/active-tasks');
+        $token   = (string) $crawler
+            ->filter('form[action*="/admin/retry-task"] input[name="_token"]')
+            ->first()
+            ->attr('value')
+        ;
+
+        $this->client->request(Request::METHOD_POST, '/admin/retry-task', [
+            '_token' => $token,
+            'taskId' => (string) $task->getId(),
+        ]);
+
+        $this->assertResponseRedirects('/admin/active-tasks');
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('div.alert-success', 'queued again');
+
+        $this->entityManager->clear();
+        $reloaded = $this->entityManager->find(DownloadTask::class, $task->getId());
+        $this->assertNotNull($reloaded);
+        $this->assertSame(DownloadTask::STATUS_QUEUED, $reloaded->getStatus());
+        $this->assertNull($reloaded->getErrorMessage());
+        $this->assertSame(0, $reloaded->getAttempts());
+
+        $this->entityManager->remove($reloaded);
+        $this->entityManager->flush();
+    }
+
+    /**
      * Verifies the prune action deletes orphan files and redirects with a success flash.
      */
     public function testPruneOrphansDeletesOrphanFiles(): void

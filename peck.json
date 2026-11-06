@@ -100,7 +100,14 @@
             "igbinary",
             "musl",
             "ci",
-            "stylesheet"
+            "stylesheet",
+            "liveness",
+            "requeue",
+            "requeued",
+            "requeues",
+            "substring",
+            "redownload",
+            "redownloaded"
         ],
         "paths": [
             "vendor"

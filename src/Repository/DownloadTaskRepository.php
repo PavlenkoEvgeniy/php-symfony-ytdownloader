@@ -183,19 +183,27 @@ final class DownloadTaskRepository extends ServiceEntityRepository implements Do
 
     #[\Override]
     /**
-     * Resets every processing task back to queued and returns their number.
-     * Intended for stuck tasks only — a task in processing may still be a live download.
+     * Resets one stuck processing task back to queued. The caller decides whether
+     * the task is really stuck (no live processing lease) before calling this.
      */
-    public function resetProcessing(): int
+    public function resetTask(int $taskId): bool
     {
-        return (int) $this->createQueryBuilder('t')
+        $affected = (int) $this->createQueryBuilder('t')
             ->update()
             ->set('t.status', ':queued')
-            ->where('t.status = :processing')
+            ->set('t.startedAt', ':startedAt')
+            ->set('t.errorMessage', ':errorMessage')
+            ->where('t.id = :id')
+            ->andWhere('t.status = :processing')
+            ->setParameter('id', $taskId)
             ->setParameter('queued', DownloadTask::STATUS_QUEUED)
             ->setParameter('processing', DownloadTask::STATUS_PROCESSING)
+            ->setParameter('startedAt', null)
+            ->setParameter('errorMessage', null)
             ->getQuery()
             ->execute();
+
+        return $affected > 0;
     }
 
     #[\Override]

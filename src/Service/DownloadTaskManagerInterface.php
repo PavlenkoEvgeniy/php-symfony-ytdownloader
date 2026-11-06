@@ -8,6 +8,10 @@ interface DownloadTaskManagerInterface
 {
     public function claimProcessing(int $taskId): bool;
 
+    public function markRetryScheduled(int $taskId, string $errorMessage): void;
+
+    public function requeueError(int $taskId): bool;
+
     public function markSuccess(int $taskId): void;
 
     public function markError(int $taskId, ?string $errorMessage = null): void;

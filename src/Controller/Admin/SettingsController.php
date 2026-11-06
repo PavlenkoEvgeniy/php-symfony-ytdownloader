@@ -55,7 +55,10 @@ final class SettingsController extends AbstractController
             $this->auditLogger->log(
                 action: AuditAction::SETTINGS_UPDATE,
                 channel: AuditChannel::ADMIN,
-                metadata: ['web_intake_enabled' => $settings->getWebIntakeEnabled()],
+                metadata: [
+                    'web_intake_enabled'        => $settings->getWebIntakeEnabled(),
+                    'progress_interval_minutes' => $settings->getProgressIntervalMinutes(),
+                ],
             );
 
             $this->addFlash('success', $this->translator->trans('admin.flash.settings_saved'));

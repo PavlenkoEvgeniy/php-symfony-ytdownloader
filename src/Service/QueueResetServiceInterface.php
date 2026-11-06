@@ -7,7 +7,7 @@ namespace App\Service;
 interface QueueResetServiceInterface
 {
     /**
-     * @return array{processing: int, messages: int}
+     * @return array{processing: int, messages: int, skipped: int}
      */
     public function reset(): array;
 }
