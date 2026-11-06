@@ -17,7 +17,11 @@
             <p class="text-muted">{{ 'admin.settings.web_intake_hint'|trans }}</p>
 
             {{ form_start(form) }}
-                {{ form_row(form.webIntakeEnabled) }}
+                <div class="form-check form-switch mb-3">
+                    {{ form_widget(form.webIntakeEnabled, {'attr': {'class': 'form-check-input', 'role': 'switch'}}) }}
+                    {{ form_label(form.webIntakeEnabled, null, {'label_attr': {'class': 'form-check-label'}}) }}
+                    {{ form_errors(form.webIntakeEnabled) }}
+                </div>
                 {{ form_row(form.progressIntervalMinutes) }}
                 {{ form_row(form.save) }}
             {{ form_end(form) }}
