@@ -144,6 +144,11 @@ Stale `var/log` files are purged on deploy.
 Manual cleanup and the list of volumes that must never be deleted:
 [docs/runbook/disk-space.md](docs/runbook/disk-space.md).
 
+Downloads use a 6-hour yt-dlp timeout (`yt_dlp.timeout`); the Telegram probe
+keeps its 20-second timeout. **Reset Stuck** in the admin Active Tasks page skips
+tasks whose download is still running, so it never starts a second download for
+the same task.
+
 ## 🤖 Telegram bot
 
 1. **Initialize**:
@@ -184,6 +189,11 @@ Manual cleanup and the list of volumes that must never be deleted:
    or `Audio`. Pure playlists/channels are rejected. The file is delivered to
    the requester's chat and then deleted from the server and the library.
    Failed deliveries keep the file and send a link to the web library.
+   While a Telegram download runs, the bot edits one progress message every
+   interval configured in **Admin → Settings** (5 minutes by default; `0`
+   disables it). When a download finally fails, the bot sends the stored reason
+   with a **Re-download** button; the same action is available on the admin
+   Active Tasks page.
 
 ## 🔐 REST API v1 (JWT)
 

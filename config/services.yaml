@@ -67,6 +67,14 @@ services:
         alias: App\Service\FormatResolver
     App\Service\YoutubeDlWrapperInterface:
         alias: App\Service\YoutubeDlWrapper
+    App\Service\TaskProcessingLockInterface:
+        alias: App\Service\TaskProcessingLock
+    App\Service\DownloadProgressNotifierInterface:
+        alias: App\Service\DownloadProgressNotifier
+    App\Service\DownloadFailureClassifierInterface:
+        alias: App\Service\DownloadFailureClassifier
+    App\Service\DownloadRetryServiceInterface:
+        alias: App\Service\DownloadRetryService
     App\Repository\SourceRepositoryInterface:
         alias: App\Repository\SourceRepository
     App\Repository\UserRepositoryInterface:

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\EventSubscriber;
 
+use App\Entity\DownloadTask;
 use App\Message\DownloadMessage;
+use App\Repository\DownloadTaskRepositoryInterface;
 use App\Service\DownloadTaskManagerInterface;
+use App\Service\TelegramNotifierInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
@@ -15,6 +18,8 @@ final readonly class DownloadTaskFailureListener
 {
     public function __construct(
         private DownloadTaskManagerInterface $downloadTaskManager,
+        private DownloadTaskRepositoryInterface $downloadTaskRepository,
+        private TelegramNotifierInterface $telegramNotifier,
         private LoggerInterface $logger,
     ) {
     }
@@ -29,7 +34,10 @@ final readonly class DownloadTaskFailureListener
             $message = $event->getEnvelope()->getMessage();
 
             if ($message instanceof DownloadMessage && null !== $message->taskId) {
-                $this->downloadTaskManager->markError($message->taskId, $event->getThrowable()->getMessage());
+                $reason = $this->shortenReason($event->getThrowable()->getMessage());
+
+                $this->downloadTaskManager->markError($message->taskId, $reason);
+                $this->notifyTelegramFailure($message->taskId, $reason);
             }
         } catch (\Throwable $exception) {
             // Never break the worker itself: the failed message still reaches the failed transport.
@@ -37,5 +45,29 @@ final readonly class DownloadTaskFailureListener
                 'error' => $exception->getMessage(),
             ]);
         }
+    }
+
+    private function notifyTelegramFailure(int $taskId, string $reason): void
+    {
+        $task = $this->downloadTaskRepository->findById($taskId);
+
+        if (!$task instanceof DownloadTask || !$task->isTelegramOrigin()) {
+            return;
+        }
+
+        $chatId = $task->getTelegramChatId();
+
+        if (null === $chatId) {
+            return;
+        }
+
+        $this->telegramNotifier->notifyDownloadFailure((string) $chatId, $reason, $taskId);
+    }
+
+    private function shortenReason(string $reason): string
+    {
+        $reason = \trim($reason);
+
+        return \mb_substr('' === $reason ? 'Download failed.' : $reason, 0, 500);
     }
 }

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
+use App\Entity\DownloadTask;
 use App\Entity\User;
+use App\Enum\AuditChannel;
 use App\Exception\InsufficientDiskSpaceException;
 use App\Repository\DownloadTaskRepositoryInterface;
 use App\Repository\UserRepositoryInterface;
 use App\Service\DownloadDispatcherInterface;
+use App\Service\DownloadRetryServiceInterface;
 use App\Service\TelegramClientInterface;
 use App\Service\TelegramUpdateHandler;
 use App\Service\YoutubeDlProbeInterface;
@@ -38,6 +41,7 @@ final class TelegramUpdateHandlerTest extends TestCase
             $this->createStub(UserRepositoryInterface::class),
             $this->createStub(DownloadTaskRepositoryInterface::class),
             $this->createStub(DownloadDispatcherInterface::class),
+            $this->createStub(DownloadRetryServiceInterface::class),
             $client,
             $this->createStub(YoutubeDlProbeInterface::class),
             $this->createStub(CacheItemPoolInterface::class),
@@ -95,6 +99,7 @@ final class TelegramUpdateHandlerTest extends TestCase
             $userRepository,
             $this->createStub(DownloadTaskRepositoryInterface::class),
             $dispatcher,
+            $this->createStub(DownloadRetryServiceInterface::class),
             $client,
             $this->createStub(YoutubeDlProbeInterface::class),
             $cache,
@@ -107,6 +112,64 @@ final class TelegramUpdateHandlerTest extends TestCase
             'callback_query' => [
                 'id'      => 'callback-1',
                 'data'    => \sprintf('dl:%s:best', $token),
+                'from'    => ['id' => 42],
+                'message' => [
+                    'message_id' => 7,
+                    'chat'       => ['id' => 42],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Verifies the Re-download button requeues the user's error task.
+     */
+    public function testRetryCallbackRequeuesTheUsersErrorTask(): void
+    {
+        $user = new User();
+        $user->setTelegramUserId(42)->setIsEnabled(true);
+
+        $task = new DownloadTask();
+        $task->setUrl('https://test.local/video')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+            ->setTelegramChatId(42)
+            ->setStatus(DownloadTask::STATUS_ERROR)
+            ->setUser($user);
+
+        $userRepository = $this->createStub(UserRepositoryInterface::class);
+        $userRepository->method('findOneByTelegramUserId')->willReturn($user);
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn($task);
+
+        $retryService = $this->createMock(DownloadRetryServiceInterface::class);
+        $retryService->expects($this->once())
+            ->method('reDownload')
+            ->with(7, $user, AuditChannel::TELEGRAM)
+            ->willReturn(true);
+
+        $client = $this->createMock(TelegramClientInterface::class);
+        $client->expects($this->once())
+            ->method('answerCallbackQuery')
+            ->with('callback-1', 'Queued again.');
+
+        $handler = new TelegramUpdateHandler(
+            $userRepository,
+            $taskRepository,
+            $this->createStub(DownloadDispatcherInterface::class),
+            $retryService,
+            $client,
+            $this->createStub(YoutubeDlProbeInterface::class),
+            $this->createStub(CacheItemPoolInterface::class),
+            $this->createStub(EntityManagerInterface::class),
+            $this->createStub(LoggerInterface::class),
+            'https://test.local',
+        );
+
+        $handler->handle([
+            'callback_query' => [
+                'id'      => 'callback-1',
+                'data'    => 'retry:7',
                 'from'    => ['id' => 42],
                 'message' => [
                     'message_id' => 7,

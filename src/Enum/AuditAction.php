@@ -12,6 +12,7 @@ enum AuditAction: string
     case DOWNLOAD_REQUEST         = 'download.requested';
     case DOWNLOAD_SUCCESS         = 'download.completed';
     case DOWNLOAD_FAILURE         = 'download.failed';
+    case DOWNLOAD_RETRY           = 'download.retried';
     case SOURCE_DOWNLOAD          = 'source.downloaded';
     case SOURCE_UPDATE            = 'source.updated';
     case SOURCE_DELETE            = 'source.deleted';

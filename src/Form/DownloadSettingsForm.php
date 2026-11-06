@@ -7,9 +7,11 @@ namespace App\Form;
 use App\Entity\DownloadSettings;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Range;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class DownloadSettingsForm extends AbstractType
@@ -26,6 +28,14 @@ final class DownloadSettingsForm extends AbstractType
             ->add('webIntakeEnabled', CheckboxType::class, [
                 'label'    => $this->translator->trans('admin.settings.web_intake'),
                 'required' => false,
+            ])
+            ->add('progressIntervalMinutes', IntegerType::class, [
+                'label'       => $this->translator->trans('admin.settings.progress_interval'),
+                'help'        => $this->translator->trans('admin.settings.progress_interval_hint'),
+                'required'    => true,
+                'constraints' => [
+                    new Range(min: 0, max: 1440),
+                ],
             ])
             ->add('save', SubmitType::class, [
                 'label' => $this->translator->trans('admin.settings.save'),

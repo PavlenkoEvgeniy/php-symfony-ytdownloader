@@ -83,9 +83,37 @@ final class SettingsControllerTest extends WebTestCase
         $this->assertSame(AuditAction::SETTINGS_UPDATE->value, $event->getAction());
         $this->assertSame(AuditChannel::ADMIN->value, $event->getChannel());
         $this->assertTrue($event->isSuccess());
-        $this->assertSame(['web_intake_enabled' => false], $event->getMetadata());
+        $this->assertSame(
+            ['web_intake_enabled' => false, 'progress_interval_minutes' => 5],
+            $event->getMetadata(),
+        );
 
         $this->setWebIntakeEnabled(true);
+    }
+
+    /**
+     * Verifies saving the progress interval persists it and records the change.
+     */
+    public function testSavesProgressIntervalAndIsAudited(): void
+    {
+        $this->setProgressInterval(5);
+        $this->loginAsAdmin();
+
+        $crawler = $this->client->request(Request::METHOD_GET, '/admin/settings');
+        $form    = $crawler->filter('form')->form();
+        $form->setValues(['download_settings_form[progressIntervalMinutes]' => '0']);
+
+        $this->client->submit($form);
+
+        $this->assertResponseRedirects('/admin/settings');
+        $this->assertSame(0, $this->currentSettings()->getProgressIntervalMinutes());
+
+        $event = $this->latestSettingsEvent();
+
+        $this->assertInstanceOf(AuditEvent::class, $event);
+        $this->assertSame(0, $event->getMetadata()['progress_interval_minutes']);
+
+        $this->setProgressInterval(5);
     }
 
     /**
@@ -148,6 +176,17 @@ final class SettingsControllerTest extends WebTestCase
 
         $settings = $this->settingsRepository->getSettings();
         $settings->setWebIntakeEnabled($enabled);
+
+        $this->entityManager->persist($settings);
+        $this->entityManager->flush();
+    }
+
+    private function setProgressInterval(int $minutes): void
+    {
+        $this->entityManager->clear();
+
+        $settings = $this->settingsRepository->getSettings();
+        $settings->setProgressIntervalMinutes($minutes);
 
         $this->entityManager->persist($settings);
         $this->entityManager->flush();

@@ -21,6 +21,26 @@ _Avoid_: running, in progress
 The status meaning "the worker has picked this task up". It is not a guarantee that the download is still running: if the worker dies mid-task, the task stays `processing` until it is redone.
 _Avoid_: running, in progress
 
+**Attempt**:
+One run of the downloader for a Download Task. A task can have several attempts.
+_Avoid_: try, run (a run is not tied to one task)
+
+**Live Attempt**:
+An Attempt whose worker is still running. Only one Live Attempt may exist per Download Task.
+_Avoid_: running task, active process
+
+**Automatic Retry**:
+Re-running a failed Attempt without user action, for a failure that another attempt may cure. Bounded by an attempt limit; not the same as Reset.
+_Avoid_: reset (Reset resumes a stuck task without a failure), re-download (Re-download is user-initiated)
+
+**Re-download**:
+A user- or administrator-initiated fresh Attempt for a task in `error` status. It clears the error and the attempt counter.
+_Avoid_: retry (Retry is automatic), reset (Reset is for `processing` tasks)
+
+**Progress Report**:
+A periodic Telegram message showing the whole-percent progress of a Download Task. It is not a Log entry.
+_Avoid_: progress log, notification (a notification is the final outcome)
+
 ### Downloads
 
 **Orphan File**:

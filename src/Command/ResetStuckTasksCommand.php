@@ -29,6 +29,7 @@ final readonly class ResetStuckTasksCommand
         $io->success($this->translator->trans('command.reset_stuck.success', [
             '%count%'    => $result['processing'],
             '%messages%' => $result['messages'],
+            '%skipped%'  => $result['skipped'],
         ]));
 
         return Command::SUCCESS;

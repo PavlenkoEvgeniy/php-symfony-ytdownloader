@@ -16,21 +16,65 @@ final readonly class DownloadTaskManager implements DownloadTaskManagerInterface
 
     #[\Override]
     /**
-     * Atomically claims a queued task for processing. There is no wrapping transaction
+     * Atomically claims a task for processing. There is no wrapping transaction
      * (messenger has no doctrine_transaction middleware on purpose), so the UPDATE
      * commits immediately: the task becomes visible as "processing" while the download
-     * is still running. Returning false means the task is gone, already processing,
-     * or finished — the message is a duplicate and must be skipped.
+     * is still running. A task in processing can be claimed when its previous attempt
+     * is dead; the processing lease, not the status, guarantees a single live attempt.
+     * Returning false means the task is gone or finished — the message is a duplicate
+     * and must be skipped.
      */
     public function claimProcessing(int $taskId): bool
     {
         $affected = (int) $this->entityManager->getConnection()->executeStatement(
-            'UPDATE download_task SET status = :processing, started_at = NOW(), attempts = attempts + 1
-             WHERE id = :id AND status = :queued',
+            'UPDATE download_task
+                SET status = :processing, started_at = NOW(), attempts = attempts + 1, error_message = NULL
+              WHERE id = :id AND status IN (:queued, :processing)',
             [
                 'id'         => $taskId,
                 'processing' => DownloadTask::STATUS_PROCESSING,
                 'queued'     => DownloadTask::STATUS_QUEUED,
+            ],
+        );
+
+        return $affected > 0;
+    }
+
+    #[\Override]
+    /**
+     * Returns a transiently failed task to the queue while keeping the attempt
+     * counter and the reason visible until the next attempt starts.
+     */
+    public function markRetryScheduled(int $taskId, string $errorMessage): void
+    {
+        $this->entityManager->getConnection()->executeStatement(
+            'UPDATE download_task
+                SET status = :queued, error_message = :errorMessage, finished_at = NULL
+              WHERE id = :id AND status = :processing',
+            [
+                'id'           => $taskId,
+                'queued'       => DownloadTask::STATUS_QUEUED,
+                'processing'   => DownloadTask::STATUS_PROCESSING,
+                'errorMessage' => $errorMessage,
+            ],
+        );
+    }
+
+    #[\Override]
+    /**
+     * Requeues an error task as a fresh request: the previous error, finish time
+     * and attempt counter are cleared.
+     */
+    public function requeueError(int $taskId): bool
+    {
+        $affected = (int) $this->entityManager->getConnection()->executeStatement(
+            'UPDATE download_task
+                SET status = :queued, error_message = NULL, finished_at = NULL, attempts = 0, started_at = NULL
+              WHERE id = :id AND status = :error',
+            [
+                'id'     => $taskId,
+                'queued' => DownloadTask::STATUS_QUEUED,
+                'error'  => DownloadTask::STATUS_ERROR,
             ],
         );
 

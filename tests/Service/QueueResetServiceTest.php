@@ -7,6 +7,7 @@ namespace App\Tests\Service;
 use App\Entity\DownloadTask;
 use App\Repository\DownloadTaskRepositoryInterface;
 use App\Service\QueueResetServiceInterface;
+use App\Service\TaskProcessingLockInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -96,6 +97,33 @@ final class QueueResetServiceTest extends KernelTestCase
             "SELECT COUNT(*) FROM messenger_messages WHERE queue_name = 'download_queue'",
         )->fetchOne();
         $this->assertSame($beforeMessages + 2, $afterMessages);
+    }
+
+    /**
+     * Verifies reset skips a processing task whose attempt is still live.
+     */
+    public function testResetSkipsTaskWithLiveAttempt(): void
+    {
+        $task = $this->createTask(DownloadTask::STATUS_PROCESSING);
+        $this->entityManager->flush();
+
+        $lock  = self::getContainer()->get(TaskProcessingLockInterface::class);
+        $lease = $lock->tryAcquire($task->getIdOrFail());
+
+        $this->assertNotNull($lease);
+
+        try {
+            $result = $this->queueResetService->reset();
+            $this->assertSame(1, $result['skipped']);
+
+            $this->entityManager->clear();
+            $reloaded = $this->downloadTaskRepository->findById($task->getIdOrFail());
+
+            $this->assertInstanceOf(DownloadTask::class, $reloaded);
+            $this->assertSame(DownloadTask::STATUS_PROCESSING, $reloaded->getStatus());
+        } finally {
+            $lease->release();
+        }
     }
 
     /**

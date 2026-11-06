@@ -88,6 +88,7 @@
                 <th class="text-center">{{ 'admin.active_tasks.attempts'|trans }}</th>
                 <th class="text-center">{{ 'admin.active_tasks.created'|trans }}</th>
                 <th class="text-center">{{ 'admin.active_tasks.error'|trans }}</th>
+                <th class="text-center">{{ 'admin.active_tasks.actions'|trans }}</th>
             </tr>
             </thead>
             <tbody>
@@ -104,10 +105,22 @@
                     <td class="text-center">{{ task.attempts }}</td>
                     <td class="text-center">{{ task.createdAt ? task.createdAt|date('Y-m-d H:i') : '' }}</td>
                     <td class="text-break">{{ task.errorMessage ?: '' }}</td>
+                    <td class="text-center">
+                        {% if task.status == 'error' %}
+                            <form method="post" action="{{ ea_url().setRoute('admin_retry_task') }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('retry_task') }}">
+                                <input type="hidden" name="taskId" value="{{ task.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-primary"
+                                        title="{{ 'admin.active_tasks.retry_title'|trans }}">
+                                    <i class="fa-solid fa-rotate-right"></i> {{ 'admin.active_tasks.retry'|trans }}
+                                </button>
+                            </form>
+                        {% endif %}
+                    </td>
                 </tr>
             {% else %}
                 <tr>
-                    <td class="text-center" colspan="7">{{ 'admin.active_tasks.no_active'|trans }}</td>
+                    <td class="text-center" colspan="8">{{ 'admin.active_tasks.no_active'|trans }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -144,6 +157,17 @@
                     <div class="small text-muted mt-2">
                         {{ 'admin.active_tasks.attempts'|trans }}: {{ task.attempts }}
                     </div>
+
+                    {% if task.status == 'error' %}
+                        <form method="post" action="{{ ea_url().setRoute('admin_retry_task') }}" class="mt-2">
+                            <input type="hidden" name="_token" value="{{ csrf_token('retry_task') }}">
+                            <input type="hidden" name="taskId" value="{{ task.id }}">
+                            <button type="submit" class="btn btn-sm btn-outline-primary w-100"
+                                    title="{{ 'admin.active_tasks.retry_title'|trans }}">
+                                <i class="fa-solid fa-rotate-right"></i> {{ 'admin.active_tasks.retry'|trans }}
+                            </button>
+                        </form>
+                    {% endif %}
                 </div>
             </div>
         {% else %}

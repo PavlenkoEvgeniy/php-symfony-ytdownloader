@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Dto\DownloadResult;
 use App\Entity\DownloadTask;
 use App\Entity\Source;
-use App\Enum\DownloadOutcome;
 use App\Repository\DownloadTaskRepositoryInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
 final readonly class VideoDownloaderService implements VideoProcessorInterface
 {
@@ -19,9 +18,9 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
         private SourceManagerInterface $sourceManager,
         private LogManagerInterface $logManager,
         private LoggerInterface $logger,
-        private TelegramNotifierInterface $telegramNotifier,
-        private TranslatorInterface $translator,
         private DownloadTaskRepositoryInterface $downloadTaskRepository,
+        private DownloadProgressNotifierInterface $progressNotifier,
+        private DownloadFailureClassifierInterface $failureClassifier,
     ) {
     }
 
@@ -31,7 +30,7 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
         string $format,
         ?string $telegramUserId = null,
         ?int $taskId = null,
-    ): DownloadOutcome {
+    ): DownloadResult {
         $telegramUserId ??= '';
         $downloadTask    = null === $taskId ? null : $this->downloadTaskRepository->findById($taskId);
         $origin          = $downloadTask?->getOrigin();
@@ -42,14 +41,17 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
 
         [$downloadFormat, $mergeAsVideo] = $this->formatResolver->resolve($format);
 
-        $collection = $this->youtubeDlWrapper->download($videoUrl, $downloadFormat, $mergeAsVideo, $allowPlaylist);
+        $progressReporter = $this->progressReporter($downloadTask, $telegramUserId);
+        $onProgress       = null === $progressReporter ? null : $progressReporter->report(...);
 
-        $saved  = 0;
-        $errors = 0;
+        $collection = $this->youtubeDlWrapper->download($videoUrl, $downloadFormat, $mergeAsVideo, $allowPlaylist, $onProgress);
+
+        $saved      = 0;
+        $firstError = null;
 
         foreach ($collection->getVideos() as $video) {
             if (null !== $video->getError()) {
-                ++$errors;
+                $firstError ??= $video->getError();
 
                 $this->logger->error('Error during downloading', ['error' => $video->getError()]);
 
@@ -78,8 +80,9 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
             ++$saved;
         }
 
-        if (0 === $saved && 0 === $errors) {
-            $this->logManager->create('error', 'Error during downloading: no files were downloaded.');
+        if (0 === $saved && null === $firstError) {
+            $firstError = 'Error during downloading: no files were downloaded.';
+            $this->logManager->create('error', $firstError);
             $this->logManager->flush();
         }
 
@@ -87,21 +90,41 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
         // some playlist items failed, otherwise Prune would treat them as orphans.
         $this->sourceManager->flush();
 
-        $hasFiles = $saved > 0;
-
-        if ($hasFiles) {
+        if ($saved > 0) {
             $this->logManager->create('finished', 'Finished downloading.');
             $this->logManager->flush();
+
+            return DownloadResult::success();
         }
 
-        // Successful Telegram downloads are delivered as files by TelegramDeliveryMessageHandler.
-        if ('' !== $telegramUserId && !$hasFiles) {
-            $this->telegramNotifier->notifyError(
-                $telegramUserId,
-                $this->translator->trans('telegram.download_error'),
-            );
+        $reason = $this->shortenReason((string) $firstError);
+
+        return DownloadResult::failure($reason, $this->failureClassifier->classify($reason));
+    }
+
+    private function progressReporter(?DownloadTask $downloadTask, string $telegramUserId): ?ProgressReporterInterface
+    {
+        if (!$downloadTask instanceof DownloadTask || !$downloadTask->isTelegramOrigin()) {
+            return null;
         }
 
-        return $hasFiles ? DownloadOutcome::SUCCESS : DownloadOutcome::ERROR;
+        $chatId = $downloadTask->getTelegramChatId() ?? (int) $telegramUserId;
+
+        if (0 === $chatId) {
+            return null;
+        }
+
+        $label = $downloadTask->getTitle() ?? $downloadTask->getUrlOrFail();
+
+        return $this->progressNotifier->start($chatId, $label);
+    }
+
+    private function shortenReason(string $reason): string
+    {
+        $reason = \trim($reason);
+        $lines  = \preg_split('/\r\n|\r|\n/', $reason) ?: [];
+        $reason = \trim(\preg_replace('/^ERROR:\s*/i', '', \trim((string) ($lines[0] ?? ''))) ?? '');
+
+        return \mb_substr('' === $reason ? 'Download failed.' : $reason, 0, 500);
     }
 }

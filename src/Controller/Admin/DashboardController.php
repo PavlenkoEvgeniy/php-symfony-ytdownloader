@@ -11,6 +11,7 @@ use App\Helper\Helper;
 use App\Repository\DownloadTaskRepositoryInterface;
 use App\Service\AuditLoggerInterface;
 use App\Service\DiskSpacePolicyInterface;
+use App\Service\DownloadRetryServiceInterface;
 use App\Service\OrphanFilePrunerInterface;
 use App\Service\QueuePurgeServiceInterface;
 use App\Service\QueueResetServiceInterface;
@@ -131,7 +132,11 @@ final class DashboardController extends AbstractDashboardController
         $this->auditLogger->log(
             action: AuditAction::QUEUE_RESET,
             channel: AuditChannel::ADMIN,
-            metadata: ['processing' => $result['processing'], 'messages' => $result['messages']],
+            metadata: [
+                'processing' => $result['processing'],
+                'messages'   => $result['messages'],
+                'skipped'    => $result['skipped'],
+            ],
         );
 
         $this->addFlash(
@@ -139,7 +144,43 @@ final class DashboardController extends AbstractDashboardController
             $this->translator->trans('admin.flash.reset', [
                 '%count%'    => $result['processing'],
                 '%messages%' => $result['messages'],
+                '%skipped%'  => $result['skipped'],
             ]),
+        );
+
+        return $this->redirectToRoute('admin_active_tasks');
+    }
+
+    /**
+     * Re-download an error task: the previous error, finish time and attempt
+     * counter are cleared and the task is queued again.
+     */
+    #[AdminRoute(path: '/retry-task', name: 'retry_task', options: ['methods' => [Request::METHOD_POST]])]
+    public function retryTask(Request $request, DownloadRetryServiceInterface $downloadRetryService): RedirectResponse
+    {
+        if (!$this->isCsrfTokenValid('retry_task', $request->getPayload()->getString('_token'))) {
+            $this->addFlash('error', $this->translator->trans('admin.flash.invalid_csrf'));
+
+            $this->auditLogger->log(
+                action: AuditAction::DOWNLOAD_RETRY,
+                channel: AuditChannel::ADMIN,
+                success: false,
+                metadata: ['reason' => 'invalid_csrf'],
+            );
+
+            return $this->redirectToRoute('admin_active_tasks');
+        }
+
+        $actor   = $this->getUser();
+        $retried = $downloadRetryService->reDownload(
+            $request->getPayload()->getInt('taskId'),
+            $actor instanceof User ? $actor : null,
+            AuditChannel::ADMIN,
+        );
+
+        $this->addFlash(
+            $retried ? 'success' : 'error',
+            $this->translator->trans($retried ? 'admin.flash.retried' : 'admin.flash.retry_failed'),
         );
 
         return $this->redirectToRoute('admin_active_tasks');
