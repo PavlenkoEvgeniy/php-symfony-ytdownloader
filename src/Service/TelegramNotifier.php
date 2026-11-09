@@ -31,14 +31,13 @@ final readonly class TelegramNotifier implements TelegramNotifierInterface
     }
 
     #[\Override]
-    public function notifyDownloadFailure(string $telegramUserId, string $reason, int $taskId): void
+    public function notifyDownloadFailure(string $telegramUserId, int $taskId): void
     {
-        $reason     = \trim($reason);
-        $reason     = '' === $reason ? 'Unknown error.' : \mb_substr($reason, 0, 300);
         $libraryUrl = \rtrim($this->telegramHostUrl, '/') . '/ui/source';
         $text       = \sprintf(
             "%s\n%s",
-            $this->translator->trans('telegram.download_error_reason', ['%reason%' => $reason]),
+            // The internal downloader reason stays on the task for the administrator.
+            $this->translator->trans('telegram.download_error'),
             $libraryUrl,
         );
 

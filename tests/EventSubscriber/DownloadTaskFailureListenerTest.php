@@ -49,7 +49,7 @@ final class DownloadTaskFailureListenerTest extends TestCase
     }
 
     /**
-     * Verifies a Telegram failure notifies the requester with the reason.
+     * Verifies a Telegram failure notifies the requester without the reason.
      */
     public function testNotifiesTelegramUserOnFinalFailure(): void
     {
@@ -68,7 +68,7 @@ final class DownloadTaskFailureListenerTest extends TestCase
         $notifier = $this->createMock(TelegramNotifierInterface::class);
         $notifier->expects($this->once())
             ->method('notifyDownloadFailure')
-            ->with('12345', 'download failed', 5);
+            ->with('12345', 5);
 
         $listener = new DownloadTaskFailureListener(
             new DownloadTaskManager($entityManager),

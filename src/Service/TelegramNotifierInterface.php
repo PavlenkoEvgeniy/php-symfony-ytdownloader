@@ -8,5 +8,5 @@ interface TelegramNotifierInterface
 {
     public function notifyError(string $telegramUserId, string $message): void;
 
-    public function notifyDownloadFailure(string $telegramUserId, string $reason, int $taskId): void;
+    public function notifyDownloadFailure(string $telegramUserId, int $taskId): void;
 }

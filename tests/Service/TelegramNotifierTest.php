@@ -40,33 +40,34 @@ final class TelegramNotifierTest extends TestCase
     }
 
     /**
-     * Verifies a download failure carries the reason, the library link and a retry button.
+     * Verifies a download failure carries a generic text, the library link and a retry button.
      */
-    public function testNotifyDownloadFailureSendsReasonAndRetryButton(): void
+    public function testNotifyDownloadFailureSendsGenericTextAndRetryButton(): void
     {
         $client = $this->createMock(TelegramClientInterface::class);
         $client->expects($this->once())
             ->method('sendMessage')
             ->with(
                 42,
-                $this->logicalAnd(
-                    $this->stringContains('video not found'),
-                    $this->stringContains('https://example.test/ui/source'),
-                ),
+                "Download failed. Please try again later.\nhttps://example.test/ui/source",
                 $this->callback(static function (array $markup): bool {
                     return 'retry:7' === ($markup['inline_keyboard'][0][0]['callback_data'] ?? null);
                 }),
             )
             ->willReturn(1);
 
-        $this->notifier($client)->notifyDownloadFailure('42', 'video not found', 7);
+        $this->notifier($client)->notifyDownloadFailure('42', 7);
     }
 
     private function notifier(TelegramClientInterface $client, ?LoggerInterface $logger = null): TelegramNotifier
     {
         $translator = $this->createStub(TranslatorInterface::class);
         $translator->method('trans')->willReturnCallback(
-            static fn (string $id, array $parameters = []): string => $id . ' ' . (string) ($parameters['%reason%'] ?? ''),
+            static fn (string $id): string => match ($id) {
+                'telegram.download_error' => 'Download failed. Please try again later.',
+                'telegram.retry'          => 'Re-download',
+                default                   => $id,
+            },
         );
 
         return new TelegramNotifier(
