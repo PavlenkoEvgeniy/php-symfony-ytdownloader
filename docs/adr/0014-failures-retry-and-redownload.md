@@ -14,9 +14,10 @@ the requester. A permanent failure is marked `error` immediately. Unexpected
 exceptions keep using Messenger's retry; thanks to ADR 0013 the retried delivery
 can actually claim the task.
 
-The final Telegram failure message carries the reason and a **Re-download**
-button. `DownloadRetryService` accepts only `error` tasks, clears the error and
-finish time, resets the attempt counter, queues the task and audits the action.
+The final Telegram failure message carries a **Re-download** button; the
+recorded reason stayed in the message until ADR 0017 hid it. `DownloadRetryService`
+accepts only `error` tasks, clears the error and finish time, resets the attempt
+counter, queues the task and audits the action.
 The Admin Panel exposes the same action. Intermediate automatic retries are
 audited as failed attempts with `will_retry: true`, not as a separate action.
 

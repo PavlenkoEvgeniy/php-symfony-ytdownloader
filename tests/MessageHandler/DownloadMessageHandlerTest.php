@@ -271,7 +271,7 @@ final class DownloadMessageHandlerTest extends TestCase
         $notifier = $this->createMock(TelegramNotifierInterface::class);
         $notifier->expects($this->once())
             ->method('notifyDownloadFailure')
-            ->with('12345', 'video not found', 7);
+            ->with('12345', 7);
 
         $handler = new DownloadMessageHandler(
             $videoProcessor,

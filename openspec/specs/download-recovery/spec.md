@@ -41,15 +41,18 @@ attempt limit is not reached; a permanent failure SHALL NOT be retried.
 - **WHEN** an attempt fails for a permanent reason
 - **THEN** the task is marked `error` without another automatic attempt
 
-### Requirement: The requester is told why a download failed
+### Requirement: The requester is told that a download failed
 
-When a Telegram-origin task ends in `error`, the bot SHALL send the recorded
-reason together with a Re-download action.
+When a Telegram-origin task ends in `error`, the bot SHALL send a generic
+failure message that does not include the recorded reason, together with a
+Re-download action and a link to the web library. The recorded reason SHALL
+remain available to administrators.
 
 #### Scenario: Final Telegram failure
 
 - **WHEN** a Telegram-origin task ends in `error`
-- **THEN** the bot sends the reason
+- **THEN** the bot sends a generic failure message
+- **AND** the message does not include the recorded reason
 - **AND** the message offers a Re-download action
 - **AND** the message points to the web library
 

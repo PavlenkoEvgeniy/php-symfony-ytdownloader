@@ -37,7 +37,7 @@ final readonly class DownloadTaskFailureListener
                 $reason = $this->shortenReason($event->getThrowable()->getMessage());
 
                 $this->downloadTaskManager->markError($message->taskId, $reason);
-                $this->notifyTelegramFailure($message->taskId, $reason);
+                $this->notifyTelegramFailure($message->taskId);
             }
         } catch (\Throwable $exception) {
             // Never break the worker itself: the failed message still reaches the failed transport.
@@ -47,7 +47,7 @@ final readonly class DownloadTaskFailureListener
         }
     }
 
-    private function notifyTelegramFailure(int $taskId, string $reason): void
+    private function notifyTelegramFailure(int $taskId): void
     {
         $task = $this->downloadTaskRepository->findById($taskId);
 
@@ -61,7 +61,7 @@ final readonly class DownloadTaskFailureListener
             return;
         }
 
-        $this->telegramNotifier->notifyDownloadFailure((string) $chatId, $reason, $taskId);
+        $this->telegramNotifier->notifyDownloadFailure((string) $chatId, $taskId);
     }
 
     private function shortenReason(string $reason): string

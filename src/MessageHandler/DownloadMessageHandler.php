@@ -86,7 +86,7 @@ final readonly class DownloadMessageHandler
             }
 
             if (!$result->isSuccess() && !$willRetry && $isTelegram && $task instanceof DownloadTask) {
-                $this->notifyFailure($task, $result, (int) $message->telegramUserId, $message->taskId ?? 0);
+                $this->notifyFailure($task, (int) $message->telegramUserId, $message->taskId ?? 0);
             }
 
             $this->audit($message, $taskId, $task, $result, $willRetry, $isTelegram);
@@ -118,7 +118,7 @@ final readonly class DownloadMessageHandler
         $this->downloadTaskManager->markRetryScheduled($taskId, $result->errorMessage ?? 'Download failed.');
     }
 
-    private function notifyFailure(DownloadTask $task, DownloadResult $result, int $fallbackChatId, int $taskId): void
+    private function notifyFailure(DownloadTask $task, int $fallbackChatId, int $taskId): void
     {
         $chatId = $task->getTelegramChatId() ?? $fallbackChatId;
 
@@ -126,11 +126,7 @@ final readonly class DownloadMessageHandler
             return;
         }
 
-        $this->telegramNotifier->notifyDownloadFailure(
-            (string) $chatId,
-            $result->errorMessage ?? 'Download failed.',
-            $taskId,
-        );
+        $this->telegramNotifier->notifyDownloadFailure((string) $chatId, $taskId);
     }
 
     private function audit(
