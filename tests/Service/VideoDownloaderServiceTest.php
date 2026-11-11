@@ -6,6 +6,7 @@ namespace App\Tests\Service;
 
 use App\Entity\DownloadTask;
 use App\Entity\Log;
+use App\Entity\Source;
 use App\Enum\DownloadFailureKind;
 use App\Enum\DownloadOutcome;
 use App\Repository\DownloadTaskRepositoryInterface;
@@ -295,6 +296,112 @@ final class VideoDownloaderServiceTest extends TestCase
         );
 
         $service->process('https://test.local', 'best', '12345', 7);
+    }
+
+    /**
+     * Verifies an already downloaded file is handed to the current Telegram task.
+     */
+    public function testProcessHandsExistingFileToTelegramTask(): void
+    {
+        /** @phpstan-ignore-next-line */
+        $youtubeDl      = $this->createStub(YoutubeDlWrapper::class);
+        /** @phpstan-ignore-next-line */
+        $formatResolver = $this->createStub(FormatResolver::class);
+        /** @phpstan-ignore-next-line */
+        $sourceManager  = $this->createMock(SourceManager::class);
+        /** @phpstan-ignore-next-line */
+        $logManager     = $this->createStub(LogManager::class);
+        $logger         = $this->createStub(LoggerInterface::class);
+
+        $formatResolver->method('resolve')->willReturn(['fmt', true]);
+
+        $existing = new Source();
+
+        $existing->setFilename('video.mp4')
+            ->setFilepath('/tmp')
+        ;
+
+        $sourceManager->expects($this->once())
+            ->method('findByFilename')
+            ->with('video.mp4')
+            ->willReturn($existing);
+        $sourceManager->expects($this->never())->method('createFromDownloadedFile');
+        $sourceManager->expects($this->once())->method('flush');
+
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+            ->setTelegramChatId(12_345)
+        ;
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn($task);
+
+        $youtubeDl->method('download')->willReturn(
+            $this->createVideoCollection([$this->createSuccessfulVideo('video.mp4', '/tmp', 123.4)]),
+        );
+
+        $service = new VideoDownloaderService(
+            $youtubeDl,
+            $formatResolver,
+            $sourceManager,
+            $logManager,
+            $logger,
+            $taskRepository,
+            $this->createStub(DownloadProgressNotifierInterface::class),
+            $this->classifier(),
+        );
+
+        $result = $service->process('https://test.local', 'best', '12345', 7);
+
+        $this->assertTrue($result->isSuccess());
+        $this->assertSame($task, $existing->getDownloadTask());
+        $this->assertSame(DownloadTask::ORIGIN_TELEGRAM, $existing->getOrigin());
+    }
+
+    /**
+     * Verifies no progress reporter is created without any chat to report to.
+     */
+    public function testProcessSkipsProgressWithoutChat(): void
+    {
+        /** @phpstan-ignore-next-line */
+        $youtubeDl      = $this->createStub(YoutubeDlWrapper::class);
+        /** @phpstan-ignore-next-line */
+        $formatResolver = $this->createStub(FormatResolver::class);
+        /** @phpstan-ignore-next-line */
+        $sourceManager  = $this->createStub(SourceManager::class);
+        /** @phpstan-ignore-next-line */
+        $logManager     = $this->createStub(LogManager::class);
+        $logger         = $this->createStub(LoggerInterface::class);
+
+        $formatResolver->method('resolve')->willReturn(['fmt', true]);
+        $youtubeDl->method('download')->willReturn($this->createVideoCollection([]));
+
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+        ;
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn($task);
+
+        $progressNotifier = $this->createMock(DownloadProgressNotifierInterface::class);
+        $progressNotifier->expects($this->never())->method('start');
+
+        $service = new VideoDownloaderService(
+            $youtubeDl,
+            $formatResolver,
+            $sourceManager,
+            $logManager,
+            $logger,
+            $taskRepository,
+            $progressNotifier,
+            $this->classifier(),
+        );
+
+        $service->process('https://test.local', 'best', '', 7);
     }
 
     private function service(

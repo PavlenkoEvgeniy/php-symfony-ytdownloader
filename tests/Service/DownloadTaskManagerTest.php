@@ -98,4 +98,79 @@ final class DownloadTaskManagerTest extends TestCase
 
         $this->assertSame(DownloadTask::STATUS_QUEUED, new DownloadTask()->getStatus());
     }
+
+    /**
+     * Verifies scheduling a retry requeues the processing task and keeps the reason.
+     */
+    public function testMarkRetryScheduledRequeuesProcessingTask(): void
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->once())
+            ->method('executeStatement')
+            ->with(
+                'UPDATE download_task
+                SET status = :queued, error_message = :errorMessage, finished_at = NULL
+              WHERE id = :id AND status = :processing',
+                [
+                    'id'           => 3,
+                    'queued'       => DownloadTask::STATUS_QUEUED,
+                    'processing'   => DownloadTask::STATUS_PROCESSING,
+                    'errorMessage' => 'timed out',
+                ],
+            )
+            ->willReturn(1);
+
+        $entityManager = $this->createStub(EntityManagerInterface::class);
+        $entityManager->method('getConnection')->willReturn($connection);
+
+        new DownloadTaskManager($entityManager)->markRetryScheduled(3, 'timed out');
+    }
+
+    /**
+     * Verifies a sent delivery stores the delivery time and the bot message id.
+     */
+    public function testMarkDeliveryStatusSentStoresDeliveryTimeAndMessageId(): void
+    {
+        $task = new DownloadTask();
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('find')->willReturn($task);
+        $entityManager->expects($this->once())->method('flush');
+
+        new DownloadTaskManager($entityManager)->markDeliveryStatus(1, DownloadTask::DELIVERY_SENT, 555);
+
+        $this->assertSame(DownloadTask::DELIVERY_SENT, $task->getDeliveryStatus());
+        $this->assertInstanceOf(\DateTimeImmutable::class, $task->getDeliveredAt());
+        $this->assertSame(555, $task->getTelegramMessageId());
+    }
+
+    /**
+     * Verifies a delivery that was not sent keeps the delivery time empty.
+     */
+    public function testMarkDeliveryStatusSkippedKeepsDeliveryTimeEmpty(): void
+    {
+        $task = new DownloadTask();
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('find')->willReturn($task);
+        $entityManager->expects($this->once())->method('flush');
+
+        new DownloadTaskManager($entityManager)->markDeliveryStatus(1, DownloadTask::DELIVERY_SKIPPED);
+
+        $this->assertSame(DownloadTask::DELIVERY_SKIPPED, $task->getDeliveryStatus());
+        $this->assertNull($task->getDeliveredAt());
+        $this->assertNull($task->getTelegramMessageId());
+    }
+
+    /**
+     * Verifies a missing task does not flush a delivery status.
+     */
+    public function testMarkDeliveryStatusIgnoresMissingTask(): void
+    {
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->once())->method('find')->willReturn(null);
+        $entityManager->expects($this->never())->method('flush');
+
+        new DownloadTaskManager($entityManager)->markDeliveryStatus(99, DownloadTask::DELIVERY_SENT, 1);
+    }
 }

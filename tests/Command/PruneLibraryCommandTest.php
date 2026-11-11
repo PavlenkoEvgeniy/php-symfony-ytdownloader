@@ -58,6 +58,19 @@ final class PruneLibraryCommandTest extends TestCase
     }
 
     /**
+     * Verifies a real run without old files reports success.
+     */
+    public function testPruneWithoutFilesReportsSuccess(): void
+    {
+        $pruner = $this->createStub(LibraryPrunerInterface::class);
+        $pruner->method('prune')->willReturn(['deleted' => 0, 'bytes' => 0, 'failed' => 0, 'files' => []]);
+
+        $output = $this->execute($pruner);
+
+        $this->assertStringContainsString('No library files older than 1 day(s) found.', $output);
+    }
+
+    /**
      * Verifies a real run reports deleted files and the freed size.
      */
     public function testPruneReportsDeletedFiles(): void

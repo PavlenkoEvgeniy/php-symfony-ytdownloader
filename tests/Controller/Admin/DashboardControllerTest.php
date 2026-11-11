@@ -254,6 +254,33 @@ final class DashboardControllerTest extends WebTestCase
     }
 
     /**
+     * Verifies the retry action refuses an invalid CSRF token.
+     */
+    public function testRetryTaskWithInvalidCsrfIsRefused(): void
+    {
+        $user = $this->userRepository->findOneByEmail('admin@admin.local');
+        $this->client->loginUser($user);
+
+        $before = (int) $this->entityManager->getConnection()->fetchOne(
+            "SELECT COUNT(*) FROM download_task WHERE status = 'error'",
+        );
+
+        $this->client->request(Request::METHOD_POST, '/admin/retry-task', [
+            '_token' => 'invalid',
+            'taskId' => '1',
+        ]);
+
+        $this->assertResponseRedirects('/admin/active-tasks');
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('div.alert-danger', 'Invalid CSRF token.');
+
+        $after = (int) $this->entityManager->getConnection()->fetchOne(
+            "SELECT COUNT(*) FROM download_task WHERE status = 'error'",
+        );
+        $this->assertSame($before, $after);
+    }
+
+    /**
      * Verifies the prune action deletes orphan files and redirects with a success flash.
      */
     public function testPruneOrphansDeletesOrphanFiles(): void

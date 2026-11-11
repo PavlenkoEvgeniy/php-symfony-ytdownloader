@@ -93,4 +93,32 @@ final class DownloadRetryServiceTest extends TestCase
 
         $this->assertFalse($service->reDownload(7));
     }
+
+    /**
+     * Verifies a task that cannot be requeued is reported as not retried.
+     */
+    public function testReDownloadReturnsFalseWhenRequeueFails(): void
+    {
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local/video')->setQuality('best')
+            ->setStatus(DownloadTask::STATUS_ERROR)
+        ;
+
+        $repository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $repository->method('findById')->willReturn($task);
+
+        $manager = $this->createMock(DownloadTaskManagerInterface::class);
+        $manager->expects($this->once())->method('requeueError')->with(7)->willReturn(false);
+
+        $bus = $this->createMock(MessageBusInterface::class);
+        $bus->expects($this->never())->method('dispatch');
+
+        $auditLogger = $this->createMock(AuditLoggerInterface::class);
+        $auditLogger->expects($this->never())->method('log');
+
+        $service = new DownloadRetryService($repository, $manager, $bus, $auditLogger);
+
+        $this->assertFalse($service->reDownload(7));
+    }
 }

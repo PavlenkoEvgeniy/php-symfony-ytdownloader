@@ -170,6 +170,42 @@ final class DownloadTaskFailureListenerTest extends TestCase
         ($listener)($event);
     }
 
+    /**
+     * Verifies a Telegram task without a chat id is not notified.
+     */
+    public function testTelegramTaskWithoutChatIdIsNotNotified(): void
+    {
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+        ;
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('find')->willReturn($task);
+        $entityManager->expects($this->once())->method('flush');
+
+        $notifier = $this->createMock(TelegramNotifierInterface::class);
+        $notifier->expects($this->never())->method('notifyDownloadFailure');
+
+        $listener = new DownloadTaskFailureListener(
+            new DownloadTaskManager($entityManager),
+            $this->repository($task),
+            $notifier,
+            $this->createStub(LoggerInterface::class),
+        );
+
+        $event = new WorkerMessageFailedEvent(
+            new Envelope(new DownloadMessage('https://test.local', 'best', '42', 5)),
+            'async',
+            new \RuntimeException('download failed')
+        );
+
+        ($listener)($event);
+
+        $this->assertSame(DownloadTask::STATUS_ERROR, $task->getStatus());
+    }
+
     private function listener(DownloadTaskManagerInterface $manager, ?DownloadTask $task = null): DownloadTaskFailureListener
     {
         return new DownloadTaskFailureListener(

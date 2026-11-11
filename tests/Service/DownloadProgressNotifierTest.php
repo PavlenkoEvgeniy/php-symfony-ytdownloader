@@ -46,6 +46,31 @@ final class DownloadProgressNotifierTest extends TestCase
         $this->assertInstanceOf(ProgressReporterInterface::class, $notifier->start(42, 'Test'));
     }
 
+    /**
+     * Verifies unreadable settings are logged and disable progress.
+     */
+    public function testUnreadableSettingsDisableProgress(): void
+    {
+        $repository = $this->createStub(DownloadSettingsRepositoryInterface::class);
+        $repository->method('getSettings')
+            ->willThrowException(new \RuntimeException('database is down'));
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('warning')
+            ->with('Failed to read the progress interval', ['error' => 'database is down']);
+
+        $notifier = new DownloadProgressNotifier(
+            $this->createStub(TelegramClientInterface::class),
+            $repository,
+            $this->createStub(TranslatorInterface::class),
+            new MockClock(),
+            $logger,
+        );
+
+        $this->assertNull($notifier->start(42, 'Test'));
+    }
+
     private function notifier(DownloadSettings $settings): DownloadProgressNotifier
     {
         $repository = $this->createStub(DownloadSettingsRepositoryInterface::class);

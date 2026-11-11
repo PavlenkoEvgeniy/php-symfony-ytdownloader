@@ -12,6 +12,7 @@ use App\Enum\AuditActorType;
 use App\Enum\AuditChannel;
 use App\Enum\DownloadFailureKind;
 use App\Message\DownloadMessage;
+use App\Message\TelegramDeliveryMessage;
 use App\MessageHandler\DownloadMessageHandler;
 use App\Repository\DownloadTaskRepositoryInterface;
 use App\Service\AuditLoggerInterface;
@@ -347,6 +348,91 @@ final class DownloadMessageHandlerTest extends TestCase
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
     }
 
+    /**
+     * Verifies a successful Telegram download schedules its delivery.
+     */
+    public function testInvokeSchedulesTelegramDeliveryOnSuccess(): void
+    {
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+            ->setTelegramChatId(12_345)
+        ;
+        $this->setTaskId($task, 7);
+
+        $manager = $this->createMock(DownloadTaskManagerInterface::class);
+        $manager->method('claimProcessing')->willReturn(true);
+        $manager->expects($this->once())->method('markSuccess')->with(7);
+        $manager->expects($this->once())
+            ->method('markDeliveryStatus')
+            ->with(7, DownloadTask::DELIVERY_PENDING);
+
+        $videoProcessor = $this->createStub(VideoProcessorInterface::class);
+        $videoProcessor->method('process')->willReturn(DownloadResult::success());
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn($task);
+
+        $bus = $this->createMock(MessageBusInterface::class);
+        $bus->expects($this->once())
+            ->method('dispatch')
+            ->with($this->callback(static fn (object $message): bool => $message instanceof TelegramDeliveryMessage && 7 === $message->taskId))
+            ->willReturn(new Envelope(new TelegramDeliveryMessage(7)));
+
+        $handler = new DownloadMessageHandler(
+            $videoProcessor,
+            $manager,
+            $this->createStub(AuditLoggerInterface::class),
+            $taskRepository,
+            $bus,
+            $this->lock(),
+            $this->createStub(TelegramNotifierInterface::class),
+        );
+
+        $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
+    }
+
+    /**
+     * Verifies a failure without a usable chat id notifies nobody.
+     */
+    public function testInvokeSkipsFailureNotificationWithoutUsableChat(): void
+    {
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+            ->setTelegramChatId(0)
+        ;
+
+        $manager = $this->createMock(DownloadTaskManagerInterface::class);
+        $manager->method('claimProcessing')->willReturn(true);
+        $manager->expects($this->once())->method('markError')->with(7, 'video not found');
+
+        $videoProcessor = $this->createStub(VideoProcessorInterface::class);
+        $videoProcessor->method('process')->willReturn(
+            DownloadResult::failure('video not found', DownloadFailureKind::PERMANENT),
+        );
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn($task);
+
+        $notifier = $this->createMock(TelegramNotifierInterface::class);
+        $notifier->expects($this->never())->method('notifyDownloadFailure');
+
+        $handler = new DownloadMessageHandler(
+            $videoProcessor,
+            $manager,
+            $this->createStub(AuditLoggerInterface::class),
+            $taskRepository,
+            $this->createStub(MessageBusInterface::class),
+            $this->lock(),
+            $notifier,
+        );
+
+        $handler->__invoke(new DownloadMessage('https://test.local', 'best', '42', 7));
+    }
+
     private function handler(
         VideoProcessorInterface $videoProcessor,
         DownloadTaskManagerInterface $manager,
@@ -371,5 +457,10 @@ final class DownloadMessageHandlerTest extends TestCase
         $lock->method('tryAcquire')->willReturn($lease);
 
         return $lock;
+    }
+
+    private function setTaskId(DownloadTask $task, int $id): void
+    {
+        new \ReflectionProperty(DownloadTask::class, 'id')->setValue($task, $id);
     }
 }
