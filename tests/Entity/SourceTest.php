@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Entity;
 
+use App\Entity\DownloadTask;
 use App\Entity\Source;
 use App\Exception\PropertyIsNotSetException;
 use PHPUnit\Framework\TestCase;
@@ -183,5 +184,25 @@ final class SourceTest extends TestCase
         $this->expectException(PropertyIsNotSetException::class);
 
         new Source()->getIdOrFail();
+    }
+
+    /**
+     * Verifies the owning task and the origin are stored and returned.
+     */
+    public function testTaskAndOriginAccessors(): void
+    {
+        $source = new Source();
+        $task   = new DownloadTask();
+
+        $this->assertNull($source->getDownloadTask());
+        $this->assertNull($source->getOrigin());
+        $this->assertFalse($source->isTelegramOrigin());
+
+        $this->assertSame($source, $source->setDownloadTask($task));
+        $this->assertSame($source, $source->setOrigin(DownloadTask::ORIGIN_TELEGRAM));
+
+        $this->assertSame($task, $source->getDownloadTask());
+        $this->assertSame(DownloadTask::ORIGIN_TELEGRAM, $source->getOrigin());
+        $this->assertTrue($source->isTelegramOrigin());
     }
 }

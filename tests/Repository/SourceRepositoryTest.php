@@ -122,4 +122,45 @@ final class SourceRepositoryTest extends KernelTestCase
         $this->assertNotContains($active, $found);
         $this->assertContains($active, $this->repository->findOlderThan($cutoff, false));
     }
+
+    /**
+     * Verifies only the sources of the requested task are returned, ordered by id.
+     */
+    public function testFindByDownloadTaskReturnsItsSourcesInOrder(): void
+    {
+        $task = new DownloadTask()->setUrl('https://test.local/repo-task')
+            ->setQuality('best')
+        ;
+        $other = new DownloadTask()->setUrl('https://test.local/repo-other')
+            ->setQuality('best')
+        ;
+
+        $first = new Source()->setFilename('repo-task-1.mp4')
+            ->setFilepath('/tmp')
+            ->setSize(1.0)
+            ->setDownloadTask($task)
+        ;
+        $second = new Source()->setFilename('repo-task-2.mp4')
+            ->setFilepath('/tmp')
+            ->setSize(1.0)
+            ->setDownloadTask($task)
+        ;
+        $foreign = new Source()->setFilename('repo-other-1.mp4')
+            ->setFilepath('/tmp')
+            ->setSize(1.0)
+            ->setDownloadTask($other)
+        ;
+
+        $this->entityManager->persist($task);
+        $this->entityManager->persist($other);
+        $this->entityManager->persist($first);
+        $this->entityManager->persist($second);
+        $this->entityManager->persist($foreign);
+        $this->entityManager->flush();
+
+        $found = $this->repository->findByDownloadTask($task);
+
+        $this->assertSame([$first, $second], $found);
+        $this->assertNotContains($foreign, $found);
+    }
 }

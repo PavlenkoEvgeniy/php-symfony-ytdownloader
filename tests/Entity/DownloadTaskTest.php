@@ -104,4 +104,38 @@ final class DownloadTaskTest extends TestCase
 
         new DownloadTask()->getIdOrFail();
     }
+
+    /**
+     * Verifies delivery bookkeeping is stored and can be cleared again.
+     */
+    public function testDeliveryBookkeepingAccessors(): void
+    {
+        $deliveredAt = new \DateTimeImmutable();
+
+        $task = new DownloadTask();
+
+        $this->assertNull($task->getDeliveredAt());
+        $this->assertNull($task->getTelegramMessageId());
+
+        $this->assertSame($task, $task->setDeliveredAt($deliveredAt));
+        $this->assertSame($task, $task->setTelegramMessageId(42));
+
+        $this->assertSame($deliveredAt, $task->getDeliveredAt());
+        $this->assertSame(42, $task->getTelegramMessageId());
+
+        $task->setDeliveredAt(null)->setTelegramMessageId(null);
+
+        $this->assertNull($task->getDeliveredAt());
+        $this->assertNull($task->getTelegramMessageId());
+    }
+
+    /**
+     * Verifies the chat id "or fail" getter throws before it is known.
+     */
+    public function testTelegramChatIdOrFailThrowsWhenUnknown(): void
+    {
+        $this->expectException(PropertyIsNotSetException::class);
+
+        new DownloadTask()->getTelegramChatIdOrFail();
+    }
 }

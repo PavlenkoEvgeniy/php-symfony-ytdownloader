@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller\Ui;
 
+use App\Exception\DownloadIntakeDisabledException;
 use App\Exception\InsufficientDiskSpaceException;
 use App\Repository\DownloadSettingsRepositoryInterface;
 use App\Repository\DownloadTaskRepositoryInterface;
 use App\Repository\UserRepository;
 use App\Service\DiskSpacePolicy;
 use App\Service\DiskSpacePolicyInterface;
+use App\Service\DownloadDispatcherInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -296,6 +298,43 @@ final class DownloadControllerTest extends WebTestCase
             $this->assertResponseRedirects('/ui/source');
             $this->client->followRedirect();
             $this->assertSelectorTextContains('div.alert-danger', 'Not enough free disk space to accept new downloads.');
+            $this->assertSame($before, $this->countTasks());
+        } finally {
+            $this->client->enableReboot();
+        }
+    }
+
+    /**
+     * Verifies a submission rejected by the dispatcher redirects with a warning.
+     */
+    public function testDownloadPostRedirectsWhenIntakeClosesDuringDispatch(): void
+    {
+        $user = $this->userRepository->findOneByEmail('admin@admin.local');
+        $this->client->loginUser($user);
+
+        $dispatcher = $this->createStub(DownloadDispatcherInterface::class);
+        $dispatcher->method('dispatch')
+            ->willThrowException(DownloadIntakeDisabledException::create());
+
+        $this->client->disableReboot();
+        $this->getContainer()->set(DownloadDispatcherInterface::class, $dispatcher);
+
+        try {
+            $before = $this->countTasks();
+
+            $crawler = $this->client->request(Request::METHOD_GET, '/ui/download');
+            $this->assertResponseIsSuccessful();
+
+            $form = $crawler->filter('form')->form([
+                'download_form[link]'    => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'download_form[quality]' => 'best',
+            ]);
+
+            $this->client->submit($form);
+
+            $this->assertResponseRedirects('/ui/source');
+            $this->client->followRedirect();
+            $this->assertSelectorTextContains('div.alert-warning', 'New downloads through the web are disabled.');
             $this->assertSame($before, $this->countTasks());
         } finally {
             $this->client->enableReboot();

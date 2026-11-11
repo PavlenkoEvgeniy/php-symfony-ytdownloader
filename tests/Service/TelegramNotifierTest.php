@@ -59,6 +59,25 @@ final class TelegramNotifierTest extends TestCase
         $this->notifier($client)->notifyDownloadFailure('42', 7);
     }
 
+    /**
+     * Verifies a failed failure-notification is logged instead of thrown.
+     */
+    public function testNotifyDownloadFailureSwallowsClientFailures(): void
+    {
+        $client = $this->createStub(TelegramClientInterface::class);
+        $client->method('sendMessage')->willThrowException(new \RuntimeException('telegram is down'));
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('error')
+            ->with(
+                'Failed to send a Telegram failure notification',
+                $this->arrayHasKey('error'),
+            );
+
+        $this->notifier($client, $logger)->notifyDownloadFailure('42', 7);
+    }
+
     private function notifier(TelegramClientInterface $client, ?LoggerInterface $logger = null): TelegramNotifier
     {
         $translator = $this->createStub(TranslatorInterface::class);
