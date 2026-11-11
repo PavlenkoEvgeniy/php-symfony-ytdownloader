@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Exception\InsufficientDiskSpaceException;
+use App\Repository\DownloadSettingsRepositoryInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * Rejects new downloads while the download volume is below the configured
  * free-space minimum (see CONTEXT.md "Disk Pressure").
+ * Unset minimum follows MIN_FREE_DISK_MB; 0 disables the guard.
  */
 final readonly class DiskSpacePolicy implements DiskSpacePolicyInterface
 {
@@ -18,7 +20,8 @@ final readonly class DiskSpacePolicy implements DiskSpacePolicyInterface
         #[Autowire(env: 'string:resolve:APP_DOWNLOADS_DIR')]
         private string $downloadsDir,
         #[Autowire(env: 'int:MIN_FREE_DISK_MB')]
-        private int $minFreeMb,
+        private int $defaultMinFreeMb,
+        private DownloadSettingsRepositoryInterface $settingsRepository,
         private LoggerInterface $logger,
     ) {
     }
@@ -32,7 +35,7 @@ final readonly class DiskSpacePolicy implements DiskSpacePolicyInterface
     #[\Override]
     public function getMinFreeBytes(): int
     {
-        return $this->minFreeMegabytesToBytes();
+        return $this->getMinFreeMegabytes() * 1024 * 1024;
     }
 
     #[\Override]
@@ -56,8 +59,10 @@ final readonly class DiskSpacePolicy implements DiskSpacePolicyInterface
         throw InsufficientDiskSpaceException::create($this->getFreeBytes(), $this->getMinFreeBytes());
     }
 
-    private function minFreeMegabytesToBytes(): int
+    private function getMinFreeMegabytes(): int
     {
-        return $this->minFreeMb * 1024 * 1024;
+        $minFreeMb = $this->settingsRepository->getSettings()->getMinFreeDiskMb() ?? $this->defaultMinFreeMb;
+
+        return \max(0, $minFreeMb);
     }
 }

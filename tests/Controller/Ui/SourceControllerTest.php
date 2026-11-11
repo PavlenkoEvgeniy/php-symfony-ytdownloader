@@ -540,6 +540,29 @@ final class SourceControllerTest extends WebTestCase
         $this->assertSelectorTextContains('div.alert-danger', 'An error occurred while renaming the file');
     }
 
+    /**
+     * Verifies an invalid filename shows a readable message, not a translation key.
+     */
+    public function testEditRejectsPathTraversalFilename(): void
+    {
+        $source = $this->createSourceWithFile('edit-traversal.mp4');
+        $this->loginAsAdmin();
+
+        $crawler = $this->client->request(Request::METHOD_GET, \sprintf('/ui/source/%d/edit', $source->getId()));
+        $form    = $crawler->filter('form')->form([
+            'source_form[filename]' => '../escape.mp4',
+        ]);
+
+        $this->client->submit($form);
+
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertSelectorTextContains('body', 'Filename must not contain slashes or be a dot path.');
+        $this->assertSelectorTextNotContains('body', 'form.filename.invalid');
+
+        $this->entityManager->clear();
+        $this->assertSame('edit-traversal.mp4', $this->sourceRepository->find($source->getId())?->getFilename());
+    }
+
     private function loginAsAdmin(): void
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');

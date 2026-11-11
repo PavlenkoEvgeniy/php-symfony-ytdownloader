@@ -123,19 +123,23 @@ cs-check:
 cs-fix:
 	docker exec ytdownloader-php-fpm vendor/bin/php-cs-fixer fix --allow-risky=yes
 
+# phpunit runs as www-data: DG\BypassFinals (enabled in tests/bootstrap.php)
+# makes is_writable() use pure mode-bit checks, so as root it reports the
+# www-data-owned var/cache/test as unwritable. HOME=/tmp gives www-data a
+# writable home (its /var/www is root-owned).
 test:
 	docker exec ytdownloader-php-fpm php bin/console doctrine:database:drop --if-exists --force --env=test
 	docker exec ytdownloader-php-fpm php bin/console doctrine:database:create --env=test
 	docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate --no-interaction --env=test
 	docker exec ytdownloader-php-fpm php bin/console doctrine:fixtures:load --no-interaction --group=all --env=test
-	docker exec ytdownloader-php-fpm php bin/phpunit --colors=always
+	docker exec -u www-data -e HOME=/tmp ytdownloader-php-fpm php bin/phpunit --colors=always
 
 test-coverage:
 	docker exec ytdownloader-php-fpm php bin/console doctrine:database:drop --if-exists --force --env=test
 	docker exec ytdownloader-php-fpm php bin/console doctrine:database:create --env=test
 	docker exec ytdownloader-php-fpm php bin/console doctrine:migrations:migrate --no-interaction --env=test
 	docker exec ytdownloader-php-fpm php bin/console doctrine:fixtures:load --no-interaction --group=all --env=test
-	docker exec ytdownloader-php-fpm php bin/phpunit --colors=always --coverage-text
+	docker exec -u www-data -e HOME=/tmp ytdownloader-php-fpm php bin/phpunit --colors=always --coverage-text
 
 phpstan:
 	docker exec ytdownloader-php-fpm vendor/bin/phpstan analyse --memory-limit=256M

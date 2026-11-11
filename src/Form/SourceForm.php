@@ -37,12 +37,14 @@ final class SourceForm extends AbstractType
                     'normalizer' => 'trim',
                 ]),
                 new NotNull(),
+                // Constraint messages are translated in the validators domain,
+                // so the key must be resolved here or the page shows it raw.
                 new Regex(
                     pattern: '/^[^\/\\\\]+$/',
-                    message: 'form.filename.invalid',
+                    message: $this->translator->trans('form.filename.invalid'),
                 ),
-                new NotEqualTo(value: '.', message: 'form.filename.invalid'),
-                new NotEqualTo(value: '..', message: 'form.filename.invalid'),
+                new NotEqualTo(value: '.', message: $this->translator->trans('form.filename.invalid')),
+                new NotEqualTo(value: '..', message: $this->translator->trans('form.filename.invalid')),
             ],
         ])
             ->add('filepath', TextType::class, [

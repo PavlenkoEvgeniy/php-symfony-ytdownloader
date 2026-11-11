@@ -46,6 +46,34 @@
             </div>
         </div>
 
+        <div class="card mb-3">
+            <div class="card-header">
+                <i class="fa-solid fa-hard-drive"></i> {{ 'admin.settings.disk_section'|trans }}
+            </div>
+            <div class="card-body">
+                <div class="alert alert-{{ diskSpaceLow ? 'warning' : 'success' }} py-2 mb-3" role="status">
+                    <div>
+                        <span class="fw-semibold">{{ 'admin.settings.disk_free'|trans({
+                            '%free%': diskSpace.free,
+                            '%total%': diskSpace.total,
+                        }) }}</span>
+                    </div>
+                    <div>
+                        {{ diskSpaceLow
+                            ? 'admin.settings.disk_below'|trans
+                            : 'admin.settings.disk_above'|trans }}
+                    </div>
+                    <div>
+                        {{ diskMinIsDefault
+                            ? 'admin.settings.disk_min_default'|trans({'%value%': diskMinMb})
+                            : 'admin.settings.disk_min_admin'|trans({'%value%': diskMinMb}) }}
+                    </div>
+                </div>
+
+                {{ form_row(form.minFreeDiskMb) }}
+            </div>
+        </div>
+
         {{ form_row(form.save) }}
     {{ form_end(form) }}
 {% endblock %}
