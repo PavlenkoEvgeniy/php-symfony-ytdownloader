@@ -28,12 +28,17 @@ class DownloadSettings
     #[ORM\Column(name: 'progress_interval_minutes', type: Types::INTEGER, options: ['default' => 5])]
     private int $progressIntervalMinutes;
 
+    #[ORM\Column(name: 'min_free_disk_mb', type: Types::INTEGER, nullable: true)]
+    private ?int $minFreeDiskMb;
+
     public function __construct(
         bool $webIntakeEnabled = true,
         int $progressIntervalMinutes = 5,
+        ?int $minFreeDiskMb = null,
     ) {
         $this->webIntakeEnabled        = $webIntakeEnabled;
         $this->progressIntervalMinutes = $progressIntervalMinutes;
+        $this->minFreeDiskMb           = $minFreeDiskMb;
     }
 
     public function getWebIntakeEnabled(): bool
@@ -56,6 +61,18 @@ class DownloadSettings
     public function setProgressIntervalMinutes(?int $progressIntervalMinutes): static
     {
         $this->progressIntervalMinutes = $progressIntervalMinutes ?? 5;
+
+        return $this;
+    }
+
+    public function getMinFreeDiskMb(): ?int
+    {
+        return $this->minFreeDiskMb;
+    }
+
+    public function setMinFreeDiskMb(?int $minFreeDiskMb): static
+    {
+        $this->minFreeDiskMb = $minFreeDiskMb;
 
         return $this;
     }

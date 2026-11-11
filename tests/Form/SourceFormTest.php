@@ -108,6 +108,13 @@ final class SourceFormTest extends TypeTestCase
             ]);
 
             $this->assertFalse($form->isValid(), $filename);
+
+            $messages = [];
+            foreach ($form->get('filename')->getErrors() as $error) {
+                $messages[] = $error->getMessage();
+            }
+
+            $this->assertContains('Filename must not contain slashes or be a dot path.', $messages, $filename);
         }
     }
 

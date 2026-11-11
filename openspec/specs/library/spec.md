@@ -67,3 +67,16 @@ that Source, while the row actions keep working as separate controls.
 - **WHEN** a user clicks Download, Edit or Delete in a file row
 - **THEN** that action runs
 - **AND** the details page does not open
+
+### Requirement: Readable filename validation message
+
+Submitting a Source edit with a filename that contains path separators or is
+a dot path SHALL be rejected with a human-readable explanation, never with a
+raw translation key.
+
+#### Scenario: Path traversal filename is rejected
+
+- **WHEN** a user submits the Source edit form with a filename containing a
+  path separator
+- **THEN** the value is not saved
+- **AND** the page shows a readable message explaining the filename rule

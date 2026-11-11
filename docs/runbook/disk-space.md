@@ -2,8 +2,11 @@
 
 The VPS has a 20 GB SSD. Download media lives in `./var/downloads`, the database
 in `./database/`, and Docker data under `/var/lib/docker`. New Download Tasks are
-rejected while free space on the download volume is below `MIN_FREE_DISK_MB`
-(5 GB by default).
+rejected while free space on the download volume is below the configured minimum
+(5 GB by default). The threshold is edited on Admin → Settings → Disk space, in
+megabytes: an empty field follows `MIN_FREE_DISK_MB` in `.env` (the factory
+default) and `0` turns the check off. A change applies to new requests
+immediately; tasks already accepted keep running.
 
 ## Check
 

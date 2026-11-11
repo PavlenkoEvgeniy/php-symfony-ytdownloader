@@ -1,5 +1,12 @@
 # Downloads are rejected below a free-space threshold
 
+> **Amendment (2026-11-11, issue #131):** the threshold is now an
+> admin-configurable setting on Admin → Settings → Disk space, with
+> `MIN_FREE_DISK_MB` kept as the factory default for installs that never set it.
+> This supersedes the "persisted admin setting" option and the `.env`-restart
+> consequence below: operational experience showed the threshold is tuned often
+> enough to earn a place in the admin panel.
+
 The service runs on a 20 GB SSD shared by Docker images, the build cache, the
 database, logs and downloaded media. Nothing stopped a new download when the disk
 was nearly full: a single Telegram file can be 2 GB, a web playlist can be larger,
@@ -27,7 +34,7 @@ media the user still wants.
 - **A persisted admin setting instead of an env value** — the threshold is an
   infrastructure limit, not a product decision; changing it requires a restart,
   like other capacity settings. (The web-intake switch remains an admin setting
-  because it is a product decision.)
+  because it is a product decision.) *Superseded by the amendment above.*
 
 ## Consequences
 
@@ -36,7 +43,8 @@ media the user still wants.
   playlist.
 - The guard applies to admins too; freeing space per the runbook is the way back.
 - The threshold is visible in `.env` and the runbook; changing it requires a
-  restart.
+  restart. *Superseded by the amendment above: the threshold is edited in the
+  admin panel, `.env` is only the factory default.*
 - A full disk with no active users still needs an external monitor; monitoring is
   out of scope for this decision.
 - The hourly orphan prune and `make docker-prune` reclaim space; the runbook lists

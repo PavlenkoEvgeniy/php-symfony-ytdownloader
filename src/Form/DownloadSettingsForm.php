@@ -11,6 +11,8 @@ use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
+use Symfony\Component\Validator\Constraints\LessThanOrEqual;
 use Symfony\Component\Validator\Constraints\Range;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
@@ -36,6 +38,17 @@ final class DownloadSettingsForm extends AbstractType
                 'required'    => true,
                 'constraints' => [
                     new Range(min: 0, max: 1440),
+                ],
+            ])
+            ->add('minFreeDiskMb', IntegerType::class, [
+                'label'       => $this->translator->trans('admin.settings.disk_threshold'),
+                'help'        => $this->translator->trans('admin.settings.disk_threshold_hint'),
+                'required'    => false,
+                'constraints' => [
+                    new GreaterThanOrEqual(0),
+                    // Above 1048576 MB the megabyte-to-bytes multiplication
+                    // would overflow a 64-bit int.
+                    new LessThanOrEqual(1048576),
                 ],
             ])
             ->add('save', SubmitType::class, [
