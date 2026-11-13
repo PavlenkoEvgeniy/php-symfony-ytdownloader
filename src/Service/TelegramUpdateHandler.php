@@ -19,7 +19,8 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
 {
     private const int LINK_TOKEN_TTL    = 600;
     private const int PENDING_TOKEN_TTL = 900;
-    private const int MAX_ACTIVE_TASKS  = 3;
+
+    private const string ACTIVE_DOWNLOAD_HINT = 'You already have a download in progress. Wait for it to finish, or cancel it with /cancel.';
 
     /** @var list<array{string, string}> */
     private const array QUALITIES = [
@@ -267,12 +268,10 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             return;
         }
 
-        if ($this->downloadTaskRepository->countActiveByUser($user) >= self::MAX_ACTIVE_TASKS) {
-            $this->telegramClient->sendMessage(
-                $chatId,
-                \sprintf('You already have %d downloads in progress.', self::MAX_ACTIVE_TASKS),
-                $this->hiddenKeyboard(),
-            );
+        // One download at a time per user: an active task answers before the
+        // link is even probed.
+        if ([] !== $this->downloadTaskRepository->findActiveByUser($user, 1)) {
+            $this->telegramClient->sendMessage($chatId, self::ACTIVE_DOWNLOAD_HINT, $this->hiddenKeyboard());
 
             return;
         }
@@ -523,6 +522,13 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             || DownloadTask::STATUS_ERROR !== $task->getStatus()
         ) {
             $this->telegramClient->answerCallbackQuery($callbackId, 'This download cannot be retried.');
+
+            return;
+        }
+
+        // Re-download would queue a second task: the single-slot rule applies.
+        if ([] !== $this->downloadTaskRepository->findActiveByUser($user, 1)) {
+            $this->telegramClient->answerCallbackQuery($callbackId, self::ACTIVE_DOWNLOAD_HINT);
 
             return;
         }

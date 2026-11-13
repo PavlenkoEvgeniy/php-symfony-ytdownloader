@@ -588,9 +588,10 @@ final class TelegramUpdateHandlerTest extends TestCase
     }
 
     /**
-     * Verifies the concurrent download limit is enforced.
+     * Verifies a second link is refused while one download is active,
+     * before the link is probed.
      */
-    public function testTooManyActiveDownloadsAreRejected(): void
+    public function testSecondLinkWhileActiveIsRefusedBeforeProbe(): void
     {
         $user = new User();
 
@@ -599,17 +600,78 @@ final class TelegramUpdateHandlerTest extends TestCase
         $users = $this->createStub(UserRepositoryInterface::class);
         $users->method('findOneByTelegramUserId')->willReturn($user);
 
+        $active = new DownloadTask();
+
+        $active->setUrl('https://test.local/running')->setQuality('best')->setStatus(DownloadTask::STATUS_PROCESSING);
+
         $tasks = $this->createMock(DownloadTaskRepositoryInterface::class);
         $tasks->expects($this->any())->method('findActiveByUserAndUrl')->willReturn(null);
-        $tasks->expects($this->any())->method('countActiveByUser')->with($user)->willReturn(3);
+        $tasks->expects($this->once())
+            ->method('findActiveByUser')
+            ->with($user, 1)
+            ->willReturn([$active]);
+
+        $probe = $this->createMock(YoutubeDlProbeInterface::class);
+        $probe->expects($this->never())->method('probe');
 
         $client = $this->createMock(TelegramClientInterface::class);
         $client->expects($this->once())
             ->method('sendMessage')
-            ->with(42, 'You already have 3 downloads in progress.', ['remove_keyboard' => true]);
+            ->with(
+                42,
+                'You already have a download in progress. Wait for it to finish, or cancel it with /cancel.',
+                ['remove_keyboard' => true],
+            );
 
-        $this->handler(users: $users, tasks: $tasks, client: $client)
+        $this->handler(users: $users, tasks: $tasks, client: $client, probe: $probe)
             ->handle($this->message('https://test.local/video'));
+    }
+
+    /**
+     * Verifies Re-download is refused with the same hint while another
+     * download of the user is active, and the retry service is untouched.
+     */
+    public function testRetryIsRefusedWhileAnotherDownloadIsActive(): void
+    {
+        $user = new User();
+
+        $user->setTelegramUserId(42)->setIsEnabled(true);
+
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local/video')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+            ->setTelegramChatId(42)
+            ->setStatus(DownloadTask::STATUS_ERROR)
+            ->setUser($user);
+
+        $users = $this->createStub(UserRepositoryInterface::class);
+        $users->method('findOneByTelegramUserId')->willReturn($user);
+
+        $active = new DownloadTask();
+
+        $active->setUrl('https://test.local/running')->setQuality('best')->setStatus(DownloadTask::STATUS_QUEUED);
+
+        $tasks = $this->createMock(DownloadTaskRepositoryInterface::class);
+        $tasks->method('findById')->willReturn($task);
+        $tasks->expects($this->once())
+            ->method('findActiveByUser')
+            ->with($user, 1)
+            ->willReturn([$active]);
+
+        $retry = $this->createMock(DownloadRetryServiceInterface::class);
+        $retry->expects($this->never())->method('reDownload');
+
+        $client = $this->createMock(TelegramClientInterface::class);
+        $client->expects($this->once())
+            ->method('answerCallbackQuery')
+            ->with(
+                'callback-1',
+                'You already have a download in progress. Wait for it to finish, or cancel it with /cancel.',
+            );
+
+        $this->handler(users: $users, tasks: $tasks, retry: $retry, client: $client)
+            ->handle($this->callbackUpdate('retry:7'));
     }
 
     /**
