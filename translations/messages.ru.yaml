@@ -133,6 +133,7 @@ telegram.please_send_link: 'Отправьте мне ссылку для заг
 telegram.downloading_in_progress: 'Загрузка выполняется. Пожалуйста, подождите...'
 telegram.download_finished: 'Загрузка завершена. Файл находится в каталоге загрузок. Чтобы скачать его, посетите сайт.'
 telegram.download_error: 'Скачивание не удалось. Попробуйте позже.'
+telegram.file_too_large: 'Файл при этом качестве слишком велик для Telegram. Выберите другое качество и скачайте заново.'
 telegram.progress: 'Скачивание %title%:'
 telegram.retry: 'Скачать заново'
 telegram.link.title: 'Привязка Telegram'

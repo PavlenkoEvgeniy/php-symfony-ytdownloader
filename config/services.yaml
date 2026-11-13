@@ -104,6 +104,12 @@ services:
         arguments:
             $ytDlpProbeClient: '@app.telegram.probe_yt_dlp_client'
 
+    # The size guard reuses the short-timeout probe client: an estimate must
+    # never take as long as a download.
+    App\Service\DownloadSizeEstimator:
+        arguments:
+            $ytDlpProbeClient: '@app.telegram.probe_yt_dlp_client'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 

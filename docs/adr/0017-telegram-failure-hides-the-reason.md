@@ -13,6 +13,11 @@ recorded reason stays on the Download Task and is shown in the Admin Panel. The
 notifier no longer accepts the reason, so it cannot leak into the message by
 accident.
 
+**Exception (change `telegram-upload-size-guard`):** a task rejected by the
+pre-download size guard sends its own actionable message — the file is too
+large, choose another quality — with no Re-download button, because repeating
+the same quality would fail again. Every other failure keeps the generic text.
+
 ## Considered Options
 
 - **Keep sending the reason** — it is the previous behavior, but it is technical
