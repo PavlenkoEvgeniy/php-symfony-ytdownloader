@@ -12,26 +12,26 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class RefreshTokenRepositoryTest extends KernelTestCase
 {
-    private EntityManager $em;
+    private EntityManager $entityManager;
     private RefreshTokenRepository $refreshTokenRepository;
 
     public function setUp(): void
     {
         self::bootKernel();
 
-        /** @var EntityManager $em */
-        $em                           = self::getContainer()->get('doctrine')->getManager();
-        $this->em                     = $em;
-        $this->refreshTokenRepository = $this->em->getRepository(RefreshToken::class);
+        /** @var EntityManager $entityManager */
+        $entityManager                           = self::getContainer()->get('doctrine')->getManager();
+        $this->entityManager                     = $entityManager;
+        $this->refreshTokenRepository            = $this->entityManager->getRepository(RefreshToken::class);
 
-        $this->em->getConnection()->beginTransaction();
+        $this->entityManager->getConnection()->beginTransaction();
     }
 
     public function tearDown(): void
     {
-        if ($this->em->getConnection()->isTransactionActive()) {
-            $this->em->getConnection()->rollback();
-            $this->em->clear();
+        if ($this->entityManager->getConnection()->isTransactionActive()) {
+            $this->entityManager->getConnection()->rollback();
+            $this->entityManager->clear();
         }
 
         parent::tearDown();
@@ -46,8 +46,8 @@ final class RefreshTokenRepositoryTest extends KernelTestCase
         $user->setEmail('refresh@test.local');
         $user->setPassword('pass');
 
-        $this->em->persist($user);
-        $this->em->flush();
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
 
         $tokenValue = 'token-value-123';
 
@@ -58,8 +58,8 @@ final class RefreshTokenRepositoryTest extends KernelTestCase
             ->setCreatedAt(new \DateTimeImmutable('now'))
             ->setExpiresAt(new \DateTimeImmutable('+1 day'));
 
-        $this->em->persist($refreshToken);
-        $this->em->flush();
+        $this->entityManager->persist($refreshToken);
+        $this->entityManager->flush();
 
         $found = $this->refreshTokenRepository->findOneByToken($tokenValue);
         $this->assertInstanceOf(RefreshToken::class, $found);

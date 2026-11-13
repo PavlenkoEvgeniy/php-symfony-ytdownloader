@@ -13,26 +13,26 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 final class UserRepositoryTest extends KernelTestCase
 {
-    private EntityManager $em;
+    private EntityManager $entityManager;
     private UserRepository $userRepository;
 
     public function setUp(): void
     {
         self::bootKernel();
 
-        /** @var EntityManager $em */
-        $em                   = self::getContainer()->get('doctrine')->getManager();
-        $this->em             = $em;
-        $this->userRepository = $this->em->getRepository(User::class);
+        /** @var EntityManager $entityManager */
+        $entityManager                   = self::getContainer()->get('doctrine')->getManager();
+        $this->entityManager             = $entityManager;
+        $this->userRepository            = $this->entityManager->getRepository(User::class);
 
-        $this->em->getConnection()->beginTransaction();
+        $this->entityManager->getConnection()->beginTransaction();
     }
 
     public function tearDown(): void
     {
-        if ($this->em->getConnection()->isTransactionActive()) {
-            $this->em->getConnection()->rollback();
-            $this->em->clear();
+        if ($this->entityManager->getConnection()->isTransactionActive()) {
+            $this->entityManager->getConnection()->rollback();
+            $this->entityManager->clear();
         }
 
         parent::tearDown();
@@ -53,9 +53,9 @@ final class UserRepositoryTest extends KernelTestCase
         $u2->setEmail('a2@test.local');
         $u2->setPassword('pass');
 
-        $this->em->persist($u1);
-        $this->em->persist($u2);
-        $this->em->flush();
+        $this->entityManager->persist($u1);
+        $this->entityManager->persist($u2);
+        $this->entityManager->flush();
 
         $this->assertSame($initial + 2, $this->userRepository->getTotalCount());
     }
@@ -71,8 +71,8 @@ final class UserRepositoryTest extends KernelTestCase
         $user->setEmail($email);
         $user->setPassword('pass');
 
-        $this->em->persist($user);
-        $this->em->flush();
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
 
         $found = $this->userRepository->findOneByEmail(\mb_strtolower($email));
         $this->assertInstanceOf(User::class, $found);
@@ -91,13 +91,13 @@ final class UserRepositoryTest extends KernelTestCase
         $user->setEmail('upgrade@test.local');
         $user->setPassword('oldhash');
 
-        $this->em->persist($user);
-        $this->em->flush();
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
 
         $this->userRepository->upgradePassword($user, 'newHash123');
 
         // clear and fetch again to ensure flush happened
-        $this->em->clear();
+        $this->entityManager->clear();
         $reloaded = $this->userRepository->findOneByEmail('upgrade@test.local');
 
         $this->assertInstanceOf(User::class, $reloaded);

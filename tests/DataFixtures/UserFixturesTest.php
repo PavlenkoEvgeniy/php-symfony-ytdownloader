@@ -47,16 +47,16 @@ final class UserFixturesTest extends KernelTestCase
      */
     public function testFixturesCanLoadData(): void
     {
-        $em             = self::getContainer()->get('doctrine.orm.entity_manager');
-        $userRepository = self::getContainer()->get('doctrine.orm.entity_manager')
+        $entityManager             = self::getContainer()->get('doctrine.orm.entity_manager');
+        $userRepository            = self::getContainer()->get('doctrine.orm.entity_manager')
             ->getRepository(User::class);
 
         foreach ($userRepository->findAll() as $user) {
-            $em->remove($user);
+            $entityManager->remove($user);
         }
-        $em->flush();
+        $entityManager->flush();
 
-        $this->fixtures->load($em);
+        $this->fixtures->load($entityManager);
 
         $allUsers = $userRepository->findAll();
         $this->assertGreaterThanOrEqual(4, \count($allUsers));
@@ -67,15 +67,15 @@ final class UserFixturesTest extends KernelTestCase
      */
     public function testFixturesCreateAdminUser(): void
     {
-        $em             = self::getContainer()->get('doctrine.orm.entity_manager');
-        $userRepository = $em->getRepository(User::class);
+        $entityManager             = self::getContainer()->get('doctrine.orm.entity_manager');
+        $userRepository            = $entityManager->getRepository(User::class);
 
         foreach ($userRepository->findAll() as $user) {
-            $em->remove($user);
+            $entityManager->remove($user);
         }
-        $em->flush();
+        $entityManager->flush();
 
-        $this->fixtures->load($em);
+        $this->fixtures->load($entityManager);
 
         $adminUser = $userRepository->findOneByEmail('admin@admin.local');
         $this->assertInstanceOf(User::class, $adminUser);
@@ -88,15 +88,15 @@ final class UserFixturesTest extends KernelTestCase
      */
     public function testFixturesCreateRegularUser(): void
     {
-        $em             = self::getContainer()->get('doctrine.orm.entity_manager');
-        $userRepository = $em->getRepository(User::class);
+        $entityManager             = self::getContainer()->get('doctrine.orm.entity_manager');
+        $userRepository            = $entityManager->getRepository(User::class);
 
         foreach ($userRepository->findAll() as $user) {
-            $em->remove($user);
+            $entityManager->remove($user);
         }
-        $em->flush();
+        $entityManager->flush();
 
-        $this->fixtures->load($em);
+        $this->fixtures->load($entityManager);
 
         $user = $userRepository->findOneByEmail('user@test.local');
         $this->assertInstanceOf(User::class, $user);
@@ -109,15 +109,15 @@ final class UserFixturesTest extends KernelTestCase
      */
     public function testFixturesCreateDisabledUsers(): void
     {
-        $em             = self::getContainer()->get('doctrine.orm.entity_manager');
-        $userRepository = $em->getRepository(User::class);
+        $entityManager             = self::getContainer()->get('doctrine.orm.entity_manager');
+        $userRepository            = $entityManager->getRepository(User::class);
 
         foreach ($userRepository->findAll() as $user) {
-            $em->remove($user);
+            $entityManager->remove($user);
         }
-        $em->flush();
+        $entityManager->flush();
 
-        $this->fixtures->load($em);
+        $this->fixtures->load($entityManager);
 
         $disabledAdmin = $userRepository->findOneByEmail('admin.disabled@admin.local');
         $disabledUser  = $userRepository->findOneByEmail('user.disabled@test.local');
@@ -133,15 +133,15 @@ final class UserFixturesTest extends KernelTestCase
      */
     public function testFixturesPasswordsAreHashed(): void
     {
-        $em             = self::getContainer()->get('doctrine.orm.entity_manager');
-        $userRepository = $em->getRepository(User::class);
+        $entityManager             = self::getContainer()->get('doctrine.orm.entity_manager');
+        $userRepository            = $entityManager->getRepository(User::class);
 
         foreach ($userRepository->findAll() as $user) {
-            $em->remove($user);
+            $entityManager->remove($user);
         }
-        $em->flush();
+        $entityManager->flush();
 
-        $this->fixtures->load($em);
+        $this->fixtures->load($entityManager);
 
         $adminUser = $userRepository->findOneByEmail('admin@admin.local');
         $this->assertNotSame('admin123456', $adminUser?->getPassword());

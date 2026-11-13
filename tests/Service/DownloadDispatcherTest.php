@@ -28,11 +28,11 @@ final class DownloadDispatcherTest extends TestCase
      */
     public function testDispatchPersistsTaskAndDispatchesMessageWithTaskId(): void
     {
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->once())
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->once())
             ->method('persist')
             ->with($this->isInstanceOf(DownloadTask::class));
-        $em->expects($this->once())->method('flush');
+        $entityManager->expects($this->once())->method('flush');
 
         $dispatched = null;
         $bus        = $this->createMock(MessageBusInterface::class);
@@ -46,7 +46,7 @@ final class DownloadDispatcherTest extends TestCase
             });
 
         $dispatcher = new DownloadDispatcher(
-            $em,
+            $entityManager,
             $bus,
             $this->createStub(AuditLoggerInterface::class),
             $this->createStub(DownloadIntakePolicyInterface::class),
@@ -80,9 +80,9 @@ final class DownloadDispatcherTest extends TestCase
      */
     public function testDispatchRejectsWhenIntakePolicyThrows(): void
     {
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->never())->method('persist');
-        $em->expects($this->never())->method('flush');
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->never())->method('persist');
+        $entityManager->expects($this->never())->method('flush');
 
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->never())->method('dispatch');
@@ -91,7 +91,7 @@ final class DownloadDispatcherTest extends TestCase
         $policy->method('assertAccepts')->willThrowException(DownloadIntakeDisabledException::create());
 
         $dispatcher = new DownloadDispatcher(
-            $em,
+            $entityManager,
             $bus,
             $this->createStub(AuditLoggerInterface::class),
             $policy,
@@ -108,9 +108,9 @@ final class DownloadDispatcherTest extends TestCase
      */
     public function testDispatchRejectsWhenDiskSpacePolicyThrows(): void
     {
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->never())->method('persist');
-        $em->expects($this->never())->method('flush');
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->never())->method('persist');
+        $entityManager->expects($this->never())->method('flush');
 
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->never())->method('dispatch');
@@ -119,7 +119,7 @@ final class DownloadDispatcherTest extends TestCase
         $diskPolicy->method('assertCanAccept')->willThrowException(InsufficientDiskSpaceException::create(0.0, 1));
 
         $dispatcher = new DownloadDispatcher(
-            $em,
+            $entityManager,
             $bus,
             $this->createStub(AuditLoggerInterface::class),
             $this->createStub(DownloadIntakePolicyInterface::class),
@@ -142,9 +142,9 @@ final class DownloadDispatcherTest extends TestCase
         $bus->method('dispatch')
             ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
 
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->once())->method('persist');
-        $em->expects($this->once())->method('flush');
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->once())->method('persist');
+        $entityManager->expects($this->once())->method('flush');
 
         $auditLogger = $this->createMock(AuditLoggerInterface::class);
         $auditLogger->expects($this->once())
@@ -163,7 +163,7 @@ final class DownloadDispatcherTest extends TestCase
             );
 
         $dispatcher = new DownloadDispatcher(
-            $em,
+            $entityManager,
             $bus,
             $auditLogger,
             $this->createStub(DownloadIntakePolicyInterface::class),
@@ -182,7 +182,7 @@ final class DownloadDispatcherTest extends TestCase
         $bus->method('dispatch')
             ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
 
-        $em = $this->createStub(EntityManagerInterface::class);
+        $entityManager = $this->createStub(EntityManagerInterface::class);
 
         $auditLogger = $this->createMock(AuditLoggerInterface::class);
         $auditLogger->expects($this->once())
@@ -201,7 +201,7 @@ final class DownloadDispatcherTest extends TestCase
             );
 
         $dispatcher = new DownloadDispatcher(
-            $em,
+            $entityManager,
             $bus,
             $auditLogger,
             $this->createStub(DownloadIntakePolicyInterface::class),

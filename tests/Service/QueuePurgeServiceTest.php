@@ -12,7 +12,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class QueuePurgeServiceTest extends KernelTestCase
 {
-    private EntityManager $em;
+    private EntityManager $entityManager;
     private Connection $connection;
     private QueuePurgeService $queuePurgeService;
 
@@ -20,11 +20,11 @@ final class QueuePurgeServiceTest extends KernelTestCase
     {
         self::bootKernel();
 
-        /** @var EntityManager $em */
-        $em                      = self::getContainer()->get('doctrine')->getManager();
-        $this->em                = $em;
-        $this->connection        = $em->getConnection();
-        $this->queuePurgeService = self::getContainer()->get(QueuePurgeService::class);
+        /** @var EntityManager $entityManager */
+        $entityManager                      = self::getContainer()->get('doctrine')->getManager();
+        $this->entityManager                = $entityManager;
+        $this->connection                   = $entityManager->getConnection();
+        $this->queuePurgeService            = self::getContainer()->get(QueuePurgeService::class);
 
         $this->connection->beginTransaction();
     }
@@ -33,7 +33,7 @@ final class QueuePurgeServiceTest extends KernelTestCase
     {
         if ($this->connection->isTransactionActive()) {
             $this->connection->rollback();
-            $this->em->clear();
+            $this->entityManager->clear();
         }
 
         parent::tearDown();
@@ -43,7 +43,7 @@ final class QueuePurgeServiceTest extends KernelTestCase
     {
         $task = new DownloadTask();
         $task->setUrl('https://youtube.com/watch?v=test')->setQuality('best')->setStatus($status);
-        $this->em->persist($task);
+        $this->entityManager->persist($task);
 
         return $task;
     }
@@ -67,18 +67,18 @@ final class QueuePurgeServiceTest extends KernelTestCase
      */
     public function testPurgeDeletesOnlyQueuedTasks(): void
     {
-        $before = $this->em->getRepository(DownloadTask::class)->getStatusCounts();
+        $before = $this->entityManager->getRepository(DownloadTask::class)->getStatusCounts();
 
         $this->createTask(DownloadTask::STATUS_QUEUED);
         $this->createTask(DownloadTask::STATUS_QUEUED);
         $this->createTask(DownloadTask::STATUS_PROCESSING);
         $this->createTask(DownloadTask::STATUS_ERROR);
         $this->createTask(DownloadTask::STATUS_SUCCESS);
-        $this->em->flush();
+        $this->entityManager->flush();
 
         $result = $this->queuePurgeService->purge();
 
-        $counts = $this->em->getRepository(DownloadTask::class)->getStatusCounts();
+        $counts = $this->entityManager->getRepository(DownloadTask::class)->getStatusCounts();
         $this->assertSame($before[DownloadTask::STATUS_QUEUED] + 2, $result['tasks']);
         $this->assertSame(0, $counts[DownloadTask::STATUS_QUEUED]);
         $this->assertSame($before[DownloadTask::STATUS_PROCESSING] + 1, $counts[DownloadTask::STATUS_PROCESSING]);
@@ -97,7 +97,7 @@ final class QueuePurgeServiceTest extends KernelTestCase
         $beforePurged = (int) $this->connection->executeQuery(
             "SELECT COUNT(*) FROM messenger_messages WHERE delivered_at IS NULL AND queue_name IN ('download_queue', 'failed_queue')",
         )->fetchOne();
-        $beforeTasks = $this->em->getRepository(DownloadTask::class)->getStatusCounts();
+        $beforeTasks = $this->entityManager->getRepository(DownloadTask::class)->getStatusCounts();
 
         $this->insertMessage('download_queue', null);
         $this->insertMessage('download_queue', null);
