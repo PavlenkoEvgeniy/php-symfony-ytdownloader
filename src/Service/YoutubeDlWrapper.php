@@ -38,8 +38,10 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
         ?\Closure $onProgress = null,
         ?string $maxFilesize = null,
     ): object {
+        $workDir = $this->prepareWorkDir();
+
         $options = [
-            'paths'             => $this->downloadsDir,
+            'paths'             => $workDir ?? $this->downloadsDir,
             'print'             => 'after_move:filepath',
             'yes-playlist'      => $allowPlaylist,
             'no-playlist'       => !$allowPlaylist,
@@ -81,32 +83,173 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
         $lastPercent = -1;
 
         try {
-            $process->start();
+            try {
+                $process->start();
 
-            foreach ($process as $type => $data) {
-                if (Process::OUT === $type) {
-                    $stdout .= $data;
-                } else {
-                    $stderr .= $data;
-                }
+                foreach ($process as $type => $data) {
+                    if (Process::OUT === $type) {
+                        $stdout .= $data;
+                    } else {
+                        $stderr .= $data;
+                    }
 
-                if (null !== $onProgress) {
-                    $this->consumeProgress($data, $buffer, $onProgress, $lastPercent);
+                    if (null !== $onProgress) {
+                        $this->consumeProgress($data, $buffer, $onProgress, $lastPercent);
+                    }
                 }
+            } catch (ProcessTimedOutException) {
+                $process->stop(0);
+                // Files completed before the timeout are already printed on
+                // stdout: relocate them so a partial run keeps finished items.
+                $this->relocateReportedFiles($stdout, $workDir);
+
+                return $this->createCollection([
+                    $this->createErroredVideo(\sprintf('Download timed out after %d seconds.', (int) $this->timeout)),
+                ]);
+            } catch (\Throwable $exception) {
+                $process->stop(0);
+                $this->relocateReportedFiles($stdout, $workDir);
+
+                return $this->createCollection([$this->createErroredVideo($exception->getMessage())]);
             }
-        } catch (ProcessTimedOutException) {
-            $process->stop(0);
 
-            return $this->createCollection([
-                $this->createErroredVideo(\sprintf('Download timed out after %d seconds.', (int) $this->timeout)),
-            ]);
-        } catch (\Throwable $exception) {
-            $process->stop(0);
+            return $this->toCollection($process->getExitCode() ?? 1, $this->relocateReportedFiles($stdout, $workDir), $stderr, $maxFilesize);
+        } finally {
+            // Whatever the outcome, only finished files reported above survive:
+            // partials and intermediates of this run leave with the staging directory.
+            if (null !== $workDir) {
+                $this->removeDirectory($workDir);
+                @\rmdir($this->workRoot());
+            }
+        }
+    }
 
-            return $this->createCollection([$this->createErroredVideo($exception->getMessage())]);
+    /**
+     * Creates a private staging directory for this run inside the downloads
+     * directory, after sweeping staging directories left by interrupted runs.
+     * Returns null when the directory cannot be created, so the run falls
+     * back to downloading straight into the downloads directory.
+     */
+    private function prepareWorkDir(): ?string
+    {
+        $this->sweepStaleWorkDirs($this->staleAfterSeconds());
+
+        $workDir = $this->workRoot() . DIRECTORY_SEPARATOR . \bin2hex(\random_bytes(8));
+
+        if (!@\mkdir($workDir, 0775, true)) {
+            return null;
         }
 
-        return $this->toCollection($process->getExitCode() ?? 1, $stdout, $stderr, $maxFilesize);
+        return $workDir;
+    }
+
+    /**
+     * A live run cannot outlive the process timeout, so a staging directory
+     * older than twice the timeout (a day without a timeout) is dead weight.
+     */
+    private function staleAfterSeconds(): int
+    {
+        if ($this->timeout <= 0) {
+            return 86400;
+        }
+
+        return (int) \max($this->timeout * 2.0, 3600.0);
+    }
+
+    private function sweepStaleWorkDirs(int $staleAfterSeconds): void
+    {
+        $entries = @\scandir($this->workRoot());
+
+        if (false === $entries) {
+            return;
+        }
+
+        $threshold = \time() - $staleAfterSeconds;
+
+        foreach ($entries as $entry) {
+            if ('.' === $entry || '..' === $entry) {
+                continue;
+            }
+
+            $path  = $this->workRoot() . DIRECTORY_SEPARATOR . $entry;
+            $mtime = @\filemtime($path);
+
+            if (!\is_dir($path) || false === $mtime || $mtime > $threshold) {
+                continue;
+            }
+
+            $this->removeDirectory($path);
+        }
+    }
+
+    /**
+     * Moves every reported file out of the staging directory into the
+     * downloads directory and rewrites its line, so callers only ever see
+     * library paths. Lines that are not staged files pass through unchanged.
+     */
+    private function relocateReportedFiles(string $stdout, ?string $workDir): string
+    {
+        if (null === $workDir) {
+            return $stdout;
+        }
+
+        $prefix = $workDir . DIRECTORY_SEPARATOR;
+        $lines  = \preg_split('/\r\n|\r|\n/', $stdout) ?: [];
+
+        foreach ($lines as $index => $line) {
+            $candidate = \trim($line);
+
+            if ('' === $candidate || !\str_starts_with($candidate, $prefix) || !\is_file($candidate)) {
+                continue;
+            }
+
+            $target = $this->downloadsDir . DIRECTORY_SEPARATOR . \basename($candidate);
+
+            if (@\rename($candidate, $target)) {
+                $lines[$index] = $target;
+
+                continue;
+            }
+
+            if (@\copy($candidate, $target)) {
+                @\unlink($candidate);
+                $lines[$index] = $target;
+            }
+        }
+
+        return \implode("\n", $lines);
+    }
+
+    private function workRoot(): string
+    {
+        return $this->downloadsDir . DIRECTORY_SEPARATOR . '.work';
+    }
+
+    private function removeDirectory(string $directory): void
+    {
+        $entries = @\scandir($directory);
+
+        if (false === $entries) {
+            return;
+        }
+
+        foreach ($entries as $entry) {
+            if ('.' === $entry || '..' === $entry) {
+                continue;
+            }
+
+            $path = $directory . DIRECTORY_SEPARATOR . $entry;
+
+            if (\is_dir($path) && !\is_link($path)) {
+                $this->removeDirectory($path);
+
+                continue;
+            }
+
+            @\unlink($path);
+        }
+
+        @\rmdir($directory);
     }
 
     private function toCollection(int $exitCode, string $stdout, string $stderr, ?string $maxFilesize): object

@@ -21,6 +21,14 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
     private const int PENDING_TOKEN_TTL = 900;
     private const int MAX_ACTIVE_TASKS  = 3;
 
+    /** @var list<array{string, string}> */
+    private const array QUALITIES = [
+        ['best', 'Best'],
+        ['moderate', 'Moderate'],
+        ['poor', 'Poor'],
+        ['audio', 'Audio'],
+    ];
+
     public function __construct(
         private UserRepositoryInterface $userRepository,
         private DownloadTaskRepositoryInterface $downloadTaskRepository,
@@ -34,6 +42,10 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         private LoggerInterface $logger,
         #[Autowire(env: 'string:TELEGRAM_HOST_URL')]
         private string $telegramHostUrl,
+        private FormatResolverInterface $formatResolver,
+        private DownloadSizeEstimatorInterface $sizeEstimator,
+        #[Autowire(env: 'int:TELEGRAM_MAX_UPLOAD_MB')]
+        private int $telegramMaxUploadMb,
     ) {
     }
 
@@ -299,7 +311,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
 
         $buttons = [];
 
-        foreach ([['best', 'Best'], ['moderate', 'Moderate'], ['poor', 'Poor'], ['audio', 'Audio']] as [$quality, $label]) {
+        foreach (self::QUALITIES as [$quality, $label]) {
             $buttons[] = ['text' => $label, 'callback_data' => \sprintf('dl:%s:%s', $token, $quality)];
         }
 
@@ -312,6 +324,86 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $this->telegramClient->sendMessage($chatId, $caption . "\n\nChoose quality:", [
             'inline_keyboard' => \array_chunk($buttons, 2),
         ]);
+    }
+
+    #[\Override]
+    public function offerQualitySelection(
+        int $chatId,
+        int $telegramUserId,
+        string $url,
+        string $title,
+        string $rejectedQuality,
+    ): void {
+        $offered = $this->offeredQualities($url, $rejectedQuality);
+
+        if ([] === $offered) {
+            try {
+                $this->telegramClient->sendMessage($chatId, 'No other quality fits the Telegram limit.', $this->hiddenKeyboard());
+            } catch (\Throwable $exception) {
+                $this->logger->error('Failed to send the empty quality selection answer', ['error' => $exception->getMessage()]);
+            }
+
+            return;
+        }
+
+        // The selection replaces any pending one: a late rejection outranks an
+        // older keyboard, whose token then simply reports "expired".
+        $token = \bin2hex(\random_bytes(16));
+        $item  = $this->cache->getItem($this->pendingKey($chatId));
+        $item->set([
+            'token'            => $token,
+            'url'              => $url,
+            'title'            => $title,
+            'telegram_user_id' => $telegramUserId,
+        ]);
+        $item->expiresAfter(self::PENDING_TOKEN_TTL);
+        $this->cache->save($item);
+
+        $buttons = [];
+
+        foreach (self::QUALITIES as [$quality, $label]) {
+            if (\in_array($quality, $offered, true)) {
+                $buttons[] = ['text' => $label, 'callback_data' => \sprintf('dl:%s:%s', $token, $quality)];
+            }
+        }
+
+        try {
+            $this->telegramClient->sendMessage($chatId, 'Choose quality:', [
+                'inline_keyboard' => \array_chunk($buttons, 2),
+            ]);
+        } catch (\Throwable $exception) {
+            $this->logger->error('Failed to send the quality selection', ['error' => $exception->getMessage()]);
+        }
+    }
+
+    /**
+     * Qualities whose estimated size is above the upload limit are left out,
+     * an unknown estimate keeps the quality (the transfer guard stays the
+     * hard limit), and the rejected quality is never offered again.
+     *
+     * @return list<string>
+     */
+    private function offeredQualities(string $url, string $rejectedQuality): array
+    {
+        $limitBytes = $this->telegramMaxUploadMb * 1024 * 1024;
+        $offered    = [];
+
+        foreach (self::QUALITIES as [$quality]) {
+            if ($quality === $rejectedQuality) {
+                continue;
+            }
+
+            [$downloadFormat] = $this->formatResolver->resolve($quality);
+            $sizes            = $this->sizeEstimator->estimate($url, $downloadFormat, false);
+
+            if ([] !== $sizes && $limitBytes < \max($sizes)) {
+                continue;
+            }
+
+            $offered[] = $quality;
+        }
+
+        return $offered;
     }
 
     /**

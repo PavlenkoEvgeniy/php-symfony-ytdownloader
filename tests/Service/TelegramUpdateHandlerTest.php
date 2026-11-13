@@ -13,6 +13,8 @@ use App\Repository\DownloadTaskRepositoryInterface;
 use App\Repository\UserRepositoryInterface;
 use App\Service\DownloadDispatcherInterface;
 use App\Service\DownloadRetryServiceInterface;
+use App\Service\DownloadSizeEstimatorInterface;
+use App\Service\FormatResolver;
 use App\Service\TelegramClientInterface;
 use App\Service\TelegramUpdateHandler;
 use App\Service\YoutubeDlProbeInterface;
@@ -1172,6 +1174,93 @@ final class TelegramUpdateHandlerTest extends TestCase
             ->handle($this->message('/status'));
     }
 
+    /**
+     * Verifies the offered selection stores a fresh pending token and leaves
+     * out the rejected quality and qualities estimated above the limit, while
+     * a quality without an estimate is still offered.
+     */
+    public function testOfferQualitySelectionFiltersRejectedAndOverLimitQualities(): void
+    {
+        $estimator = $this->createStub(DownloadSizeEstimatorInterface::class);
+        $estimator->method('estimate')->willReturnCallback(
+            static function (string $url, string $format): array {
+                if (\str_contains($format, 'height<=1080')) {
+                    return [3_000_000_000];
+                }
+
+                if (\str_contains($format, 'height<=720')) {
+                    return [3_000_000_000];
+                }
+
+                if (\str_contains($format, 'height<=320')) {
+                    return [];
+                }
+
+                if (\str_starts_with($format, 'bestaudio')) {
+                    return [50_000_000];
+                }
+
+                return [];
+            },
+        );
+
+        $stored = null;
+        $item   = $this->cacheItem($stored);
+
+        $cache = $this->createMock(CacheItemPoolInterface::class);
+        $cache->expects($this->once())->method('getItem')->with('telegram_pending_42')->willReturn($item);
+        $cache->expects($this->once())->method('save')->with($item);
+
+        $messages = [];
+        $client   = $this->captureMessages($messages);
+
+        $this->handler(client: $client, cache: $cache, sizeEstimator: $estimator)
+            ->offerQualitySelection(42, 42, 'https://test.local/video', 'Test video', 'best');
+
+        $this->assertCount(1, $messages);
+        $this->assertSame('Choose quality:', $messages[0]['text']);
+
+        $this->assertIsArray($stored);
+        $this->assertSame('https://test.local/video', $stored['url']);
+        $this->assertSame('Test video', $stored['title']);
+        $this->assertSame(42, $stored['telegram_user_id']);
+
+        $token    = (string) $stored['token'];
+        $keyboard = $messages[0]['replyMarkup']['inline_keyboard'];
+
+        // "best" was rejected, "moderate" is over the limit: only the
+        // unknown-estimate "poor" and the small "audio" remain.
+        $this->assertSame(
+            [
+                ['text' => 'Poor', 'callback_data' => \sprintf('dl:%s:poor', $token)],
+                ['text' => 'Audio', 'callback_data' => \sprintf('dl:%s:audio', $token)],
+            ],
+            \array_merge(...$keyboard),
+        );
+    }
+
+    /**
+     * Verifies that when every remaining quality is over the limit the bot
+     * answers instead of showing an empty selection, and stores no token.
+     */
+    public function testOfferQualitySelectionSaysWhenNoQualityFits(): void
+    {
+        $estimator = $this->createStub(DownloadSizeEstimatorInterface::class);
+        $estimator->method('estimate')->willReturn([4_000_000_000]);
+
+        $cache = $this->createMock(CacheItemPoolInterface::class);
+        $cache->expects($this->never())->method('getItem');
+        $cache->expects($this->never())->method('save');
+
+        $client = $this->createMock(TelegramClientInterface::class);
+        $client->expects($this->once())
+            ->method('sendMessage')
+            ->with(42, 'No other quality fits the Telegram limit.', ['remove_keyboard' => true]);
+
+        $this->handler(client: $client, cache: $cache, sizeEstimator: $estimator)
+            ->offerQualitySelection(42, 42, 'https://test.local/video', 'Test video', 'best');
+    }
+
     private function handler(
         ?UserRepositoryInterface $users = null,
         ?DownloadTaskRepositoryInterface $tasks = null,
@@ -1183,6 +1272,8 @@ final class TelegramUpdateHandlerTest extends TestCase
         ?EntityManagerInterface $entityManager = null,
         ?LoggerInterface $logger = null,
         string $hostUrl = 'https://test.local',
+        ?DownloadSizeEstimatorInterface $sizeEstimator = null,
+        int $telegramMaxUploadMb = 2048,
     ): TelegramUpdateHandler {
         return new TelegramUpdateHandler(
             $users ?? $this->createStub(UserRepositoryInterface::class),
@@ -1195,6 +1286,9 @@ final class TelegramUpdateHandlerTest extends TestCase
             $entityManager ?? $this->createStub(EntityManagerInterface::class),
             $logger ?? $this->createStub(LoggerInterface::class),
             $hostUrl,
+            new FormatResolver(),
+            $sizeEstimator ?? $this->createStub(DownloadSizeEstimatorInterface::class),
+            $telegramMaxUploadMb,
         );
     }
 
