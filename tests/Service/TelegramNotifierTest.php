@@ -40,7 +40,7 @@ final class TelegramNotifierTest extends TestCase
     }
 
     /**
-     * Verifies a download failure carries a generic text, the library link and a retry button.
+     * Verifies a download failure carries a generic text without a library link and a retry button.
      */
     public function testNotifyDownloadFailureSendsGenericTextAndRetryButton(): void
     {
@@ -49,7 +49,7 @@ final class TelegramNotifierTest extends TestCase
             ->method('sendMessage')
             ->with(
                 42,
-                "Download failed. Please try again later.\nhttps://example.test/ui/source",
+                'Download failed. Please try again later.',
                 $this->callback(static function (array $markup): bool {
                     return 'retry:7' === ($markup['inline_keyboard'][0][0]['callback_data'] ?? null);
                 }),
@@ -126,7 +126,6 @@ final class TelegramNotifierTest extends TestCase
             $client,
             $logger ?? $this->createStub(LoggerInterface::class),
             $translator,
-            'https://example.test',
         );
     }
 }

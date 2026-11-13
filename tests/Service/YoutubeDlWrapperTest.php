@@ -339,6 +339,24 @@ final class YoutubeDlWrapperTest extends TestCase
         $this->assertStringContainsString('larger than max-filesize', (string) $videos[0]->getError());
     }
 
+    /**
+     * Verifies an empty successful run under a transfer cap is the cap refusal,
+     * because quiet mode keeps yt-dlp from printing the refusal line at all.
+     */
+    public function testCapRefusalWithoutOutputReportsRefusalReason(): void
+    {
+        $binary = $this->createBinary("exit 0\n");
+
+        $videos = $this->wrapper($binary, 30.0)
+            ->download('https://youtube.com/watch?v=test', 'format', true, true, null, '2000M')
+            ->getVideos()
+        ;
+
+        $this->assertCount(1, $videos);
+        $this->assertStringContainsString('larger than max-filesize', (string) $videos[0]->getError());
+        $this->assertNull($videos[0]->getFile());
+    }
+
     private function wrapper(string $binaryPath, float $timeout): YoutubeDlWrapper
     {
         return new YoutubeDlWrapper($binaryPath, ['--no-warnings'], $timeout, \sys_get_temp_dir());
