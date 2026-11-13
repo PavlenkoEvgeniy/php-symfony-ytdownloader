@@ -43,11 +43,12 @@ attempt limit is not reached; a permanent failure SHALL NOT be retried.
 
 ### Requirement: Oversized Telegram downloads are rejected before transfer
 
-For a Telegram-origin Download Task, the service SHALL estimate the final file
-size of the selected quality from metadata before transferring any data. If the
-estimate exceeds the configured Telegram upload limit, the attempt SHALL fail
-without downloading: the task ends in `error` with a stored reason, and no
-automatic retry is scheduled.
+For a Telegram-origin Download Task, the service SHALL keep the download within
+the configured Telegram upload limit, checking the size as early as it becomes
+known. A download that would exceed the limit SHALL NOT complete: no file is
+produced or kept, the task ends in `error` with a stored reason, and no
+automatic retry is scheduled. A completed oversized file SHALL be removed
+rather than kept as library content.
 
 #### Scenario: Estimate over the limit
 
@@ -66,10 +67,24 @@ automatic retry is scheduled.
 - **WHEN** a Telegram-origin task starts and the metadata provides no usable size estimate for the selected quality
 - **THEN** the download proceeds as usual
 
+#### Scenario: The size is revealed when the transfer starts
+
+- **WHEN** a Telegram-origin task starts, metadata has no usable estimate, and the size revealed at transfer start exceeds the configured upload limit
+- **THEN** the transfer is aborted without producing a file
+- **AND** the task ends in `error` with a stored reason stating that the file is too large for Telegram
+- **AND** no automatic retry is scheduled
+
+#### Scenario: A completed oversized file is not kept
+
+- **WHEN** a Telegram download completes and the resulting file exceeds the configured upload limit
+- **THEN** the file is removed and is not kept as library content
+- **AND** the task ends in `error` with a stored reason stating that the file is too large for Telegram
+- **AND** no automatic retry is scheduled
+
 #### Scenario: Non-Telegram task is not restricted
 
 - **WHEN** a Download Task that did not originate in Telegram is processed
-- **THEN** the size estimate is not applied and the download proceeds regardless of the estimated size
+- **THEN** the size checks are not applied and the download proceeds regardless of the estimated size
 
 #### Scenario: The limit follows configuration
 
@@ -120,6 +135,11 @@ Re-download action, and SHALL NOT include internal downloader details.
 
 - **WHEN** a Telegram-origin task is rejected by the size guard
 - **THEN** the failure message offers no Re-download action, because repeating the same quality would fail again
+
+#### Scenario: Rejection discovered during the transfer
+
+- **WHEN** a Telegram-origin task is rejected because the size only became known at transfer start or after completion
+- **THEN** the requester receives the same size message asking for another quality
 
 ### Requirement: An administrator can re-download an error task
 

@@ -5,12 +5,11 @@
 ### Requirement: Oversized Telegram downloads are rejected before transfer
 
 For a Telegram-origin Download Task, the service SHALL keep the download within
-the configured Telegram upload limit. The size SHALL be checked as early as it
-becomes known: from metadata before any transfer, or at transfer start when the
-size is only revealed there. A download that would exceed the limit SHALL NOT
-complete — no file is produced or kept, the task ends in `error` with a stored
-reason, and no automatic retry is scheduled. A completed file that still
-exceeds the limit SHALL be removed rather than kept as library content.
+the configured Telegram upload limit, checking the size as early as it becomes
+known. A download that would exceed the limit SHALL NOT complete: no file is
+produced or kept, the task ends in `error` with a stored reason, and no
+automatic retry is scheduled. A completed oversized file SHALL be removed
+rather than kept as library content.
 
 #### Scenario: Estimate over the limit
 
