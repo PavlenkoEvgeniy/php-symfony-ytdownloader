@@ -484,6 +484,57 @@ final class DownloadMessageHandlerTest extends TestCase
         $this->assertStringContainsString('Telegram upload limit', (string) $task->getErrorMessage());
     }
 
+    /**
+     * Verifies a transfer-cap refusal also reaches the dedicated size message.
+     */
+    public function testInvokeSendsSizeMessageForTransferCapRefusal(): void
+    {
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+            ->setTelegramChatId(12_345)
+        ;
+
+        $connection = $this->createStub(Connection::class);
+        $connection->method('executeStatement')->willReturn(1);
+
+        $em = $this->createStub(EntityManagerInterface::class);
+        $em->method('getConnection')->willReturn($connection);
+        $em->method('find')->willReturn($task);
+        $em->method('flush');
+
+        $videoProcessor = $this->createStub(VideoProcessorInterface::class);
+        $videoProcessor->method('process')->willReturn(
+            DownloadResult::sizeExceeded('File size 2755 MB exceeds the Telegram upload limit of 2000 MB. Choose another quality.'),
+        );
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn($task);
+
+        $bus = $this->createMock(MessageBusInterface::class);
+        $bus->expects($this->never())->method('dispatch');
+
+        $notifier = $this->createMock(TelegramNotifierInterface::class);
+        $notifier->expects($this->once())->method('notifyFileTooLarge')->with('12345');
+        $notifier->expects($this->never())->method('notifyDownloadFailure');
+
+        $handler = new DownloadMessageHandler(
+            $videoProcessor,
+            new DownloadTaskManager($em),
+            $this->createStub(AuditLoggerInterface::class),
+            $taskRepository,
+            $bus,
+            $this->lock(),
+            $notifier,
+        );
+
+        $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
+
+        $this->assertSame(DownloadTask::STATUS_ERROR, $task->getStatus());
+        $this->assertStringContainsString('Telegram upload limit', (string) $task->getErrorMessage());
+    }
+
     private function handler(
         VideoProcessorInterface $videoProcessor,
         DownloadTaskManagerInterface $manager,

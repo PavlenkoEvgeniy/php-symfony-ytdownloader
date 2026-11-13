@@ -36,9 +36,11 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
         ?int $taskId = null,
     ): DownloadResult {
         $telegramUserId ??= '';
-        $downloadTask    = null === $taskId ? null : $this->downloadTaskRepository->findById($taskId);
-        $origin          = $downloadTask?->getOrigin();
-        $allowPlaylist   = !($downloadTask?->isTelegramOrigin() ?? false);
+        $downloadTask     = null === $taskId ? null : $this->downloadTaskRepository->findById($taskId);
+        $origin           = $downloadTask?->getOrigin();
+        $isTelegramOrigin = $downloadTask instanceof DownloadTask && $downloadTask->isTelegramOrigin();
+        $allowPlaylist    = !$isTelegramOrigin;
+        $maxFilesize      = $isTelegramOrigin ? $this->telegramMaxUploadMb . 'M' : null;
 
         $this->logManager->create('commenced', 'Started downloading.');
         $this->logManager->flush();
@@ -58,7 +60,7 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
         $progressReporter = $this->progressReporter($downloadTask, $telegramUserId);
         $onProgress       = null === $progressReporter ? null : $progressReporter->report(...);
 
-        $collection = $this->youtubeDlWrapper->download($videoUrl, $downloadFormat, $mergeAsVideo, $allowPlaylist, $onProgress);
+        $collection = $this->youtubeDlWrapper->download($videoUrl, $downloadFormat, $mergeAsVideo, $allowPlaylist, $onProgress, $maxFilesize);
 
         $saved      = 0;
         $firstError = null;
@@ -81,6 +83,10 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
             $source   = $this->sourceManager->findByFilename($filename);
 
             if (!$source instanceof Source) {
+                if ($isTelegramOrigin && $this->exceedsUploadLimit($size)) {
+                    return $this->rejectCompletedOversize($filename, $path, $size);
+                }
+
                 $this->sourceManager->createFromDownloadedFile($filename, $path, $size, $downloadTask, $origin);
 
                 $this->logManager->create('success', \sprintf('File "%s" downloaded successfully.', $filename), $size);
@@ -113,6 +119,14 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
 
         $reason = $this->shortenReason((string) $firstError);
 
+        if (null !== $firstError && \str_contains($firstError, 'larger than max-filesize')) {
+            $refusalReason = $this->refusalReason($firstError);
+
+            $this->logger->info('Rejected by the Telegram size guard', ['reason' => $refusalReason]);
+
+            return DownloadResult::sizeExceeded($refusalReason);
+        }
+
         return DownloadResult::failure($reason, $this->failureClassifier->classify($reason));
     }
 
@@ -143,6 +157,58 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
         }
 
         return null;
+    }
+
+    private function exceedsUploadLimit(float $size): bool
+    {
+        return (float) ($this->telegramMaxUploadMb * 1024 * 1024) < $size;
+    }
+
+    /**
+     * Turns a transfer-cap refusal line ("... (X bytes > Y bytes) ...") into the
+     * actionable size-rejection reason, falling back to the limit alone when the
+     * wording of the refusal carries no sizes to parse.
+     */
+    private function refusalReason(string $rawReason): string
+    {
+        if (1 !== \preg_match('/(\d+) bytes > (\d+) bytes/', $rawReason, $matches)) {
+            return \sprintf(
+                'The file exceeds the Telegram upload limit of %d MB. Choose another quality.',
+                $this->telegramMaxUploadMb,
+            );
+        }
+
+        return $this->oversizedReason((int) $matches[1]);
+    }
+
+    private function oversizedReason(float|int $bytes): string
+    {
+        return \sprintf(
+            'File size %d MB exceeds the Telegram upload limit of %d MB. Choose another quality.',
+            (int) \round((float) $bytes / 1024.0 / 1024.0),
+            $this->telegramMaxUploadMb,
+        );
+    }
+
+    /**
+     * A file that completed past the limit is removed instead of becoming
+     * library content, and the task is reported as the size rejection.
+     */
+    private function rejectCompletedOversize(string $filename, string $path, float $size): DownloadResult
+    {
+        $fullPath = $path . '/' . $filename;
+
+        if (\is_file($fullPath)) {
+            \unlink($fullPath);
+        }
+
+        $reason = $this->oversizedReason($size);
+
+        $this->logManager->create('error', $reason);
+        $this->logManager->flush();
+        $this->logger->info('Rejected by the Telegram size guard', ['reason' => $reason]);
+
+        return DownloadResult::sizeExceeded($reason);
     }
 
     private function progressReporter(?DownloadTask $downloadTask, string $telegramUserId): ?ProgressReporterInterface
