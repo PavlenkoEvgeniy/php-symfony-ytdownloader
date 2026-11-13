@@ -19,6 +19,7 @@ enum AuditAction: string
     case SOURCES_DELETE           = 'source.deleted_all';
     case QUEUE_PURGE              = 'admin.queue_purged';
     case QUEUE_RESET              = 'admin.queue_reset';
+    case ERROR_TASKS_CLEAR        = 'admin.error_tasks_cleared';
     case ORPHANS_PRUNE            = 'admin.orphans_pruned';
     case SETTINGS_UPDATE          = 'admin.settings_updated';
     case TELEGRAM_DELIVERED       = 'telegram.delivered';

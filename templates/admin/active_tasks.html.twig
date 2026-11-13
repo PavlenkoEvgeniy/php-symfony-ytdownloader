@@ -28,6 +28,16 @@
                 </button>
             </form>
         {% endif %}
+
+        {% if stats.error > 0 %}
+            <form method="post" action="{{ ea_url().setRoute('admin_clear_error_tasks') }}"
+                  onsubmit="return confirm({{ 'admin.active_tasks.clear_errors_confirm'|trans({'%count%': stats.error})|json_encode }})">
+                <input type="hidden" name="_token" value="{{ csrf_token('clear_error_tasks') }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ 'admin.active_tasks.clear_errors_title'|trans }}">
+                    <i class="fa-solid fa-trash-can"></i> {{ 'admin.active_tasks.clear_errors'|trans }}
+                </button>
+            </form>
+        {% endif %}
     </div>
 
     <div class="card mt-3">

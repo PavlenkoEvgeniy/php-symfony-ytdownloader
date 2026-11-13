@@ -34,6 +34,8 @@ interface DownloadTaskRepositoryInterface
 
     public function deleteQueued(): int;
 
+    public function deleteErrorTasks(): int;
+
     /**
      * @return DownloadTask[]
      */

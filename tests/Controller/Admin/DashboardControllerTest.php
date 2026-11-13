@@ -449,6 +449,76 @@ final class DashboardControllerTest extends WebTestCase
         $this->entityManager->flush();
     }
 
+    /**
+     * Verifies the clear action deletes error tasks, keeps the others and reports the count.
+     */
+    public function testClearErrorTasksDeletesErrorTasksOnly(): void
+    {
+        $errorTask = new DownloadTask();
+
+        $errorTask->setUrl('https://youtube.com/watch?v=clear-error-test')
+            ->setQuality('best')
+            ->setStatus(DownloadTask::STATUS_ERROR)
+            ->setErrorMessage('video not found')
+        ;
+        $queuedTask = new DownloadTask();
+
+        $queuedTask->setUrl('https://youtube.com/watch?v=clear-error-queued')->setQuality('best');
+        $this->entityManager->persist($errorTask);
+        $this->entityManager->persist($queuedTask);
+        $this->entityManager->flush();
+
+        $token = $this->getAdminToken('clear-error-tasks');
+
+        $this->client->request(Request::METHOD_POST, '/admin/clear-error-tasks', ['_token' => $token]);
+
+        $this->assertResponseRedirects('/admin/active-tasks');
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('div.alert-success', 'Cleared');
+
+        $this->entityManager->clear();
+        $this->assertNull($this->entityManager->find(DownloadTask::class, $errorTask->getId()));
+
+        $reloaded = $this->entityManager->find(DownloadTask::class, $queuedTask->getId());
+        $this->assertNotNull($reloaded);
+        $this->assertSame(DownloadTask::STATUS_QUEUED, $reloaded->getStatus());
+
+        $this->entityManager->remove($reloaded);
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Verifies the clear action rejects a request without a valid CSRF token.
+     */
+    public function testClearErrorTasksRejectsInvalidCsrfToken(): void
+    {
+        $task = new DownloadTask();
+
+        $task->setUrl('https://youtube.com/watch?v=clear-error-csrf')
+            ->setQuality('best')
+            ->setStatus(DownloadTask::STATUS_ERROR)
+            ->setErrorMessage('video not found')
+        ;
+        $this->entityManager->persist($task);
+        $this->entityManager->flush();
+
+        $user = $this->userRepository->findOneByEmail('admin@admin.local');
+        $this->client->loginUser($user);
+
+        $this->client->request(Request::METHOD_POST, '/admin/clear-error-tasks');
+
+        $this->assertResponseRedirects('/admin/active-tasks');
+        $this->client->followRedirect();
+        $this->assertSelectorTextContains('div.alert-danger', 'Invalid CSRF token.');
+
+        $this->entityManager->clear();
+        $reloaded = $this->entityManager->find(DownloadTask::class, $task->getId());
+        $this->assertNotNull($reloaded);
+
+        $this->entityManager->remove($reloaded);
+        $this->entityManager->flush();
+    }
+
     private function getAdminToken(string $routePath): string
     {
         $user = $this->userRepository->findOneByEmail('admin@admin.local');
