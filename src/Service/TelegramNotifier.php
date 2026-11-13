@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Service;
 
 use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 final readonly class TelegramNotifier implements TelegramNotifierInterface
@@ -14,8 +13,6 @@ final readonly class TelegramNotifier implements TelegramNotifierInterface
         private TelegramClientInterface $telegramClient,
         private LoggerInterface $logger,
         private TranslatorInterface $translator,
-        #[Autowire(env: 'string:TELEGRAM_HOST_URL')]
-        private string $telegramHostUrl,
     ) {
     }
 
@@ -33,13 +30,9 @@ final readonly class TelegramNotifier implements TelegramNotifierInterface
     #[\Override]
     public function notifyDownloadFailure(string $telegramUserId, int $taskId): void
     {
-        $libraryUrl = \rtrim($this->telegramHostUrl, '/') . '/ui/source';
-        $text       = \sprintf(
-            "%s\n%s",
-            // The internal downloader reason stays on the task for the administrator.
-            $this->translator->trans('telegram.download_error'),
-            $libraryUrl,
-        );
+        // The internal downloader reason stays on the task for the administrator,
+        // and the message carries no web-library link on the requester's request.
+        $text = $this->translator->trans('telegram.download_error');
 
         $replyMarkup = [
             'inline_keyboard' => [[

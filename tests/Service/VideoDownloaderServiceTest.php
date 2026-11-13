@@ -712,6 +712,82 @@ final class VideoDownloaderServiceTest extends TestCase
     }
 
     /**
+     * Verifies a quiet cap refusal without sizes still becomes the size rejection.
+     */
+    public function testProcessMapsQuietCapRefusalToLimitOnlyReason(): void
+    {
+        /** @phpstan-ignore-next-line */
+        $youtubeDl      = $this->createMock(YoutubeDlWrapper::class);
+        /** @phpstan-ignore-next-line */
+        $formatResolver = $this->createStub(FormatResolver::class);
+        /** @phpstan-ignore-next-line */
+        $sourceManager  = $this->createStub(SourceManager::class);
+        /** @phpstan-ignore-next-line */
+        $logManager     = $this->createMock(LogManager::class);
+        $logger         = $this->createMock(LoggerInterface::class);
+
+        $formatResolver->method('resolve')->willReturn(['fmt', true]);
+
+        $refusalReason = 'File is larger than max-filesize (transfer cap 50M).';
+
+        $youtubeDl->expects($this->once())
+            ->method('download')
+            ->with('https://test.local', 'fmt', true, false, null, '50M')
+            ->willReturn($this->createVideoCollection([$this->createErroredVideo($refusalReason)]));
+
+        $estimator = $this->createMock(DownloadSizeEstimatorInterface::class);
+        $estimator->expects($this->once())->method('estimate')->willReturn([]);
+
+        $logCalls = [];
+        $logManager->expects($this->exactly(2))
+            ->method('create')
+            ->willReturnCallback(function (string $type, string $message, ?float $size = null) use (&$logCalls) {
+                $logCalls[] = [$type, $message, $size];
+
+                return new Log();
+            });
+        $logManager->expects($this->exactly(2))->method('flush');
+
+        $logger->expects($this->once())
+            ->method('info')
+            ->with('Rejected by the Telegram size guard', $this->arrayHasKey('reason'));
+
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+        ;
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn($task);
+
+        $service = new VideoDownloaderService(
+            $youtubeDl,
+            $formatResolver,
+            $sourceManager,
+            $logManager,
+            $logger,
+            $taskRepository,
+            $this->createStub(DownloadProgressNotifierInterface::class),
+            $this->classifier(),
+            $estimator,
+            50,
+        );
+
+        $result = $service->process('https://test.local', 'best', '', 7);
+
+        $this->assertTrue($result->isSizeExceeded());
+        $this->assertSame(
+            'The file exceeds the Telegram upload limit of 50 MB. Choose another quality.',
+            $result->errorMessage,
+        );
+        $this->assertSame([
+            ['commenced', 'Started downloading.', null],
+            ['error', \sprintf('Error during downloading: %s', $refusalReason), null],
+        ], $logCalls);
+    }
+
+    /**
      * Verifies a completed file past the limit is removed instead of kept.
      */
     public function testProcessRemovesCompletedOversizedTelegramFile(): void

@@ -106,10 +106,10 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
             return $this->createCollection([$this->createErroredVideo($exception->getMessage())]);
         }
 
-        return $this->toCollection($process->getExitCode() ?? 1, $stdout, $stderr);
+        return $this->toCollection($process->getExitCode() ?? 1, $stdout, $stderr, $maxFilesize);
     }
 
-    private function toCollection(int $exitCode, string $stdout, string $stderr): object
+    private function toCollection(int $exitCode, string $stdout, string $stderr, ?string $maxFilesize): object
     {
         // A transfer-cap refusal exits 0 like a skipped download, so it must be
         // recognized before the exit-code and file bookkeeping below.
@@ -130,6 +130,15 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
         }
 
         if ([] === $videos) {
+            // --print forces yt-dlp into quiet mode, which suppresses the
+            // refusal line, so an empty successful run under a transfer cap
+            // is that refusal and must be recognized by outcome instead.
+            if (null !== $maxFilesize) {
+                return $this->createCollection([
+                    $this->createErroredVideo(\sprintf('File is larger than max-filesize (transfer cap %s).', $maxFilesize)),
+                ]);
+            }
+
             return $this->createCollection([
                 $this->createErroredVideo('yt-dlp finished successfully, but no downloaded file was reported.'),
             ]);
