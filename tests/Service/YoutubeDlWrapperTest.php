@@ -459,9 +459,69 @@ final class YoutubeDlWrapperTest extends TestCase
         $this->assertDirectoryExists($freshDir);
     }
 
-    private function wrapper(string $binaryPath, float $timeout, ?string $downloadsDir = null): YoutubeDlWrapper
+    /**
+     * Verifies a run that produces no output and no staged file changes
+     * fails fast with the stall reason instead of waiting for the timeout.
+     */
+    public function testSilentRunFailsFastWithStallReason(): void
     {
-        return new YoutubeDlWrapper($binaryPath, ['--no-warnings'], $timeout, $downloadsDir ?? \sys_get_temp_dir());
+        $downloadsDir = $this->createTemporaryDirectory();
+        $binary       = $this->createBinary("sleep 5\nexit 1\n");
+
+        $started = \microtime(true);
+        $videos  = $this->wrapper($binary, 30.0, $downloadsDir, 0.5)
+            ->download('https://youtube.com/watch?v=test', 'format', true)
+            ->getVideos()
+        ;
+
+        $this->assertLessThan(3.0, \microtime(true) - $started);
+        $this->assertStringContainsString('stalled', (string) $videos[0]->getError());
+        $this->assertStringContainsString('no changes', (string) $videos[0]->getError());
+        $this->assertSame([], \array_values(\array_diff((array) \scandir($downloadsDir), ['.', '..'])));
+    }
+
+    /**
+     * Verifies a staged file that keeps growing counts as activity and the
+     * run completes although each silent gap approaches the stall window.
+     */
+    public function testGrowingStagedFileKeepsTheRunAlive(): void
+    {
+        $downloadsDir = $this->createTemporaryDirectory();
+        $binary       = $this->createBinary(
+            "\$prev=''; \$dir=''; for a in \"\$@\"; do if [ \"\$prev\" = '--paths' ]; then dir=\"\$a\"; fi; prev=\"\$a\"; done\n"
+            . "i=0\n"
+            . "while [ \$i -lt 8 ]; do printf x >> \"\$dir/Video.mp4\"; sleep 0.2; i=\$((i+1)); done\n"
+            . "echo \"\$dir/Video.mp4\"\n",
+        );
+
+        $videos = $this->wrapper($binary, 30.0, $downloadsDir, 1.0)
+            ->download('https://youtube.com/watch?v=test', 'format', true)
+            ->getVideos()
+        ;
+
+        $this->assertNull($videos[0]->getError());
+        $this->assertFileExists($downloadsDir . '/Video.mp4');
+    }
+
+    /**
+     * Verifies the progress bar flag reaches the command: quiet mode
+     * otherwise suppresses every progress line the wrapper parses.
+     */
+    public function testProgressBarIsEnabledForTheCommand(): void
+    {
+        $argsFile = $this->createTemporaryFile();
+        $binary   = $this->createBinary(\sprintf("printf '%%s\\n' \"\$@\" > %s\n", \escapeshellarg($argsFile)));
+
+        $this->wrapper($binary, 30.0)->download('https://youtube.com/watch?v=test', 'format', true);
+
+        $arguments = \file($argsFile, FILE_IGNORE_NEW_LINES) ?: [];
+
+        $this->assertContains('--progress', $arguments);
+    }
+
+    private function wrapper(string $binaryPath, float $timeout, ?string $downloadsDir = null, float $stallTimeout = 60.0): YoutubeDlWrapper
+    {
+        return new YoutubeDlWrapper($binaryPath, ['--no-warnings'], $timeout, $downloadsDir ?? \sys_get_temp_dir(), $stallTimeout);
     }
 
     private function createTemporaryDirectory(): string

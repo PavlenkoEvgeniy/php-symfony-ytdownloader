@@ -21,6 +21,7 @@ final class DownloadFailureClassifierTest extends TestCase
         yield 'private video' => ['ERROR: Private video. Sign in if you have access.', DownloadFailureKind::PERMANENT];
         yield 'unsupported url' => ['ERROR: Unsupported URL: https://example.test/video', DownloadFailureKind::PERMANENT];
         yield 'unknown reason is permanent' => ['Something unexpected happened', DownloadFailureKind::PERMANENT];
+        yield 'stalled attempt' => ['Download stalled: no changes for 60 seconds.', DownloadFailureKind::PERMANENT];
     }
 
     /**
