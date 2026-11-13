@@ -1261,6 +1261,67 @@ final class TelegramUpdateHandlerTest extends TestCase
             ->offerQualitySelection(42, 42, 'https://test.local/video', 'Test video', 'best');
     }
 
+    /**
+     * Verifies a quality larger than the rejected one is not offered even
+     * with a missing or fitting estimate: Best > Moderate > Poor > Audio,
+     * and only qualities after the rejected one are probed at all.
+     */
+    public function testOfferQualitySelectionDropsLargerQualitiesAfterRejection(): void
+    {
+        $probed = [];
+
+        $estimator = $this->createStub(DownloadSizeEstimatorInterface::class);
+        $estimator->method('estimate')->willReturnCallback(
+            static function (string $url, string $format) use (&$probed): array {
+                $probed[] = $format;
+
+                if (\str_contains($format, 'height<=320')) {
+                    return [];
+                }
+
+                if (\str_starts_with($format, 'bestaudio')) {
+                    return [50_000_000];
+                }
+
+                return [100_000_000];
+            },
+        );
+
+        $stored = null;
+        $item   = $this->cacheItem($stored);
+
+        $cache = $this->createMock(CacheItemPoolInterface::class);
+        $cache->expects($this->once())->method('getItem')->with('telegram_pending_42')->willReturn($item);
+        $cache->expects($this->once())->method('save')->with($item);
+
+        $messages = [];
+        $client   = $this->captureMessages($messages);
+
+        $this->handler(client: $client, cache: $cache, sizeEstimator: $estimator)
+            ->offerQualitySelection(42, 42, 'https://test.local/video', 'Test video', 'moderate');
+
+        $this->assertCount(1, $messages);
+        $this->assertSame('Choose quality:', $messages[0]['text']);
+
+        $token    = (string) $stored['token'];
+        $keyboard = $messages[0]['replyMarkup']['inline_keyboard'];
+
+        // "best" and "moderate" are cut by the rejection; "poor" (unknown
+        // estimate) and "audio" (small) remain, in size order.
+        $this->assertSame(
+            [
+                ['text' => 'Poor', 'callback_data' => \sprintf('dl:%s:poor', $token)],
+                ['text' => 'Audio', 'callback_data' => \sprintf('dl:%s:audio', $token)],
+            ],
+            \array_merge(...$keyboard),
+        );
+
+        // The cut qualities are never probed: their estimates cannot change the decision.
+        $this->assertCount(2, $probed);
+        $this->assertStringContainsString('height<=320', $probed[0]);
+        $this->assertStringContainsString('bestaudio', $probed[1]);
+    }
+
     private function handler(
         ?UserRepositoryInterface $users = null,
         ?DownloadTaskRepositoryInterface $tasks = null,
