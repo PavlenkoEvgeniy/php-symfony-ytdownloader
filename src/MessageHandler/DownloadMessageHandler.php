@@ -86,7 +86,7 @@ final readonly class DownloadMessageHandler
             }
 
             if (!$result->isSuccess() && !$willRetry && $isTelegram && $task instanceof DownloadTask) {
-                $this->notifyFailure($task, (int) $message->telegramUserId, $message->taskId ?? 0);
+                $this->notifyFailure($task, (int) $message->telegramUserId, $message->taskId ?? 0, $result->isSizeExceeded());
             }
 
             $this->audit($message, $taskId, $task, $result, $willRetry, $isTelegram);
@@ -118,11 +118,21 @@ final readonly class DownloadMessageHandler
         $this->downloadTaskManager->markRetryScheduled($taskId, $result->errorMessage ?? 'Download failed.');
     }
 
-    private function notifyFailure(DownloadTask $task, int $fallbackChatId, int $taskId): void
+    private function notifyFailure(DownloadTask $task, int $fallbackChatId, int $taskId, bool $sizeExceeded): void
     {
         $chatId = $task->getTelegramChatId() ?? $fallbackChatId;
 
-        if ($chatId <= 0 || $taskId <= 0) {
+        if ($chatId <= 0) {
+            return;
+        }
+
+        if ($sizeExceeded) {
+            $this->telegramNotifier->notifyFileTooLarge((string) $chatId);
+
+            return;
+        }
+
+        if ($taskId <= 0) {
             return;
         }
 

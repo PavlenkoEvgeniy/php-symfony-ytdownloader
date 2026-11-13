@@ -111,7 +111,8 @@
             "requeues",
             "substring",
             "redownload",
-            "redownloaded"
+            "redownloaded",
+            "oversized"
         ],
         "paths": [
             "vendor"

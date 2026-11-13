@@ -17,6 +17,7 @@ final readonly class DownloadResult
         public DownloadOutcome $outcome,
         public ?string $errorMessage = null,
         public DownloadFailureKind $failureKind = DownloadFailureKind::NONE,
+        public bool $sizeExceeded = false,
     ) {
     }
 
@@ -30,6 +31,15 @@ final readonly class DownloadResult
         return new self(DownloadOutcome::ERROR, $errorMessage, $failureKind);
     }
 
+    /**
+     * Rejected before the transfer because the file would not fit the Telegram
+     * upload limit: permanent, and reported to the requester with its own message.
+     */
+    public static function sizeExceeded(string $errorMessage): self
+    {
+        return new self(DownloadOutcome::ERROR, $errorMessage, DownloadFailureKind::PERMANENT, true);
+    }
+
     public function isSuccess(): bool
     {
         return DownloadOutcome::SUCCESS === $this->outcome;
@@ -38,5 +48,10 @@ final readonly class DownloadResult
     public function isTransient(): bool
     {
         return DownloadFailureKind::TRANSIENT === $this->failureKind;
+    }
+
+    public function isSizeExceeded(): bool
+    {
+        return $this->sizeExceeded;
     }
 }

@@ -12,6 +12,7 @@ use App\Enum\DownloadOutcome;
 use App\Repository\DownloadTaskRepositoryInterface;
 use App\Service\DownloadFailureClassifierInterface;
 use App\Service\DownloadProgressNotifierInterface;
+use App\Service\DownloadSizeEstimatorInterface;
 use App\Service\FormatResolver;
 use App\Service\LogManager;
 use App\Service\ProgressReporterInterface;
@@ -293,6 +294,8 @@ final class VideoDownloaderServiceTest extends TestCase
             $taskRepository,
             $progressNotifier,
             $this->classifier(),
+            $this->createStub(DownloadSizeEstimatorInterface::class),
+            50,
         );
 
         $service->process('https://test.local', 'best', '12345', 7);
@@ -351,6 +354,8 @@ final class VideoDownloaderServiceTest extends TestCase
             $taskRepository,
             $this->createStub(DownloadProgressNotifierInterface::class),
             $this->classifier(),
+            $this->createStub(DownloadSizeEstimatorInterface::class),
+            50,
         );
 
         $result = $service->process('https://test.local', 'best', '12345', 7);
@@ -399,9 +404,232 @@ final class VideoDownloaderServiceTest extends TestCase
             $taskRepository,
             $progressNotifier,
             $this->classifier(),
+            $this->createStub(DownloadSizeEstimatorInterface::class),
+            50,
         );
 
         $service->process('https://test.local', 'best', '', 7);
+    }
+
+    /**
+     * Verifies an over-limit Telegram download is rejected before any transfer.
+     */
+    public function testProcessRejectsOversizedTelegramDownloadBeforeTransfer(): void
+    {
+        /** @phpstan-ignore-next-line */
+        $youtubeDl      = $this->createMock(YoutubeDlWrapper::class);
+        /** @phpstan-ignore-next-line */
+        $formatResolver = $this->createStub(FormatResolver::class);
+        /** @phpstan-ignore-next-line */
+        $sourceManager  = $this->createStub(SourceManager::class);
+        /** @phpstan-ignore-next-line */
+        $logManager     = $this->createMock(LogManager::class);
+        $logger         = $this->createMock(LoggerInterface::class);
+
+        $formatResolver->method('resolve')->willReturn(['fmt', true]);
+
+        $youtubeDl->expects($this->never())->method('download');
+        $sourceManager->expects($this->never())->method('flush');
+
+        $logCalls = [];
+        $logManager->expects($this->exactly(2))
+            ->method('create')
+            ->willReturnCallback(function (string $type, string $message, ?float $size = null) use (&$logCalls) {
+                $logCalls[] = [$type, $message, $size];
+
+                return new Log();
+            });
+        $logManager->expects($this->exactly(2))->method('flush');
+
+        $logger->expects($this->once())
+            ->method('info')
+            ->with('Rejected by the Telegram size guard', $this->arrayHasKey('reason'));
+
+        $estimator = $this->createStub(DownloadSizeEstimatorInterface::class);
+        $estimator->method('estimate')->willReturn([60 * 1024 * 1024]);
+
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+            ->setTelegramChatId(12_345)
+        ;
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn($task);
+
+        $progressNotifier = $this->createMock(DownloadProgressNotifierInterface::class);
+        $progressNotifier->expects($this->never())->method('start');
+
+        $service = new VideoDownloaderService(
+            $youtubeDl,
+            $formatResolver,
+            $sourceManager,
+            $logManager,
+            $logger,
+            $taskRepository,
+            $progressNotifier,
+            $this->classifier(),
+            $estimator,
+            50,
+        );
+
+        $result = $service->process('https://test.local', 'best', '12345', 7);
+
+        $this->assertTrue($result->isSizeExceeded());
+        $this->assertFalse($result->isTransient());
+        $this->assertSame(DownloadOutcome::ERROR, $result->outcome);
+        $this->assertStringContainsString('Telegram upload limit', (string) $result->errorMessage);
+        $this->assertSame([
+            ['commenced', 'Started downloading.', null],
+            ['error', 'Estimated file size 60 MB exceeds the Telegram upload limit of 50 MB. Choose another quality.', null],
+        ], $logCalls);
+    }
+
+    /**
+     * Verifies a Telegram download within the configured limit proceeds as usual.
+     */
+    public function testProcessDownloadsWhenEstimateIsWithinLimit(): void
+    {
+        /** @phpstan-ignore-next-line */
+        $youtubeDl      = $this->createMock(YoutubeDlWrapper::class);
+        /** @phpstan-ignore-next-line */
+        $formatResolver = $this->createStub(FormatResolver::class);
+        /** @phpstan-ignore-next-line */
+        $sourceManager  = $this->createStub(SourceManager::class);
+        /** @phpstan-ignore-next-line */
+        $logManager     = $this->createStub(LogManager::class);
+        $logger         = $this->createStub(LoggerInterface::class);
+
+        $formatResolver->method('resolve')->willReturn(['fmt', true]);
+
+        $youtubeDl->expects($this->once())
+            ->method('download')
+            ->with('https://test.local', 'fmt', true, false, null)
+            ->willReturn($this->createVideoCollection([$this->createSuccessfulVideo('video.mp4', '/tmp', 1.0)]));
+
+        $estimator = $this->createMock(DownloadSizeEstimatorInterface::class);
+        $estimator->expects($this->once())->method('estimate')->willReturn([100 * 1024 * 1024]);
+
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+        ;
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn($task);
+
+        $service = new VideoDownloaderService(
+            $youtubeDl,
+            $formatResolver,
+            $sourceManager,
+            $logManager,
+            $logger,
+            $taskRepository,
+            $this->createStub(DownloadProgressNotifierInterface::class),
+            $this->classifier(),
+            $estimator,
+            100,
+        );
+
+        $result = $service->process('https://test.local', 'best', '', 7);
+
+        $this->assertTrue($result->isSuccess());
+        $this->assertFalse($result->isSizeExceeded());
+    }
+
+    /**
+     * Verifies a Telegram download proceeds when no size can be estimated.
+     */
+    public function testProcessDownloadsWhenSizeCannotBeEstimated(): void
+    {
+        /** @phpstan-ignore-next-line */
+        $youtubeDl      = $this->createMock(YoutubeDlWrapper::class);
+        /** @phpstan-ignore-next-line */
+        $formatResolver = $this->createStub(FormatResolver::class);
+        /** @phpstan-ignore-next-line */
+        $sourceManager  = $this->createStub(SourceManager::class);
+        /** @phpstan-ignore-next-line */
+        $logManager     = $this->createStub(LogManager::class);
+        $logger         = $this->createStub(LoggerInterface::class);
+
+        $formatResolver->method('resolve')->willReturn(['fmt', true]);
+
+        $youtubeDl->expects($this->once())
+            ->method('download')
+            ->willReturn($this->createVideoCollection([$this->createSuccessfulVideo('video.mp4', '/tmp', 1.0)]));
+
+        $estimator = $this->createMock(DownloadSizeEstimatorInterface::class);
+        $estimator->expects($this->once())->method('estimate')->willReturn([]);
+
+        $task = new DownloadTask();
+
+        $task->setUrl('https://test.local')->setQuality('best')
+            ->setOrigin(DownloadTask::ORIGIN_TELEGRAM)
+        ;
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn($task);
+
+        $service = new VideoDownloaderService(
+            $youtubeDl,
+            $formatResolver,
+            $sourceManager,
+            $logManager,
+            $logger,
+            $taskRepository,
+            $this->createStub(DownloadProgressNotifierInterface::class),
+            $this->classifier(),
+            $estimator,
+            50,
+        );
+
+        $result = $service->process('https://test.local', 'best', '', 7);
+
+        $this->assertTrue($result->isSuccess());
+    }
+
+    /**
+     * Verifies web and API downloads are never subject to the size guard.
+     */
+    public function testProcessIgnoresSizeGuardForNonTelegramTasks(): void
+    {
+        /** @phpstan-ignore-next-line */
+        $youtubeDl      = $this->createMock(YoutubeDlWrapper::class);
+        /** @phpstan-ignore-next-line */
+        $formatResolver = $this->createStub(FormatResolver::class);
+        /** @phpstan-ignore-next-line */
+        $sourceManager  = $this->createStub(SourceManager::class);
+        /** @phpstan-ignore-next-line */
+        $logManager     = $this->createStub(LogManager::class);
+        $logger         = $this->createStub(LoggerInterface::class);
+
+        $formatResolver->method('resolve')->willReturn(['fmt', true]);
+
+        $youtubeDl->expects($this->once())
+            ->method('download')
+            ->willReturn($this->createVideoCollection([$this->createSuccessfulVideo('video.mp4', '/tmp', 1.0)]));
+
+        $estimator = $this->createMock(DownloadSizeEstimatorInterface::class);
+        $estimator->expects($this->never())->method('estimate');
+
+        $service = new VideoDownloaderService(
+            $youtubeDl,
+            $formatResolver,
+            $sourceManager,
+            $logManager,
+            $logger,
+            $this->createStub(DownloadTaskRepositoryInterface::class),
+            $this->createStub(DownloadProgressNotifierInterface::class),
+            $this->classifier(),
+            $estimator,
+            50,
+        );
+
+        $result = $service->process('https://test.local', 'best');
+
+        $this->assertTrue($result->isSuccess());
     }
 
     private function service(
@@ -420,6 +648,8 @@ final class VideoDownloaderServiceTest extends TestCase
             $this->createStub(DownloadTaskRepositoryInterface::class),
             $this->createStub(DownloadProgressNotifierInterface::class),
             $this->classifier(),
+            $this->createStub(DownloadSizeEstimatorInterface::class),
+            50,
         );
     }
 

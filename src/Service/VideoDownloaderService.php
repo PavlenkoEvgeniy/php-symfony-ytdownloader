@@ -9,6 +9,7 @@ use App\Entity\DownloadTask;
 use App\Entity\Source;
 use App\Repository\DownloadTaskRepositoryInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 final readonly class VideoDownloaderService implements VideoProcessorInterface
 {
@@ -21,6 +22,9 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
         private DownloadTaskRepositoryInterface $downloadTaskRepository,
         private DownloadProgressNotifierInterface $progressNotifier,
         private DownloadFailureClassifierInterface $failureClassifier,
+        private DownloadSizeEstimatorInterface $sizeEstimator,
+        #[Autowire(env: 'int:TELEGRAM_MAX_UPLOAD_MB')]
+        private int $telegramMaxUploadMb,
     ) {
     }
 
@@ -40,6 +44,16 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
         $this->logManager->flush();
 
         [$downloadFormat, $mergeAsVideo] = $this->formatResolver->resolve($format);
+
+        $sizeRejection = $this->sizeRejection($downloadTask, $videoUrl, $downloadFormat, $allowPlaylist);
+
+        if (null !== $sizeRejection) {
+            $this->logManager->create('error', $sizeRejection);
+            $this->logManager->flush();
+            $this->logger->info('Rejected by the Telegram size guard', ['reason' => $sizeRejection]);
+
+            return DownloadResult::sizeExceeded($sizeRejection);
+        }
 
         $progressReporter = $this->progressReporter($downloadTask, $telegramUserId);
         $onProgress       = null === $progressReporter ? null : $progressReporter->report(...);
@@ -100,6 +114,35 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
         $reason = $this->shortenReason((string) $firstError);
 
         return DownloadResult::failure($reason, $this->failureClassifier->classify($reason));
+    }
+
+    /**
+     * Rejects a Telegram download whose estimated size would exceed the upload
+     * limit, so the requester is told to pick another quality before any transfer.
+     */
+    private function sizeRejection(
+        ?DownloadTask $downloadTask,
+        string $videoUrl,
+        string $downloadFormat,
+        bool $allowPlaylist,
+    ): ?string {
+        if (!$downloadTask instanceof DownloadTask || !$downloadTask->isTelegramOrigin()) {
+            return null;
+        }
+
+        $limitBytes = $this->telegramMaxUploadMb * 1024 * 1024;
+
+        foreach ($this->sizeEstimator->estimate($videoUrl, $downloadFormat, $allowPlaylist) as $sizeBytes) {
+            if ($limitBytes < $sizeBytes) {
+                return \sprintf(
+                    'Estimated file size %d MB exceeds the Telegram upload limit of %d MB. Choose another quality.',
+                    (int) \round((float) $sizeBytes / 1024.0 / 1024.0),
+                    $this->telegramMaxUploadMb,
+                );
+            }
+        }
+
+        return null;
     }
 
     private function progressReporter(?DownloadTask $downloadTask, string $telegramUserId): ?ProgressReporterInterface

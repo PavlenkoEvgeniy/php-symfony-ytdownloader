@@ -58,4 +58,19 @@ final readonly class TelegramNotifier implements TelegramNotifierInterface
             ]);
         }
     }
+
+    #[\Override]
+    public function notifyFileTooLarge(string $telegramUserId): void
+    {
+        try {
+            $this->telegramClient->sendMessage(
+                (int) $telegramUserId,
+                $this->translator->trans('telegram.file_too_large'),
+            );
+        } catch (\Throwable $exception) {
+            $this->logger->error('Failed to send a Telegram size rejection message', [
+                'error' => $exception->getMessage(),
+            ]);
+        }
+    }
 }
