@@ -145,6 +145,44 @@ final class DownloadTaskRepositoryTest extends KernelTestCase
     }
 
     /**
+     * Verifies deleting active tasks removes queued and processing ones for
+     * that user only and keeps finished and error tasks.
+     */
+    public function testDeleteActiveByUserRemovesQueuedAndProcessingTasks(): void
+    {
+        $queued     = $this->createTask();
+        $processing = $this->createTask(status: DownloadTask::STATUS_PROCESSING, urlSuffix: 'running');
+        $this->createTask(status: DownloadTask::STATUS_SUCCESS, urlSuffix: 'done');
+        $this->createTask(status: DownloadTask::STATUS_ERROR, urlSuffix: 'broken');
+        $theirs     = $this->createTask(user: $this->other, urlSuffix: 'theirs');
+
+        $this->assertSame(2, $this->repository->deleteActiveByUser($this->user));
+
+        $this->entityManager->clear();
+        $this->assertNull($this->repository->findById((int) $queued->getId()));
+        $this->assertNull($this->repository->findById((int) $processing->getId()));
+        $this->assertNotNull($this->repository->findById((int) $theirs->getId()));
+        $this->assertSame(1, $this->repository->countActiveByUser($this->other));
+    }
+
+    /**
+     * Verifies the existence probe sees a row deleted by raw SQL even while
+     * the identity map still holds the entity - the reason /cancel uses it.
+     */
+    public function testExistsByIdSeesRowsDeletedElsewhere(): void
+    {
+        $task = $this->createTask();
+        $id   = (int) $task->getId();
+
+        $this->assertTrue($this->repository->existsById($id));
+
+        $this->entityManager->getConnection()->executeStatement('DELETE FROM download_task WHERE id = ?', [$id]);
+
+        $this->assertFalse($this->repository->existsById($id));
+        $this->assertNotNull($this->repository->findById($id), 'the identity map still returns the stale entity');
+    }
+
+    /**
      * Verifies an active task is found by url while a finished one is not.
      */
     public function testFindActiveByUserAndUrlIgnoresFinishedTasks(): void

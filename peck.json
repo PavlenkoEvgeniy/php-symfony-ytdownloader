@@ -10,6 +10,7 @@
             "oskarstark",
             "filesize",
             "mtime",
+            "cancelled",
             "profiler",
             "easyadmin",
             "sourcefiles",

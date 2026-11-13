@@ -12,6 +12,12 @@ interface DownloadTaskRepositoryInterface
     public function findById(int $id): ?DownloadTask;
 
     /**
+     * Scalar existence probe that bypasses the identity map, so a task
+     * deleted by another connection is seen as gone immediately.
+     */
+    public function existsById(int $id): bool;
+
+    /**
      * @return DownloadTask[]
      */
     public function getRecentActiveTasks(int $limit = 50): array;
@@ -29,6 +35,12 @@ interface DownloadTaskRepositoryInterface
     public function findQueuedByUser(User $user): array;
 
     public function deleteQueuedByUser(User $user): int;
+
+    /**
+     * Removes every active task (queued and processing) of a user and
+     * returns their number; /cancel uses it to free the user's slot.
+     */
+    public function deleteActiveByUser(User $user): int;
 
     public function findActiveByUserAndUrl(User $user, string $url): ?DownloadTask;
 

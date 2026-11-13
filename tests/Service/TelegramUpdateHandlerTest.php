@@ -408,7 +408,7 @@ final class TelegramUpdateHandlerTest extends TestCase
         $users->method('findOneByTelegramUserId')->willReturn($user);
 
         $tasks = $this->createMock(DownloadTaskRepositoryInterface::class);
-        $tasks->expects($this->once())->method('deleteQueuedByUser')->with($user)->willReturn(3);
+        $tasks->expects($this->once())->method('deleteActiveByUser')->with($user)->willReturn(3);
 
         $cache = $this->createMock(CacheItemPoolInterface::class);
         $cache->expects($this->once())->method('deleteItem')->with('telegram_pending_42');
@@ -416,7 +416,7 @@ final class TelegramUpdateHandlerTest extends TestCase
         $client = $this->createMock(TelegramClientInterface::class);
         $client->expects($this->once())
             ->method('sendMessage')
-            ->with(42, 'Cancelled 3 queued download(s).', ['remove_keyboard' => true]);
+            ->with(42, 'Cancelled 3 download(s).', ['remove_keyboard' => true]);
 
         $this->handler(users: $users, tasks: $tasks, client: $client, cache: $cache)
             ->handle($this->message('/cancel'));
@@ -435,7 +435,7 @@ final class TelegramUpdateHandlerTest extends TestCase
         $users->method('findOneByTelegramUserId')->willReturn($user);
 
         $tasks = $this->createStub(DownloadTaskRepositoryInterface::class);
-        $tasks->method('deleteQueuedByUser')->willReturn(0);
+        $tasks->method('deleteActiveByUser')->willReturn(0);
 
         $client = $this->createMock(TelegramClientInterface::class);
         $client->expects($this->once())
@@ -1206,6 +1206,7 @@ final class TelegramUpdateHandlerTest extends TestCase
 
         $tasks = $this->createMock(DownloadTaskRepositoryInterface::class);
         $tasks->expects($this->never())->method('deleteQueuedByUser');
+        $tasks->expects($this->never())->method('deleteActiveByUser');
 
         $client = $this->createMock(TelegramClientInterface::class);
         $client->expects($this->once())
