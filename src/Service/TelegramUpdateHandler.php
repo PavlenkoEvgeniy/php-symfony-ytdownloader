@@ -377,19 +377,25 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
     }
 
     /**
-     * Qualities whose estimated size is above the upload limit are left out,
-     * an unknown estimate keeps the quality (the transfer guard stays the
-     * hard limit), and the rejected quality is never offered again.
+     * The qualities are ordered from the largest file to the smallest, so a
+     * cut decision — the rejected quality or one estimated above the upload
+     * limit — takes every same-or-larger quality with it. Only qualities
+     * after the rejected one are worth probing: a larger quality is cut
+     * regardless of its own estimate. An unknown estimate keeps a smaller
+     * quality (the transfer guard stays the hard limit).
      *
      * @return list<string>
      */
     private function offeredQualities(string $url, string $rejectedQuality): array
     {
-        $limitBytes = $this->telegramMaxUploadMb * 1024 * 1024;
-        $offered    = [];
+        $names          = \array_column(self::QUALITIES, 0);
+        $rejectedIndex  = \array_search($rejectedQuality, $names, true);
+        $rejectedIndex  = false === $rejectedIndex ? -1 : $rejectedIndex;
+        $limitBytes     = $this->telegramMaxUploadMb * 1024 * 1024;
+        $cutOffIndex    = $rejectedIndex;
 
-        foreach (self::QUALITIES as [$quality]) {
-            if ($quality === $rejectedQuality) {
+        foreach ($names as $index => $quality) {
+            if ($index <= $cutOffIndex) {
                 continue;
             }
 
@@ -397,10 +403,16 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             $sizes            = $this->sizeEstimator->estimate($url, $downloadFormat, false);
 
             if ([] !== $sizes && $limitBytes < \max($sizes)) {
-                continue;
+                $cutOffIndex = $index;
             }
+        }
 
-            $offered[] = $quality;
+        $offered = [];
+
+        foreach ($names as $index => $quality) {
+            if ($index > $cutOffIndex) {
+                $offered[] = $quality;
+            }
         }
 
         return $offered;
