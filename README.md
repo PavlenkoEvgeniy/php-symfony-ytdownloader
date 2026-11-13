@@ -165,9 +165,13 @@ the same task.
         `TELEGRAM_API_BASE_URL=http://telegram-bot-api:8081` and
         `TELEGRAM_MAX_UPLOAD_MB=2000` (ADR-0008). Without it the bot falls back
         to the cloud API and its 50 MB upload limit.
-      - Telegram downloads are size-guarded: if the estimated final size
-        exceeds `TELEGRAM_MAX_UPLOAD_MB`, the download is rejected before the
-        transfer and the bot asks the requester to choose another quality.
+      - Telegram downloads are size-guarded against `TELEGRAM_MAX_UPLOAD_MB`
+        in three layers: a metadata size estimate rejects before the transfer
+        starts, a transfer cap makes the downloader abort oversized transfers
+        the moment the size becomes known, and a final guard removes any file
+        that still completed over the limit. Rejections never retry, never
+        reach the library, and the bot asks the requester to choose another
+        quality.
       - Register the webhook:
          ```bash
          make telegram-bot-hook

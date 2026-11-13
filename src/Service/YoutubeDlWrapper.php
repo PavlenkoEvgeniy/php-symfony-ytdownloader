@@ -36,6 +36,7 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
         bool $mergeAsVideo,
         bool $allowPlaylist = true,
         ?\Closure $onProgress = null,
+        ?string $maxFilesize = null,
     ): object {
         $options = [
             'paths'             => $this->downloadsDir,
@@ -45,6 +46,10 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
             'newline'           => true,
             'progress-template' => 'download:PROGRESS:%(progress._percent_str)s',
         ];
+
+        if (null !== $maxFilesize) {
+            $options['max-filesize'] = $maxFilesize;
+        }
 
         if ($mergeAsVideo) {
             $options += [
@@ -106,6 +111,14 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
 
     private function toCollection(int $exitCode, string $stdout, string $stderr): object
     {
+        // A transfer-cap refusal exits 0 like a skipped download, so it must be
+        // recognized before the exit-code and file bookkeeping below.
+        $refusal = $this->maxFilesizeRefusal($stderr, $stdout);
+
+        if (null !== $refusal) {
+            return $this->createCollection([$this->createErroredVideo($refusal)]);
+        }
+
         if (0 !== $exitCode) {
             return $this->createCollection([$this->createErroredVideo($this->failureReason($stderr, $stdout))]);
         }
@@ -228,6 +241,23 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
         }
 
         return \array_values(\array_unique($paths));
+    }
+
+    private function maxFilesizeRefusal(string ...$outputs): ?string
+    {
+        foreach ($outputs as $output) {
+            foreach (\preg_split('/\r\n|\r|\n/', $output) ?: [] as $line) {
+                $line = \trim($line);
+
+                if ('' === $line || !\str_contains($line, 'larger than max-filesize')) {
+                    continue;
+                }
+
+                return \mb_substr(\preg_replace('/^ERROR:\s*/i', '', $line) ?? $line, 0, 500);
+            }
+        }
+
+        return null;
     }
 
     private function failureReason(string $stderr, string $stdout): string

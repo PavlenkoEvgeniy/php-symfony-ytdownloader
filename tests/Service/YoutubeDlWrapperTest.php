@@ -275,6 +275,70 @@ final class YoutubeDlWrapperTest extends TestCase
         $this->assertSame(5.0, $info->getSize());
     }
 
+    /**
+     * Verifies an explicit transfer cap is passed to the downloader command.
+     */
+    public function testMaxFilesizeIsPassedToTheCommand(): void
+    {
+        $argsFile = $this->createTemporaryFile();
+        $binary   = $this->createBinary(\sprintf("printf '%%s\\n' \"\$@\" > %s\n", \escapeshellarg($argsFile)));
+
+        $this->wrapper($binary, 30.0)->download('https://youtube.com/watch?v=test', 'best_format', true, true, null, '2000M');
+
+        $arguments = \file($argsFile, FILE_IGNORE_NEW_LINES) ?: [];
+
+        $this->assertContains('--max-filesize', $arguments);
+        $this->assertContains('2000M', $arguments);
+    }
+
+    /**
+     * Verifies a download without a cap never receives the limit option.
+     */
+    public function testWithoutMaxFilesizeNoCapOptionIsPassed(): void
+    {
+        $argsFile = $this->createTemporaryFile();
+        $binary   = $this->createBinary(\sprintf("printf '%%s\\n' \"\$@\" > %s\n", \escapeshellarg($argsFile)));
+
+        $this->wrapper($binary, 30.0)->download('https://youtube.com/watch?v=test', 'best_format', true);
+
+        $arguments = \file($argsFile, FILE_IGNORE_NEW_LINES) ?: [];
+
+        $this->assertNotContains('--max-filesize', $arguments);
+    }
+
+    /**
+     * Verifies a cap refusal that exits 0 without a file reports the refusal line.
+     */
+    public function testCapRefusalOnSuccessfulExitReportsRefusalReason(): void
+    {
+        $binary = $this->createBinary("echo '[download] File is larger than max-filesize (2889135013 bytes > 52428800 bytes). Aborting.'\nexit 0\n");
+
+        $videos = $this->wrapper($binary, 30.0)
+            ->download('https://youtube.com/watch?v=test', 'format', true)
+            ->getVideos()
+        ;
+
+        $this->assertCount(1, $videos);
+        $this->assertStringContainsString('larger than max-filesize', (string) $videos[0]->getError());
+        $this->assertNull($videos[0]->getFile());
+    }
+
+    /**
+     * Verifies the refusal line wins over unrelated output when the process fails.
+     */
+    public function testCapRefusalWinsOverOtherFailureReason(): void
+    {
+        $binary = $this->createBinary("echo 'ERROR: video unavailable' >&2\necho '[download] File is larger than max-filesize (3000 bytes > 1000 bytes). Aborting.'\nexit 1\n");
+
+        $videos = $this->wrapper($binary, 30.0)
+            ->download('https://youtube.com/watch?v=test', 'format', true)
+            ->getVideos()
+        ;
+
+        $this->assertCount(1, $videos);
+        $this->assertStringContainsString('larger than max-filesize', (string) $videos[0]->getError());
+    }
+
     private function wrapper(string $binaryPath, float $timeout): YoutubeDlWrapper
     {
         return new YoutubeDlWrapper($binaryPath, ['--no-warnings'], $timeout, \sys_get_temp_dir());
