@@ -31,6 +31,21 @@ final class DownloadTaskRepository extends ServiceEntityRepository implements Do
 
     #[\Override]
     /**
+     * Scalar existence probe that bypasses the identity map, so a task
+     * deleted by another connection is seen as gone immediately.
+     */
+    public function existsById(int $id): bool
+    {
+        return 0 < (int) $this->createQueryBuilder('t')
+            ->select('COUNT(t.id)')
+            ->where('t.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    #[\Override]
+    /**
      * @return DownloadTask[]
      */
     public function findActiveByUser(User $user, int $limit = 10): array
@@ -98,6 +113,26 @@ final class DownloadTaskRepository extends ServiceEntityRepository implements Do
             ->andWhere('t.status = :status')
             ->setParameter('user', $user)
             ->setParameter('status', DownloadTask::STATUS_QUEUED)
+            ->getQuery()
+            ->execute();
+    }
+
+    #[\Override]
+    /**
+     * Removes every active task (queued and processing) of a user and
+     * returns their number; /cancel uses it to free the user's slot.
+     */
+    public function deleteActiveByUser(User $user): int
+    {
+        return (int) $this->createQueryBuilder('t')
+            ->delete()
+            ->where('t.user = :user')
+            ->andWhere('t.status IN (:statuses)')
+            ->setParameter('user', $user)
+            ->setParameter('statuses', [
+                DownloadTask::STATUS_QUEUED,
+                DownloadTask::STATUS_PROCESSING,
+            ], ArrayParameterType::STRING)
             ->getQuery()
             ->execute();
     }

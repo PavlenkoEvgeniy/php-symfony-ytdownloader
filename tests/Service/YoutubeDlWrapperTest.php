@@ -519,6 +519,52 @@ final class YoutubeDlWrapperTest extends TestCase
         $this->assertContains('--progress', $arguments);
     }
 
+    /**
+     * Verifies an aborting cancellation closure stops the run quickly and
+     * leaves nothing behind.
+     */
+    public function testCancellationClosureStopsTheRun(): void
+    {
+        $downloadsDir = $this->createTemporaryDirectory();
+        $binary       = $this->createBinary("sleep 5\nexit 1\n");
+
+        $started = \microtime(true);
+        $videos  = $this->wrapper($binary, 30.0, $downloadsDir)
+            ->download('https://youtube.com/watch?v=test', 'format', true, true, null, null, static fn (): bool => true)
+            ->getVideos()
+        ;
+
+        $this->assertLessThan(3.0, \microtime(true) - $started);
+        $this->assertStringContainsString('cancelled', (string) $videos[0]->getError());
+        $this->assertSame([], \array_values(\array_diff((array) \scandir($downloadsDir), ['.', '..'])));
+    }
+
+    /**
+     * Verifies a failing cancellation probe does not abort a healthy run.
+     */
+    public function testFailingCancellationProbeIsIgnored(): void
+    {
+        $downloadsDir = $this->createTemporaryDirectory();
+        $binary       = $this->createBinary("exit 0\n");
+
+        $videos = $this->wrapper($binary, 30.0, $downloadsDir)
+            ->download(
+                'https://youtube.com/watch?v=test',
+                'format',
+                true,
+                true,
+                null,
+                null,
+                static function (): bool {
+                    throw new \RuntimeException('database hiccup');
+                },
+            )
+            ->getVideos()
+        ;
+
+        $this->assertStringContainsString('no downloaded file was reported', (string) $videos[0]->getError());
+    }
+
     private function wrapper(string $binaryPath, float $timeout, ?string $downloadsDir = null, float $stallTimeout = 60.0): YoutubeDlWrapper
     {
         return new YoutubeDlWrapper($binaryPath, ['--no-warnings'], $timeout, $downloadsDir ?? \sys_get_temp_dir(), $stallTimeout);

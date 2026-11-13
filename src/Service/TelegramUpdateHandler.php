@@ -199,11 +199,14 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         }
 
         $this->cache->deleteItem($this->pendingKey($chatId));
-        $cancelled = $this->downloadTaskRepository->deleteQueuedByUser($user);
+
+        // Active means queued or processing: a running transfer stops too,
+        // which is what frees the user's single download slot.
+        $cancelled = $this->downloadTaskRepository->deleteActiveByUser($user);
 
         $this->telegramClient->sendMessage(
             $chatId,
-            $cancelled > 0 ? \sprintf('Cancelled %d queued download(s).', $cancelled) : 'Nothing to cancel.',
+            $cancelled > 0 ? \sprintf('Cancelled %d download(s).', $cancelled) : 'Nothing to cancel.',
             $this->hiddenKeyboard(),
         );
     }

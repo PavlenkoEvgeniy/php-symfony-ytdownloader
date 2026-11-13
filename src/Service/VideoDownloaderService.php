@@ -60,7 +60,13 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
         $progressReporter = $this->progressReporter($downloadTask, $telegramUserId);
         $onProgress       = null === $progressReporter ? null : $progressReporter->report(...);
 
-        $collection = $this->youtubeDlWrapper->download($videoUrl, $downloadFormat, $mergeAsVideo, $allowPlaylist, $onProgress, $maxFilesize);
+        // A task removed by /cancel is gone from the database: polling that
+        // keeps the wrapper's loop from starting or continuing the transfer.
+        $shouldAbort = null === $taskId
+            ? null
+            : fn (): bool => !$this->downloadTaskRepository->existsById($taskId);
+
+        $collection = $this->youtubeDlWrapper->download($videoUrl, $downloadFormat, $mergeAsVideo, $allowPlaylist, $onProgress, $maxFilesize, $shouldAbort);
 
         $saved      = 0;
         $firstError = null;

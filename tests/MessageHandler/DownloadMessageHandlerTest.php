@@ -554,6 +554,42 @@ final class DownloadMessageHandlerTest extends TestCase
         $this->assertStringContainsString('Telegram upload limit', (string) $task->getErrorMessage());
     }
 
+    /**
+     * Verifies a task removed by /cancel mid-attempt sends no notification:
+     * the reload finds nothing and the notification branch needs a live task.
+     */
+    public function testCancelledTaskSendsNoNotification(): void
+    {
+        $manager = $this->createMock(DownloadTaskManagerInterface::class);
+        $manager->method('claimProcessing')->willReturn(true);
+        $manager->expects($this->once())->method('markError')->with(7, 'Download cancelled by user.');
+
+        $videoProcessor = $this->createStub(VideoProcessorInterface::class);
+        $videoProcessor->method('process')->willReturn(
+            DownloadResult::failure('Download cancelled by user.', DownloadFailureKind::PERMANENT),
+        );
+
+        $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $taskRepository->method('findById')->willReturn(null);
+
+        $notifier = $this->createMock(TelegramNotifierInterface::class);
+        $notifier->expects($this->never())->method('notifyDownloadFailure');
+        $notifier->expects($this->never())->method('notifyFileTooLarge');
+
+        $handler = new DownloadMessageHandler(
+            $videoProcessor,
+            $manager,
+            $this->createStub(AuditLoggerInterface::class),
+            $taskRepository,
+            $this->createStub(MessageBusInterface::class),
+            $this->lock(),
+            $notifier,
+            $this->createStub(TelegramUpdateHandlerInterface::class),
+        );
+
+        $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
+    }
+
     private function handler(
         VideoProcessorInterface $videoProcessor,
         DownloadTaskManagerInterface $manager,

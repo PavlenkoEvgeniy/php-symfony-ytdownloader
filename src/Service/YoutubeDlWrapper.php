@@ -38,6 +38,7 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
         bool $allowPlaylist = true,
         ?\Closure $onProgress = null,
         ?string $maxFilesize = null,
+        ?\Closure $shouldAbort = null,
     ): object {
         $workDir = $this->prepareWorkDir();
 
@@ -120,6 +121,17 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
                     if ($state !== $lastState) {
                         $lastState    = $state;
                         $lastActivity = \microtime(true);
+                    }
+
+                    // Cancellation is best-effort: a probing failure must not
+                    // kill a healthy download; the next poll tries again.
+                    if (null !== $shouldAbort && $this->shouldAbort($shouldAbort)) {
+                        $process->stop(0);
+                        $this->relocateReportedFiles($stdout, $workDir);
+
+                        return $this->createCollection([
+                            $this->createErroredVideo('Download cancelled by user.'),
+                        ]);
                     }
 
                     if (\microtime(true) - $lastActivity >= $this->stallTimeout) {
@@ -283,6 +295,17 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
      * entry. A transfer that keeps writing changes it; a stalled one does not.
      * Returns an empty string when there is no isolated directory to watch.
      */
+    private function shouldAbort(\Closure $shouldAbort): bool
+    {
+        try {
+            return (bool) $shouldAbort();
+        } catch (\Throwable) {
+            // A failed probe (e.g. a database hiccup) must not abort
+            // anything: the next poll tries again.
+            return false;
+        }
+    }
+
     private function stagingState(?string $workDir): string
     {
         if (null === $workDir) {

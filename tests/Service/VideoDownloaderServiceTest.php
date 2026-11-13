@@ -48,7 +48,7 @@ final class VideoDownloaderServiceTest extends TestCase
         $collection = $this->createVideoCollection([$video]);
         $youtubeDl->expects($this->once())
             ->method('download')
-            ->with('https://test.local', 'fmt', true, true, null, null)
+            ->with('https://test.local', 'fmt', true, true, null, null, $this->isNull())
             ->willReturn($collection);
 
         $sourceManager->expects($this->once())
@@ -505,7 +505,7 @@ final class VideoDownloaderServiceTest extends TestCase
 
         $youtubeDl->expects($this->once())
             ->method('download')
-            ->with('https://test.local', 'fmt', true, false, null, '100M')
+            ->with('https://test.local', 'fmt', true, false, null, '100M', $this->isInstanceOf(\Closure::class))
             ->willReturn($this->createVideoCollection([$this->createSuccessfulVideo('video.mp4', '/tmp', 1.0)]));
 
         $estimator = $this->createMock(DownloadSizeEstimatorInterface::class);
@@ -609,7 +609,7 @@ final class VideoDownloaderServiceTest extends TestCase
 
         $youtubeDl->expects($this->once())
             ->method('download')
-            ->with('https://test.local', 'fmt', true, true, null, null)
+            ->with('https://test.local', 'fmt', true, true, null, null, $this->isNull())
             ->willReturn($this->createVideoCollection([$this->createSuccessfulVideo('video.mp4', '/tmp', 1.0)]));
 
         $estimator = $this->createMock(DownloadSizeEstimatorInterface::class);
@@ -654,7 +654,7 @@ final class VideoDownloaderServiceTest extends TestCase
 
         $youtubeDl->expects($this->once())
             ->method('download')
-            ->with('https://test.local', 'fmt', true, false, null, '50M')
+            ->with('https://test.local', 'fmt', true, false, null, '50M', $this->isInstanceOf(\Closure::class))
             ->willReturn($this->createVideoCollection([$this->createErroredVideo($refusalLine)]));
 
         $estimator = $this->createMock(DownloadSizeEstimatorInterface::class);
@@ -732,7 +732,7 @@ final class VideoDownloaderServiceTest extends TestCase
 
         $youtubeDl->expects($this->once())
             ->method('download')
-            ->with('https://test.local', 'fmt', true, false, null, '50M')
+            ->with('https://test.local', 'fmt', true, false, null, '50M', $this->isInstanceOf(\Closure::class))
             ->willReturn($this->createVideoCollection([$this->createErroredVideo($refusalReason)]));
 
         $estimator = $this->createMock(DownloadSizeEstimatorInterface::class);
