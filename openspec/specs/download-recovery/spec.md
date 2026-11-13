@@ -119,6 +119,12 @@ reason SHALL remain available to administrators in every case.
 - **WHEN** a Telegram-origin task ends in `error` because of the size guard
 - **THEN** the bot sends the size-rejection message instead of the generic failure message
 
+#### Scenario: Re-download while another download is active
+
+- **WHEN** the requester presses Re-download while one of their tasks is queued or processing
+- **THEN** nothing is queued
+- **AND** the bot answers that the current download must be awaited or cancelled with /cancel
+
 ### Requirement: The requester is told to choose another quality
 
 When a Telegram-origin task is rejected by the size guard, the bot SHALL send a
