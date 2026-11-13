@@ -16,15 +16,15 @@ final class LogManagerTest extends TestCase
      */
     public function testCreatePersistsLogWithOptionalSize(): void
     {
-        $em = $this->createMock(EntityManagerInterface::class);
+        $entityManager = $this->createMock(EntityManagerInterface::class);
 
-        $em->expects($this->once())
+        $entityManager->expects($this->once())
             ->method('persist')
             ->with($this->callback(static fn (Log $log): bool => 'info' === $log->getType()
                 && 'hello world' === $log->getMessage()
                 && 12.5 === $log->getSize()));
 
-        $manager = new LogManager($em);
+        $manager = new LogManager($entityManager);
 
         $log = $manager->create('info', 'hello world', 12.5);
 
@@ -38,10 +38,10 @@ final class LogManagerTest extends TestCase
      */
     public function testFlushDelegatesToEntityManager(): void
     {
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->once())->method('flush');
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->once())->method('flush');
 
-        $manager = new LogManager($em);
+        $manager = new LogManager($entityManager);
         $manager->flush();
     }
 }

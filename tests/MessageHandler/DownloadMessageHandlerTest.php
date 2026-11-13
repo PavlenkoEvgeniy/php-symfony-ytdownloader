@@ -42,13 +42,13 @@ final class DownloadMessageHandlerTest extends TestCase
         $connection = $this->createMock(Connection::class);
         $connection->expects($this->once())->method('executeStatement')->willReturn(1);
 
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->method('getConnection')->willReturn($connection);
-        $em->expects($this->once())
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('getConnection')->willReturn($connection);
+        $entityManager->expects($this->once())
             ->method('find')
             ->with(DownloadTask::class, 7)
             ->willReturn($task);
-        $em->expects($this->once())->method('flush');
+        $entityManager->expects($this->once())->method('flush');
 
         $videoProcessor = $this->createMock(VideoProcessorInterface::class);
         $videoProcessor->expects($this->once())
@@ -59,7 +59,7 @@ final class DownloadMessageHandlerTest extends TestCase
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->never())->method('dispatch');
 
-        $handler = $this->handler($videoProcessor, new DownloadTaskManager($em), $bus);
+        $handler = $this->handler($videoProcessor, new DownloadTaskManager($entityManager), $bus);
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
 
@@ -77,13 +77,13 @@ final class DownloadMessageHandlerTest extends TestCase
         $connection = $this->createMock(Connection::class);
         $connection->expects($this->once())->method('executeStatement')->willReturn(1);
 
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->method('getConnection')->willReturn($connection);
-        $em->expects($this->once())
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('getConnection')->willReturn($connection);
+        $entityManager->expects($this->once())
             ->method('find')
             ->with(DownloadTask::class, 7)
             ->willReturn($task);
-        $em->expects($this->once())->method('flush');
+        $entityManager->expects($this->once())->method('flush');
 
         $videoProcessor = $this->createMock(VideoProcessorInterface::class);
         $videoProcessor->expects($this->once())
@@ -94,7 +94,7 @@ final class DownloadMessageHandlerTest extends TestCase
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->never())->method('dispatch');
 
-        $handler = $this->handler($videoProcessor, new DownloadTaskManager($em), $bus);
+        $handler = $this->handler($videoProcessor, new DownloadTaskManager($entityManager), $bus);
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
 
@@ -110,14 +110,14 @@ final class DownloadMessageHandlerTest extends TestCase
         $connection = $this->createMock(Connection::class);
         $connection->expects($this->once())->method('executeStatement')->willReturn(0);
 
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->method('getConnection')->willReturn($connection);
-        $em->expects($this->never())->method('find');
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('getConnection')->willReturn($connection);
+        $entityManager->expects($this->never())->method('find');
 
         $videoProcessor = $this->createMock(VideoProcessorInterface::class);
         $videoProcessor->expects($this->never())->method('process');
 
-        $handler = $this->handler($videoProcessor, new DownloadTaskManager($em), $this->createStub(MessageBusInterface::class));
+        $handler = $this->handler($videoProcessor, new DownloadTaskManager($entityManager), $this->createStub(MessageBusInterface::class));
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
     }
@@ -154,10 +154,10 @@ final class DownloadMessageHandlerTest extends TestCase
      */
     public function testInvokeLeavesTasksUntouchedWithoutTaskId(): void
     {
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->expects($this->never())->method('getConnection');
-        $em->expects($this->never())->method('find');
-        $em->expects($this->never())->method('flush');
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->never())->method('getConnection');
+        $entityManager->expects($this->never())->method('find');
+        $entityManager->expects($this->never())->method('flush');
 
         $videoProcessor = $this->createMock(VideoProcessorInterface::class);
         $videoProcessor->expects($this->once())
@@ -165,7 +165,7 @@ final class DownloadMessageHandlerTest extends TestCase
             ->with('https://test.local/2', 'audio', '', null)
             ->willReturn(DownloadResult::success());
 
-        $handler = $this->handler($videoProcessor, new DownloadTaskManager($em), $this->createStub(MessageBusInterface::class));
+        $handler = $this->handler($videoProcessor, new DownloadTaskManager($entityManager), $this->createStub(MessageBusInterface::class));
 
         $handler->__invoke(new DownloadMessage('https://test.local/2', 'audio'));
     }
@@ -235,10 +235,10 @@ final class DownloadMessageHandlerTest extends TestCase
         $connection = $this->createStub(Connection::class);
         $connection->method('executeStatement')->willReturn(1);
 
-        $em = $this->createStub(EntityManagerInterface::class);
-        $em->method('getConnection')->willReturn($connection);
-        $em->method('find')->willReturn($task);
-        $em->method('flush');
+        $entityManager = $this->createStub(EntityManagerInterface::class);
+        $entityManager->method('getConnection')->willReturn($connection);
+        $entityManager->method('find')->willReturn($task);
+        $entityManager->method('flush');
 
         $videoProcessor = $this->createStub(VideoProcessorInterface::class);
         $videoProcessor->method('process')->willReturn(
@@ -276,7 +276,7 @@ final class DownloadMessageHandlerTest extends TestCase
 
         $handler = new DownloadMessageHandler(
             $videoProcessor,
-            new DownloadTaskManager($em),
+            new DownloadTaskManager($entityManager),
             $auditLogger,
             $taskRepository,
             $this->createStub(MessageBusInterface::class),
@@ -301,10 +301,10 @@ final class DownloadMessageHandlerTest extends TestCase
         $connection = $this->createStub(Connection::class);
         $connection->method('executeStatement')->willReturn(1);
 
-        $em = $this->createStub(EntityManagerInterface::class);
-        $em->method('getConnection')->willReturn($connection);
-        $em->method('find')->willReturn($task);
-        $em->method('flush');
+        $entityManager = $this->createStub(EntityManagerInterface::class);
+        $entityManager->method('getConnection')->willReturn($connection);
+        $entityManager->method('find')->willReturn($task);
+        $entityManager->method('flush');
 
         $videoProcessor = $this->createStub(VideoProcessorInterface::class);
         $videoProcessor->method('process')->willReturn(
@@ -337,7 +337,7 @@ final class DownloadMessageHandlerTest extends TestCase
 
         $handler = new DownloadMessageHandler(
             $videoProcessor,
-            new DownloadTaskManager($em),
+            new DownloadTaskManager($entityManager),
             $auditLogger,
             $taskRepository,
             $this->createStub(MessageBusInterface::class),
@@ -448,10 +448,10 @@ final class DownloadMessageHandlerTest extends TestCase
         $connection = $this->createStub(Connection::class);
         $connection->method('executeStatement')->willReturn(1);
 
-        $em = $this->createStub(EntityManagerInterface::class);
-        $em->method('getConnection')->willReturn($connection);
-        $em->method('find')->willReturn($task);
-        $em->method('flush');
+        $entityManager = $this->createStub(EntityManagerInterface::class);
+        $entityManager->method('getConnection')->willReturn($connection);
+        $entityManager->method('find')->willReturn($task);
+        $entityManager->method('flush');
 
         $videoProcessor = $this->createStub(VideoProcessorInterface::class);
         $videoProcessor->method('process')->willReturn(
@@ -470,7 +470,7 @@ final class DownloadMessageHandlerTest extends TestCase
 
         $handler = new DownloadMessageHandler(
             $videoProcessor,
-            new DownloadTaskManager($em),
+            new DownloadTaskManager($entityManager),
             $this->createStub(AuditLoggerInterface::class),
             $taskRepository,
             $bus,
@@ -499,10 +499,10 @@ final class DownloadMessageHandlerTest extends TestCase
         $connection = $this->createStub(Connection::class);
         $connection->method('executeStatement')->willReturn(1);
 
-        $em = $this->createStub(EntityManagerInterface::class);
-        $em->method('getConnection')->willReturn($connection);
-        $em->method('find')->willReturn($task);
-        $em->method('flush');
+        $entityManager = $this->createStub(EntityManagerInterface::class);
+        $entityManager->method('getConnection')->willReturn($connection);
+        $entityManager->method('find')->willReturn($task);
+        $entityManager->method('flush');
 
         $videoProcessor = $this->createStub(VideoProcessorInterface::class);
         $videoProcessor->method('process')->willReturn(
@@ -521,7 +521,7 @@ final class DownloadMessageHandlerTest extends TestCase
 
         $handler = new DownloadMessageHandler(
             $videoProcessor,
-            new DownloadTaskManager($em),
+            new DownloadTaskManager($entityManager),
             $this->createStub(AuditLoggerInterface::class),
             $taskRepository,
             $bus,

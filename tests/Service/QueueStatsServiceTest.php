@@ -12,26 +12,26 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class QueueStatsServiceTest extends KernelTestCase
 {
-    private EntityManager $em;
+    private EntityManager $entityManager;
     private QueueStatsService $queueStatsService;
 
     public function setUp(): void
     {
         self::bootKernel();
 
-        /** @var EntityManager $em */
-        $em                      = self::getContainer()->get('doctrine')->getManager();
-        $this->em                = $em;
-        $this->queueStatsService = self::getContainer()->get(QueueStatsService::class);
+        /** @var EntityManager $entityManager */
+        $entityManager                      = self::getContainer()->get('doctrine')->getManager();
+        $this->entityManager                = $entityManager;
+        $this->queueStatsService            = self::getContainer()->get(QueueStatsService::class);
 
-        $this->em->getConnection()->beginTransaction();
+        $this->entityManager->getConnection()->beginTransaction();
     }
 
     public function tearDown(): void
     {
-        if ($this->em->getConnection()->isTransactionActive()) {
-            $this->em->getConnection()->rollback();
-            $this->em->clear();
+        if ($this->entityManager->getConnection()->isTransactionActive()) {
+            $this->entityManager->getConnection()->rollback();
+            $this->entityManager->clear();
         }
 
         parent::tearDown();
@@ -46,8 +46,8 @@ final class QueueStatsServiceTest extends KernelTestCase
 
         $task = new DownloadTask();
         $task->setUrl('https://youtube.com/watch?v=test')->setQuality('best');
-        $this->em->persist($task);
-        $this->em->flush();
+        $this->entityManager->persist($task);
+        $this->entityManager->flush();
 
         $stats = $this->queueStatsService->getStats();
 
@@ -68,13 +68,13 @@ final class QueueStatsServiceTest extends KernelTestCase
         $sourceManager = self::getContainer()->get(SourceManager::class);
 
         $source = $sourceManager->createFromDownloadedFile('issue-77-fixture.mp4', '/tmp', 1234.0);
-        $this->em->flush();
+        $this->entityManager->flush();
 
         $statsAfterDownload = $this->queueStatsService->getStats();
         $this->assertSame($beforeTotal + 1234, $statsAfterDownload['totalSize']);
 
-        $this->em->remove($source);
-        $this->em->flush();
+        $this->entityManager->remove($source);
+        $this->entityManager->flush();
 
         // Deleting the source never reduces the lifetime counter (issue #77).
         $stats = $this->queueStatsService->getStats();
