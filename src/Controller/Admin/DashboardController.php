@@ -153,6 +153,44 @@ final class DashboardController extends AbstractDashboardController
     }
 
     /**
+     * Clear the error list: delete every Download Task in error status while
+     * tasks in other statuses are kept.
+     */
+    #[AdminRoute(path: '/clear-error-tasks', name: 'clear_error_tasks', options: ['methods' => [Request::METHOD_POST]])]
+    public function clearErrorTasks(
+        Request $request,
+        DownloadTaskRepositoryInterface $downloadTaskRepository,
+    ): RedirectResponse {
+        if (!$this->isCsrfTokenValid('clear_error_tasks', $request->getPayload()->getString('_token'))) {
+            $this->addFlash('error', $this->translator->trans('admin.flash.invalid_csrf'));
+
+            $this->auditLogger->log(
+                action: AuditAction::ERROR_TASKS_CLEAR,
+                channel: AuditChannel::ADMIN,
+                success: false,
+                metadata: ['reason' => 'invalid_csrf'],
+            );
+
+            return $this->redirectToRoute('admin_active_tasks');
+        }
+
+        $cleared = $downloadTaskRepository->deleteErrorTasks();
+
+        $this->auditLogger->log(
+            action: AuditAction::ERROR_TASKS_CLEAR,
+            channel: AuditChannel::ADMIN,
+            metadata: ['tasks' => $cleared],
+        );
+
+        $this->addFlash(
+            'success',
+            $this->translator->trans('admin.flash.errors_cleared', ['%count%' => $cleared]),
+        );
+
+        return $this->redirectToRoute('admin_active_tasks');
+    }
+
+    /**
      * Re-download an error task: the previous error, finish time and attempt
      * counter are cleared and the task is queued again.
      */

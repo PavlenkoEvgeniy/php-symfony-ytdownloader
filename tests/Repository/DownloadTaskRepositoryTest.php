@@ -203,6 +203,26 @@ final class DownloadTaskRepositoryTest extends KernelTestCase
     }
 
     /**
+     * Verifies every error task is removed at once while other statuses are kept.
+     */
+    public function testDeleteErrorTasksRemovesErrorTasksOnly(): void
+    {
+        $this->createTask(status: DownloadTask::STATUS_ERROR, urlSuffix: 'first');
+        $this->createTask(status: DownloadTask::STATUS_ERROR, urlSuffix: 'second');
+        $this->createTask(urlSuffix: 'queued');
+        $this->createTask(status: DownloadTask::STATUS_PROCESSING, urlSuffix: 'running');
+        $this->createTask(status: DownloadTask::STATUS_SUCCESS, urlSuffix: 'done');
+
+        $deleted = $this->repository->deleteErrorTasks();
+
+        $this->assertGreaterThanOrEqual(2, $deleted);
+        $this->assertSame(0, $this->countRows("status = 'error'"));
+        $this->assertGreaterThanOrEqual(1, $this->countRows("status = 'queued'"));
+        $this->assertGreaterThanOrEqual(1, $this->countRows("status = 'processing'"));
+        $this->assertGreaterThanOrEqual(1, $this->countRows("status = 'success'"));
+    }
+
+    /**
      * Verifies only processing tasks are returned by the stuck task lookup.
      */
     public function testFindProcessingTasksReturnsProcessingTasksOnly(): void

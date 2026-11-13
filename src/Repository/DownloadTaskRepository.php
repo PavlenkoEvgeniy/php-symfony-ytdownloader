@@ -165,6 +165,21 @@ final class DownloadTaskRepository extends ServiceEntityRepository implements Do
 
     #[\Override]
     /**
+     * Bulk-deletes every failed task (error status) so the Active Tasks list
+     * can be cleared, and returns their number.
+     */
+    public function deleteErrorTasks(): int
+    {
+        return (int) $this->createQueryBuilder('t')
+            ->delete()
+            ->where('t.status = :status')
+            ->setParameter('status', DownloadTask::STATUS_ERROR)
+            ->getQuery()
+            ->execute();
+    }
+
+    #[\Override]
+    /**
      * @return DownloadTask[]
      */
     public function findProcessingTasks(): array
