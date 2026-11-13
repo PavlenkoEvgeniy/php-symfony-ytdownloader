@@ -60,7 +60,11 @@ final class DownloadMessageHandlerTest extends TestCase
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->never())->method('dispatch');
 
-        $handler = $this->handler($videoProcessor, new DownloadTaskManager($entityManager), $bus);
+        $repository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $repository->method('existsById')->willReturn(true);
+        $repository->method('findById')->willReturn($task);
+
+        $handler = $this->handler($videoProcessor, new DownloadTaskManager($entityManager), $bus, $repository);
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
 
@@ -95,7 +99,11 @@ final class DownloadMessageHandlerTest extends TestCase
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->never())->method('dispatch');
 
-        $handler = $this->handler($videoProcessor, new DownloadTaskManager($entityManager), $bus);
+        $repository = $this->createStub(DownloadTaskRepositoryInterface::class);
+        $repository->method('existsById')->willReturn(true);
+        $repository->method('findById')->willReturn($task);
+
+        $handler = $this->handler($videoProcessor, new DownloadTaskManager($entityManager), $bus, $repository);
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
 
@@ -196,6 +204,8 @@ final class DownloadMessageHandlerTest extends TestCase
         $repository = $this->createStub(DownloadTaskRepositoryInterface::class);
         $repository->method('findById')->willReturn($task);
 
+        $repository->method('existsById')->willReturn(true);
+
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->once())
             ->method('dispatch')
@@ -250,6 +260,8 @@ final class DownloadMessageHandlerTest extends TestCase
 
         $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
         $taskRepository->method('findById')->willReturn($task);
+
+        $taskRepository->method('existsById')->willReturn(true);
 
         $auditLogger = $this->createMock(AuditLoggerInterface::class);
         $auditLogger->expects($this->once())
@@ -318,6 +330,8 @@ final class DownloadMessageHandlerTest extends TestCase
         $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
         $taskRepository->method('findById')->willReturn($task);
 
+        $taskRepository->method('existsById')->willReturn(true);
+
         $auditLogger = $this->createMock(AuditLoggerInterface::class);
         $auditLogger->expects($this->once())
             ->method('log')
@@ -379,6 +393,8 @@ final class DownloadMessageHandlerTest extends TestCase
         $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
         $taskRepository->method('findById')->willReturn($task);
 
+        $taskRepository->method('existsById')->willReturn(true);
+
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->once())
             ->method('dispatch')
@@ -422,6 +438,8 @@ final class DownloadMessageHandlerTest extends TestCase
 
         $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
         $taskRepository->method('findById')->willReturn($task);
+
+        $taskRepository->method('existsById')->willReturn(true);
 
         $notifier = $this->createMock(TelegramNotifierInterface::class);
         $notifier->expects($this->never())->method('notifyDownloadFailure');
@@ -467,6 +485,8 @@ final class DownloadMessageHandlerTest extends TestCase
 
         $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
         $taskRepository->method('findById')->willReturn($task);
+
+        $taskRepository->method('existsById')->willReturn(true);
 
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->never())->method('dispatch');
@@ -525,6 +545,8 @@ final class DownloadMessageHandlerTest extends TestCase
         $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
         $taskRepository->method('findById')->willReturn($task);
 
+        $taskRepository->method('existsById')->willReturn(true);
+
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects($this->never())->method('dispatch');
 
@@ -562,15 +584,23 @@ final class DownloadMessageHandlerTest extends TestCase
     {
         $manager = $this->createMock(DownloadTaskManagerInterface::class);
         $manager->method('claimProcessing')->willReturn(true);
-        $manager->expects($this->once())->method('markError')->with(7, 'Download cancelled by user.');
+        $manager->expects($this->never())->method('markError');
+        $manager->expects($this->never())->method('markSuccess');
 
         $videoProcessor = $this->createStub(VideoProcessorInterface::class);
         $videoProcessor->method('process')->willReturn(
             DownloadResult::failure('Download cancelled by user.', DownloadFailureKind::PERMANENT),
         );
 
+        // /cancel removed the row mid-attempt; only the identity map still
+        // holds the entity, which findById alone would happily return.
+        $stale = new DownloadTask();
+
+        $stale->setUrl('https://test.local')->setQuality('best');
+
         $taskRepository = $this->createStub(DownloadTaskRepositoryInterface::class);
-        $taskRepository->method('findById')->willReturn(null);
+        $taskRepository->method('existsById')->willReturn(false);
+        $taskRepository->method('findById')->willReturn($stale);
 
         $notifier = $this->createMock(TelegramNotifierInterface::class);
         $notifier->expects($this->never())->method('notifyDownloadFailure');
@@ -594,12 +624,13 @@ final class DownloadMessageHandlerTest extends TestCase
         VideoProcessorInterface $videoProcessor,
         DownloadTaskManagerInterface $manager,
         MessageBusInterface $bus,
+        ?DownloadTaskRepositoryInterface $repository = null,
     ): DownloadMessageHandler {
         return new DownloadMessageHandler(
             $videoProcessor,
             $manager,
             $this->createStub(AuditLoggerInterface::class),
-            $this->createStub(DownloadTaskRepositoryInterface::class),
+            $repository ?? $this->createStub(DownloadTaskRepositoryInterface::class),
             $bus,
             $this->lock(),
             $this->createStub(TelegramNotifierInterface::class),

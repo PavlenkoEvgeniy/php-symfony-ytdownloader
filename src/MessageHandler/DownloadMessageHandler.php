@@ -67,14 +67,21 @@ final readonly class DownloadMessageHandler
                 $taskId,
             );
 
-            $task      = null !== $taskId ? $this->downloadTaskRepository->findById($taskId) : null;
+            // existsById guards the reload: after /cancel removed the row the
+            // identity map would still hand back the stale entity it hydrated
+            // at the start of the attempt, and the notification branch below
+            // would take it for a live task.
+            $task = null !== $taskId && $this->downloadTaskRepository->existsById($taskId)
+                ? $this->downloadTaskRepository->findById($taskId)
+                : null;
+
             $willRetry = $this->shouldRetry($task, $result);
 
-            if (null !== $taskId) {
+            if ($task instanceof DownloadTask) {
                 if ($result->isSuccess()) {
                     $this->downloadTaskManager->markSuccess($taskId);
                 } elseif ($willRetry) {
-                    $this->scheduleRetry($message, $taskId, $result, $task?->getAttempts() ?? 1);
+                    $this->scheduleRetry($message, $taskId, $result, $task->getAttempts());
                 } else {
                     $this->downloadTaskManager->markError($taskId, $result->errorMessage);
                 }
