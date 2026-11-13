@@ -47,9 +47,12 @@ help:
 env-setup:
 	@bash bin/generate-env.sh
 
-init: env-setup db-purge docker-compose-up composer-install generate-jwt-keypair db-setup cache-clear
+# Workers start with the container (ADR-0003); stop them around cache-clear:
+# a killed worker never redelivers its message, and a worker writing
+# var/cache while it is deleted fails the rm ("Directory not empty").
+init: env-setup db-purge docker-compose-up composer-install generate-jwt-keypair db-setup worker-stop cache-clear worker-start
 
-ci-cd-init: composer-install generate-jwt-keypair db-setup cache-clear
+ci-cd-init: composer-install generate-jwt-keypair db-setup worker-stop cache-clear worker-start
 
 build:
 	docker compose -f docker/docker-compose.yml up -d --build
