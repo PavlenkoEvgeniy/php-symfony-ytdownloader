@@ -21,6 +21,7 @@ use App\Service\DownloadTaskManagerInterface;
 use App\Service\TaskProcessingLeaseInterface;
 use App\Service\TaskProcessingLockInterface;
 use App\Service\TelegramNotifierInterface;
+use App\Service\TelegramUpdateHandlerInterface;
 use App\Service\VideoProcessorInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -144,6 +145,7 @@ final class DownloadMessageHandlerTest extends TestCase
             $this->createStub(MessageBusInterface::class),
             $lock,
             $this->createStub(TelegramNotifierInterface::class),
+            $this->createStub(TelegramUpdateHandlerInterface::class),
         );
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
@@ -213,6 +215,7 @@ final class DownloadMessageHandlerTest extends TestCase
             $bus,
             $this->lock(),
             $this->createStub(TelegramNotifierInterface::class),
+            $this->createStub(TelegramUpdateHandlerInterface::class),
         );
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
@@ -282,6 +285,7 @@ final class DownloadMessageHandlerTest extends TestCase
             $this->createStub(MessageBusInterface::class),
             $this->lock(),
             $notifier,
+            $this->createStub(TelegramUpdateHandlerInterface::class),
         );
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
@@ -343,6 +347,7 @@ final class DownloadMessageHandlerTest extends TestCase
             $this->createStub(MessageBusInterface::class),
             $this->lock(),
             $this->createStub(TelegramNotifierInterface::class),
+            $this->createStub(TelegramUpdateHandlerInterface::class),
         );
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
@@ -388,6 +393,7 @@ final class DownloadMessageHandlerTest extends TestCase
             $bus,
             $this->lock(),
             $this->createStub(TelegramNotifierInterface::class),
+            $this->createStub(TelegramUpdateHandlerInterface::class),
         );
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
@@ -428,6 +434,7 @@ final class DownloadMessageHandlerTest extends TestCase
             $this->createStub(MessageBusInterface::class),
             $this->lock(),
             $notifier,
+            $this->createStub(TelegramUpdateHandlerInterface::class),
         );
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '42', 7));
@@ -468,6 +475,11 @@ final class DownloadMessageHandlerTest extends TestCase
         $notifier->expects($this->once())->method('notifyFileTooLarge')->with('12345');
         $notifier->expects($this->never())->method('notifyDownloadFailure');
 
+        $updateHandler = $this->createMock(TelegramUpdateHandlerInterface::class);
+        $updateHandler->expects($this->once())
+            ->method('offerQualitySelection')
+            ->with(12_345, 12_345, 'https://test.local', 'https://test.local', 'best');
+
         $handler = new DownloadMessageHandler(
             $videoProcessor,
             new DownloadTaskManager($entityManager),
@@ -476,6 +488,7 @@ final class DownloadMessageHandlerTest extends TestCase
             $bus,
             $this->lock(),
             $notifier,
+            $updateHandler,
         );
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
@@ -519,6 +532,11 @@ final class DownloadMessageHandlerTest extends TestCase
         $notifier->expects($this->once())->method('notifyFileTooLarge')->with('12345');
         $notifier->expects($this->never())->method('notifyDownloadFailure');
 
+        $updateHandler = $this->createMock(TelegramUpdateHandlerInterface::class);
+        $updateHandler->expects($this->once())
+            ->method('offerQualitySelection')
+            ->with(12_345, 12_345, 'https://test.local', 'https://test.local', 'best');
+
         $handler = new DownloadMessageHandler(
             $videoProcessor,
             new DownloadTaskManager($entityManager),
@@ -527,6 +545,7 @@ final class DownloadMessageHandlerTest extends TestCase
             $bus,
             $this->lock(),
             $notifier,
+            $updateHandler,
         );
 
         $handler->__invoke(new DownloadMessage('https://test.local', 'best', '12345', 7));
@@ -548,6 +567,7 @@ final class DownloadMessageHandlerTest extends TestCase
             $bus,
             $this->lock(),
             $this->createStub(TelegramNotifierInterface::class),
+            $this->createStub(TelegramUpdateHandlerInterface::class),
         );
     }
 

@@ -17,6 +17,7 @@ use App\Service\AuditLoggerInterface;
 use App\Service\DownloadTaskManagerInterface;
 use App\Service\TaskProcessingLockInterface;
 use App\Service\TelegramNotifierInterface;
+use App\Service\TelegramUpdateHandlerInterface;
 use App\Service\VideoProcessorInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -36,6 +37,7 @@ final readonly class DownloadMessageHandler
         private MessageBusInterface $messageBus,
         private TaskProcessingLockInterface $taskProcessingLock,
         private TelegramNotifierInterface $telegramNotifier,
+        private TelegramUpdateHandlerInterface $telegramUpdateHandler,
     ) {
     }
 
@@ -128,6 +130,16 @@ final readonly class DownloadMessageHandler
 
         if ($sizeExceeded) {
             $this->telegramNotifier->notifyFileTooLarge((string) $chatId);
+
+            // In a private chat the chat id and the Telegram user id coincide,
+            // which is what the pending selection token is validated against.
+            $this->telegramUpdateHandler->offerQualitySelection(
+                $chatId,
+                $chatId,
+                $task->getUrlOrFail(),
+                $task->getTitle() ?? $task->getUrlOrFail(),
+                $task->getQualityOrFail(),
+            );
 
             return;
         }
