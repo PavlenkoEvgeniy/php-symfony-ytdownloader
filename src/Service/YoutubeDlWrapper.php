@@ -26,6 +26,7 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
         private float $timeout,
         #[Autowire(env: 'string:resolve:APP_DOWNLOADS_DIR')]
         private string $downloadsDir,
+        private float $stallTimeout = 60.0,
     ) {
     }
 
@@ -46,6 +47,9 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
             'yes-playlist'      => $allowPlaylist,
             'no-playlist'       => !$allowPlaylist,
             'newline'           => true,
+            // Quiet mode (implied by --print) suppresses the progress bar;
+            // --progress turns it back on so progress lines keep flowing.
+            'progress'          => true,
             'progress-template' => 'download:PROGRESS:%(progress._percent_str)s',
         ];
 
@@ -86,16 +90,65 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
             try {
                 $process->start();
 
-                foreach ($process as $type => $data) {
-                    if (Process::OUT === $type) {
-                        $stdout .= $data;
-                    } else {
-                        $stderr .= $data;
+                $lastActivity = \microtime(true);
+                $lastState    = $this->stagingState($workDir);
+
+                // The process iterator would only wake up on output, and a
+                // stalled run produces none: poll instead, treating output
+                // and changes to the staged files as activity. No change for
+                // the stall window means the transfer is dead.
+                while ($process->isRunning()) {
+                    $outChunk = $process->getIncrementalOutput();
+                    $errChunk = $process->getIncrementalErrorOutput();
+
+                    if ('' !== $outChunk) {
+                        $stdout .= $outChunk;
+                        $lastActivity = \microtime(true);
+
+                        if (null !== $onProgress) {
+                            $this->consumeProgress($outChunk, $buffer, $onProgress, $lastPercent);
+                        }
                     }
 
-                    if (null !== $onProgress) {
-                        $this->consumeProgress($data, $buffer, $onProgress, $lastPercent);
+                    if ('' !== $errChunk) {
+                        $stderr .= $errChunk;
+                        $lastActivity = \microtime(true);
                     }
+
+                    $state = $this->stagingState($workDir);
+
+                    if ($state !== $lastState) {
+                        $lastState    = $state;
+                        $lastActivity = \microtime(true);
+                    }
+
+                    if (\microtime(true) - $lastActivity >= $this->stallTimeout) {
+                        $process->stop(0);
+                        // Files completed before the stall are printed on
+                        // stdout: keep them, only the dead transfer is lost.
+                        $this->relocateReportedFiles($stdout, $workDir);
+
+                        return $this->createCollection([
+                            $this->createErroredVideo(\sprintf(
+                                'Download stalled: no changes for %d seconds.',
+                                (int) \round($this->stallTimeout),
+                            )),
+                        ]);
+                    }
+
+                    $process->checkTimeout();
+                    \usleep(200_000);
+                }
+
+                // Final drain: output written between the last poll and the exit.
+                $outChunk = $process->getIncrementalOutput();
+                $errChunk = $process->getIncrementalErrorOutput();
+
+                $stdout .= $outChunk;
+                $stderr .= $errChunk;
+
+                if (null !== $onProgress && '' !== $outChunk) {
+                    $this->consumeProgress($outChunk, $buffer, $onProgress, $lastPercent);
                 }
             } catch (ProcessTimedOutException) {
                 $process->stop(0);
@@ -223,6 +276,44 @@ final readonly class YoutubeDlWrapper implements YoutubeDlWrapperInterface
     private function workRoot(): string
     {
         return $this->downloadsDir . DIRECTORY_SEPARATOR . '.work';
+    }
+
+    /**
+     * Signature of the staging directory: name, size and mtime of every
+     * entry. A transfer that keeps writing changes it; a stalled one does not.
+     * Returns an empty string when there is no isolated directory to watch.
+     */
+    private function stagingState(?string $workDir): string
+    {
+        if (null === $workDir) {
+            return '';
+        }
+
+        // The worker is long-running: without dropping the stat cache every
+        // poll would see the sizes and mtimes of the first observation.
+        \clearstatcache();
+
+        $entries = @\scandir($workDir);
+
+        if (false === $entries) {
+            return '';
+        }
+
+        $state = [];
+
+        foreach ($entries as $entry) {
+            if ('.' === $entry || '..' === $entry) {
+                continue;
+            }
+
+            $path  = $workDir . DIRECTORY_SEPARATOR . $entry;
+            $mtime = @\filemtime($path);
+            $size  = @\filesize($path);
+
+            $state[] = $entry . '|' . (false === $size ? -1 : $size) . '|' . (false === $mtime ? -1 : $mtime);
+        }
+
+        return \implode("\n", $state);
     }
 
     private function removeDirectory(string $directory): void

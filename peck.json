@@ -9,6 +9,7 @@
             "monolog",
             "oskarstark",
             "filesize",
+            "mtime",
             "profiler",
             "easyadmin",
             "sourcefiles",
