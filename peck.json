@@ -121,7 +121,8 @@
             "dedup",
             "backoff",
             "poller",
-            "dedupe"
+            "dedupe",
+            "zh"
         ],
         "paths": [
             "vendor"

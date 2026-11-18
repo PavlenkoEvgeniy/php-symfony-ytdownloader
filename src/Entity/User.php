@@ -55,6 +55,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(name: 'telegram_linked_at', type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $telegramLinkedAt = null;
 
+    #[ORM\Column(name: 'bot_locale', type: Types::STRING, length: 5, nullable: true)]
+    private ?string $botLocale = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -256,5 +259,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getTelegramUserIdOrFail(): int
     {
         return $this->telegramUserId ?? throw PropertyIsNotSetException::forProperty('telegramUserId');
+    }
+
+    public function getBotLocale(): ?string
+    {
+        return $this->botLocale;
+    }
+
+    public function setBotLocale(?string $botLocale): static
+    {
+        $this->botLocale = $botLocale;
+
+        return $this;
     }
 }

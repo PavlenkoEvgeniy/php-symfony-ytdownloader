@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
+use App\Entity\User;
+use App\Repository\UserRepositoryInterface;
 use App\Service\TelegramClientInterface;
 use App\Service\TelegramNotifier;
 use PHPUnit\Framework\TestCase;
@@ -110,22 +112,56 @@ final class TelegramNotifierTest extends TestCase
         $this->notifier($client, $logger)->notifyFileTooLarge('42');
     }
 
-    private function notifier(TelegramClientInterface $client, ?LoggerInterface $logger = null): TelegramNotifier
+    private function notifier(TelegramClientInterface $client, ?LoggerInterface $logger = null, ?User $user = null): TelegramNotifier
     {
         $translator = $this->createStub(TranslatorInterface::class);
         $translator->method('trans')->willReturnCallback(
-            static fn (string $id): string => match ($id) {
-                'telegram.download_error' => 'Download failed. Please try again later.',
-                'telegram.file_too_large' => 'The file is too large for Telegram.',
-                'telegram.retry'          => 'Re-download',
-                default                   => $id,
+            static function (string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string {
+                if (null !== $locale && 'en' !== $locale) {
+                    return $id . '@' . $locale;
+                }
+
+                return match ($id) {
+                    'telegram.download_error' => 'Download failed. Please try again later.',
+                    'telegram.file_too_large' => 'The file is too large for Telegram.',
+                    'telegram.retry'          => 'Re-download',
+                    default                   => $id,
+                };
             },
         );
+
+        $users = $this->createStub(UserRepositoryInterface::class);
+        $users->method('findOneByTelegramUserId')->willReturn($user);
 
         return new TelegramNotifier(
             $client,
             $logger ?? $this->createStub(LoggerInterface::class),
             $translator,
+            $users,
         );
+    }
+
+    /**
+     * Verifies the failure notification speaks the language the chat's user
+     * chose.
+     */
+    public function testNotifyDownloadFailureUsesTheUsersLocale(): void
+    {
+        $user = new User();
+        $user->setBotLocale('ru');
+
+        $client = $this->createMock(TelegramClientInterface::class);
+        $client->expects($this->once())
+            ->method('sendMessage')
+            ->with(
+                42,
+                'telegram.download_error@ru',
+                $this->callback(static function (array $markup): bool {
+                    return 'telegram.retry@ru' === ($markup['inline_keyboard'][0][0]['text'] ?? null);
+                }),
+            )
+            ->willReturn(1);
+
+        $this->notifier($client, null, $user)->notifyDownloadFailure('42', 7);
     }
 }
