@@ -23,6 +23,10 @@ use PHPUnit\Framework\TestCase;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Translation\Loader\ArrayLoader;
+use Symfony\Component\Translation\Translator;
+use Symfony\Component\Yaml\Yaml;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class TelegramUpdateHandlerTest extends TestCase
 {
@@ -1006,7 +1010,7 @@ final class TelegramUpdateHandlerTest extends TestCase
         $client->expects($this->once())->method('answerCallbackQuery')->with('callback-1', 'Queued');
         $client->expects($this->once())
             ->method('editMessageText')
-            ->with(42, 7, 'Queued: Test (poor)');
+            ->with(42, 7, 'Queued: Test (Poor)');
 
         $this->handler(users: $users, client: $client, cache: $cache, dispatcher: $dispatcher)
             ->handle($this->callbackUpdate(\sprintf('dl:%s:poor', $token)));
@@ -1385,6 +1389,164 @@ final class TelegramUpdateHandlerTest extends TestCase
         $this->assertStringContainsString('bestaudio', $probed[1]);
     }
 
+    /**
+     * Verifies /info reports the version and the deployment time from the
+     * .env mtime in UTC.
+     */
+    public function testInfoReportsVersionAndUpdateTime(): void
+    {
+        $dir = \sys_get_temp_dir() . '/yt_info_' . \bin2hex(\random_bytes(4));
+        \mkdir($dir);
+        \touch($dir . '/.env', 1795010000);
+
+        try {
+            $client = $this->createMock(TelegramClientInterface::class);
+            $client->expects($this->once())
+                ->method('sendMessage')
+                ->with(
+                    42,
+                    \sprintf("Version: 1.2.3\nUpdated: %s UTC", \gmdate('Y-m-d H:i', 1795010000)),
+                    ['remove_keyboard' => true],
+                );
+
+            $this->handler(client: $client, appVersion: '1.2.3', projectDir: $dir)
+                ->handle($this->message('/info'));
+        } finally {
+            @\unlink($dir . '/.env');
+            @\rmdir($dir);
+        }
+    }
+
+    /**
+     * Verifies /info degrades to "unknown" instead of failing when the
+     * deployment file is missing.
+     */
+    public function testInfoWithoutDeployFileSaysUnknown(): void
+    {
+        $client = $this->createMock(TelegramClientInterface::class);
+        $client->expects($this->once())
+            ->method('sendMessage')
+            ->with(42, "Version: 9.9.9\nUpdated: unknown UTC", ['remove_keyboard' => true]);
+
+        $this->handler(client: $client, appVersion: '9.9.9', projectDir: '/nonexistent-' . \bin2hex(\random_bytes(4)))
+            ->handle($this->message('/info'));
+    }
+
+    /**
+     * Verifies /language offers every supported language in its own script.
+     */
+    public function testLanguageCommandListsEveryLanguage(): void
+    {
+        $user = new User();
+
+        $user->setTelegramUserId(42)->setIsEnabled(true)->setBotLocale('en');
+
+        $users = $this->createStub(UserRepositoryInterface::class);
+        $users->method('findOneByTelegramUserId')->willReturn($user);
+
+        $codes = [];
+        $count = 0;
+
+        $client = $this->createMock(TelegramClientInterface::class);
+        $client->expects($this->once())
+            ->method('sendMessage')
+            ->with(
+                42,
+                $this->stringContains('Choose'),
+                $this->callback(static function (array $markup) use (&$codes, &$count): bool {
+                    $buttons = \array_merge(...$markup['inline_keyboard']);
+                    $count   = \count($buttons);
+
+                    foreach ($buttons as $button) {
+                        $codes[] = $button['callback_data'];
+                    }
+
+                    return true;
+                }),
+            );
+
+        $this->handler(users: $users, client: $client)->handle($this->message('/language'));
+
+        $this->assertSame(10, $count);
+        $this->assertSame(
+            ['lang:en', 'lang:ru', 'lang:es', 'lang:pt', 'lang:de', 'lang:fr', 'lang:tr', 'lang:ar', 'lang:hi', 'lang:zh'],
+            $codes,
+        );
+    }
+
+    /**
+     * Verifies choosing a language stores it and confirms in that language.
+     */
+    public function testLanguageChoiceIsSavedAndConfirmed(): void
+    {
+        $user = new User();
+
+        $user->setTelegramUserId(42)->setIsEnabled(true)->setBotLocale('en');
+
+        $users = $this->createStub(UserRepositoryInterface::class);
+        $users->method('findOneByTelegramUserId')->willReturn($user);
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->once())->method('flush');
+
+        $savedRu = $this->translator()->trans('telegram.language.saved', [], 'messages', 'ru');
+
+        $client = $this->createMock(TelegramClientInterface::class);
+        $client->expects($this->once())
+            ->method('answerCallbackQuery')
+            ->with('callback-1', $savedRu);
+        $client->expects($this->once())
+            ->method('editMessageText')
+            ->with(42, 7, $savedRu, ['inline_keyboard' => []]);
+
+        $this->handler(users: $users, client: $client, entityManager: $entityManager)
+            ->handle($this->callbackUpdate('lang:ru'));
+
+        $this->assertSame('ru', $user->getBotLocale());
+    }
+
+    /**
+     * Verifies later messages use the chosen language.
+     */
+    public function testMessagesFollowTheChosenLocale(): void
+    {
+        $user = new User();
+
+        $user->setTelegramUserId(42)->setIsEnabled(true)->setBotLocale('ru');
+
+        $users = $this->createStub(UserRepositoryInterface::class);
+        $users->method('findOneByTelegramUserId')->willReturn($user);
+
+        $helpRu = $this->translator()->trans('telegram.bot.help', [], 'messages', 'ru');
+
+        $client = $this->createMock(TelegramClientInterface::class);
+        $client->expects($this->once())
+            ->method('sendMessage')
+            ->with(42, $helpRu, ['remove_keyboard' => true]);
+
+        $this->handler(users: $users, client: $client)->handle($this->message('/help'));
+    }
+
+    /**
+     * Real translations from the shipped locale files, so assertions can
+     * stay written in English while exercising other locales too.
+     */
+    private function translator(): TranslatorInterface
+    {
+        $translator = new Translator('en');
+        $translator->addLoader('array', new ArrayLoader());
+
+        foreach (['en', 'ru', 'es', 'pt', 'de', 'fr', 'tr', 'ar', 'hi', 'zh'] as $locale) {
+            $file = \dirname(__DIR__, 2) . '/translations/messages.' . $locale . '.yaml';
+
+            if (\is_file($file)) {
+                $translator->addResource('array', Yaml::parseFile($file), $locale, 'messages');
+            }
+        }
+
+        return $translator;
+    }
+
     private function handler(
         ?UserRepositoryInterface $users = null,
         ?DownloadTaskRepositoryInterface $tasks = null,
@@ -1398,6 +1560,9 @@ final class TelegramUpdateHandlerTest extends TestCase
         string $hostUrl = 'https://test.local',
         ?DownloadSizeEstimatorInterface $sizeEstimator = null,
         int $telegramMaxUploadMb = 2048,
+        string $appVersion = '0.0.0-test',
+        string $projectDir = '',
+        ?TranslatorInterface $translator = null,
     ): TelegramUpdateHandler {
         return new TelegramUpdateHandler(
             $users ?? $this->createStub(UserRepositoryInterface::class),
@@ -1413,6 +1578,9 @@ final class TelegramUpdateHandlerTest extends TestCase
             new FormatResolver(),
             $sizeEstimator ?? $this->createStub(DownloadSizeEstimatorInterface::class),
             $telegramMaxUploadMb,
+            $translator ?? $this->translator(),
+            $appVersion,
+            $projectDir,
         );
     }
 

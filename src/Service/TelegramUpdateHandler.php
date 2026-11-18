@@ -14,20 +14,31 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInterface
 {
     private const int LINK_TOKEN_TTL    = 600;
     private const int PENDING_TOKEN_TTL = 900;
 
-    private const string ACTIVE_DOWNLOAD_HINT = 'You already have a download in progress. Wait for it to finish, or cancel it with /cancel.';
+    /** @var list<string> */
+    private const array QUALITY_CODES = ['best', 'moderate', 'poor', 'audio'];
 
-    /** @var list<array{string, string}> */
-    private const array QUALITIES = [
-        ['best', 'Best'],
-        ['moderate', 'Moderate'],
-        ['poor', 'Poor'],
-        ['audio', 'Audio'],
+    /** @var list<string> */
+    private const array LANGUAGE_CODES = ['en', 'ru', 'es', 'pt', 'de', 'fr', 'tr', 'ar', 'hi', 'zh'];
+
+    /** @var array<string, string> */
+    private const array LANGUAGE_NAMES = [
+        'en' => 'English',
+        'ru' => 'Русский',
+        'es' => 'Español',
+        'pt' => 'Português',
+        'de' => 'Deutsch',
+        'fr' => 'Français',
+        'tr' => 'Türkçe',
+        'ar' => 'العربية',
+        'hi' => 'हिन्दी',
+        'zh' => '中文',
     ];
 
     public function __construct(
@@ -47,7 +58,27 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         private DownloadSizeEstimatorInterface $sizeEstimator,
         #[Autowire(env: 'int:TELEGRAM_MAX_UPLOAD_MB')]
         private int $telegramMaxUploadMb,
+        private TranslatorInterface $translator,
+        #[Autowire(env: 'string:APP_VERSION')]
+        private string $appVersion,
+        #[Autowire('%kernel.project_dir%')]
+        private string $projectDir,
     ) {
+    }
+
+    /**
+     * @param array<string, mixed> $parameters
+     */
+    private function t(string $key, array $parameters = [], ?string $locale = null): string
+    {
+        return $this->translator->trans($key, $parameters, 'messages', $locale);
+    }
+
+    private function localeOf(?User $user): string
+    {
+        $locale = $user?->getBotLocale();
+
+        return null === $locale ? 'en' : $locale;
     }
 
     #[\Override]
@@ -79,7 +110,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         }
 
         if ('private' !== $chatType) {
-            $this->telegramClient->sendMessage($chatId, 'I work only in private chats.');
+            $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.private_only'));
 
             return;
         }
@@ -96,7 +127,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             return;
         }
 
-        $this->telegramClient->sendMessage($chatId, 'Send me an https:// link to a video.', $this->hiddenKeyboard());
+        $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.send_link'), $this->hiddenKeyboard());
     }
 
     private function parseCommand(string $text): string
@@ -112,12 +143,14 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
     private function handleCommand(string $command, int $chatId, int $userId, array $from): void
     {
         match ($command) {
-            '/start'  => $this->handleStart($chatId, $userId),
-            '/login'  => $this->handleLogin($chatId, $userId, $from),
-            '/logout' => $this->handleLogout($chatId, $userId),
-            '/cancel' => $this->handleCancel($chatId, $userId),
-            '/status' => $this->handleStatus($chatId, $userId),
-            default   => $this->sendHelp($chatId),
+            '/start'    => $this->handleStart($chatId, $userId),
+            '/login'    => $this->handleLogin($chatId, $userId, $from),
+            '/logout'   => $this->handleLogout($chatId, $userId),
+            '/cancel'   => $this->handleCancel($chatId, $userId),
+            '/status'   => $this->handleStatus($chatId, $userId),
+            '/info'     => $this->handleInfo($chatId, $userId),
+            '/language' => $this->handleLanguage($chatId, $userId),
+            default     => $this->sendHelp($chatId, $userId),
         };
     }
 
@@ -133,7 +166,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
 
         $this->telegramClient->sendMessage(
             $chatId,
-            "Welcome to YT Downloader.\n\nLink your account first with /login.",
+            $this->t('telegram.bot.welcome_unlinked'),
             $this->hiddenKeyboard(),
         );
     }
@@ -148,7 +181,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         if ($existing instanceof User) {
             $this->telegramClient->sendMessage(
                 $chatId,
-                \sprintf('Already linked as %s. Use /logout to unlink.', $this->telegramLabel($existing)),
+                $this->t('telegram.bot.login_already_linked', ['%account%' => $this->telegramLabel($existing)], $this->localeOf($existing)),
                 $this->hiddenKeyboard(),
             );
 
@@ -168,7 +201,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
 
         $this->telegramClient->sendMessage(
             $chatId,
-            \sprintf("Open this link to sign in and link your account:\n%s\n\nThe link expires in 10 minutes.", $url),
+            $this->t('telegram.bot.login_flow', ['%url%' => $url]),
             $this->hiddenKeyboard(),
         );
     }
@@ -187,7 +220,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $user->unlinkTelegram();
         $this->entityManager->flush();
 
-        $this->telegramClient->sendMessage($chatId, 'Unlinked. Queued downloads were cancelled.', $this->hiddenKeyboard());
+        $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.logout_done', [], $this->localeOf($user)), $this->hiddenKeyboard());
     }
 
     private function handleCancel(int $chatId, int $userId): void
@@ -206,7 +239,9 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
 
         $this->telegramClient->sendMessage(
             $chatId,
-            $cancelled > 0 ? \sprintf('Cancelled %d download(s).', $cancelled) : 'Nothing to cancel.',
+            $cancelled > 0
+                ? $this->t('telegram.bot.cancelled', ['%count%' => $cancelled], $this->localeOf($user))
+                : $this->t('telegram.bot.nothing_to_cancel', [], $this->localeOf($user)),
             $this->hiddenKeyboard(),
         );
     }
@@ -222,7 +257,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $tasks = $this->downloadTaskRepository->findActiveByUser($user);
 
         if ([] === $tasks) {
-            $this->telegramClient->sendMessage($chatId, 'No active downloads.', $this->hiddenKeyboard());
+            $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.status_empty', [], $this->localeOf($user)), $this->hiddenKeyboard());
 
             return;
         }
@@ -239,14 +274,71 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             );
         }
 
-        $this->telegramClient->sendMessage($chatId, "Active downloads:\n" . \implode("\n", $lines), $this->hiddenKeyboard());
+        $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.status_list', ['%list%' => \implode("\n", $lines)], $this->localeOf($user)), $this->hiddenKeyboard());
     }
 
-    private function sendHelp(int $chatId): void
+    private function handleInfo(int $chatId, int $userId): void
     {
+        $locale = $this->localeOf($this->userRepository->findOneByTelegramUserId($userId));
+
         $this->telegramClient->sendMessage(
             $chatId,
-            "Commands:\n/start — start\n/login — link your account\n/logout — unlink\n/cancel — cancel queued downloads\n/status — active downloads\n/help — this message\n\nOr send an https:// video link.",
+            $this->t('telegram.info.reply', [
+                '%version%' => $this->appVersion,
+                '%updated%' => $this->lastUpdateTime($locale),
+            ], $locale),
+            $this->hiddenKeyboard(),
+        );
+    }
+
+    /**
+     * Offers the language list; the choice is saved per linked user.
+     */
+    private function handleLanguage(int $chatId, int $userId): void
+    {
+        $user = $this->resolveUser($chatId, $userId);
+
+        if (!$user instanceof User) {
+            return;
+        }
+
+        $locale = $this->localeOf($user);
+
+        $this->telegramClient->sendMessage($chatId, $this->t('telegram.language.prompt', [], $locale), [
+            'inline_keyboard' => \array_chunk(
+                \array_map(
+                    static fn (string $code): array => [
+                        'text'          => self::LANGUAGE_NAMES[$code],
+                        'callback_data' => 'lang:' . $code,
+                    ],
+                    self::LANGUAGE_CODES,
+                ),
+                2,
+            ),
+        ]);
+    }
+
+    /**
+     * The release checkout rewrites .env at every deploy (the version bump),
+     * so its mtime marks when this version arrived.
+     */
+    private function lastUpdateTime(string $locale): string
+    {
+        $envFile   = \rtrim($this->projectDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.env';
+        $timestamp = \is_file($envFile) ? @\filemtime($envFile) : false;
+
+        return false === $timestamp
+            ? $this->t('telegram.info.unknown', [], $locale)
+            : \gmdate('Y-m-d H:i', $timestamp);
+    }
+
+    private function sendHelp(int $chatId, int $userId): void
+    {
+        $locale = $this->localeOf($this->userRepository->findOneByTelegramUserId($userId));
+
+        $this->telegramClient->sendMessage(
+            $chatId,
+            $this->t('telegram.bot.help', [], $locale),
             $this->hiddenKeyboard(),
         );
     }
@@ -260,13 +352,13 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         }
 
         if (\strlen($url) > 512) {
-            $this->telegramClient->sendMessage($chatId, 'The link is too long.', $this->hiddenKeyboard());
+            $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.link_too_long', [], $this->localeOf($user)), $this->hiddenKeyboard());
 
             return;
         }
 
         if ($this->downloadTaskRepository->findActiveByUserAndUrl($user, $url) instanceof DownloadTask) {
-            $this->telegramClient->sendMessage($chatId, 'This link is already queued.', $this->hiddenKeyboard());
+            $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.link_already_queued', [], $this->localeOf($user)), $this->hiddenKeyboard());
 
             return;
         }
@@ -274,18 +366,20 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         // One download at a time per user: an active task answers before the
         // link is even probed.
         if ([] !== $this->downloadTaskRepository->findActiveByUser($user, 1)) {
-            $this->telegramClient->sendMessage($chatId, self::ACTIVE_DOWNLOAD_HINT, $this->hiddenKeyboard());
+            $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.active_download_hint', [], $this->localeOf($user)), $this->hiddenKeyboard());
 
             return;
         }
 
-        $this->telegramClient->sendMessage($chatId, 'Checking link…');
+        $locale = $this->localeOf($user);
+
+        $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.checking_link', [], $locale));
 
         try {
             $probe = $this->probe->probe($url);
         } catch (\Throwable $exception) {
             $this->logger->info('Telegram link probe failed', ['url' => $url, 'error' => $exception->getMessage()]);
-            $this->telegramClient->sendMessage($chatId, 'Could not read this link.', $this->hiddenKeyboard());
+            $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.probe_failed', [], $this->localeOf($user)), $this->hiddenKeyboard());
 
             return;
         }
@@ -293,7 +387,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         if ($probe->isPlaylist) {
             $this->telegramClient->sendMessage(
                 $chatId,
-                'Playlists are not supported. Send a link to a single video.',
+                $this->t('telegram.bot.playlist_unsupported', [], $this->localeOf($user)),
                 $this->hiddenKeyboard(),
             );
 
@@ -313,8 +407,11 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
 
         $buttons = [];
 
-        foreach (self::QUALITIES as [$quality, $label]) {
-            $buttons[] = ['text' => $label, 'callback_data' => \sprintf('dl:%s:%s', $token, $quality)];
+        foreach (self::QUALITY_CODES as $quality) {
+            $buttons[] = [
+                'text'          => $this->t('telegram.bot.quality.' . $quality, [], $locale),
+                'callback_data' => \sprintf('dl:%s:%s', $token, $quality),
+            ];
         }
 
         $caption = $probe->title;
@@ -323,7 +420,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             $caption .= \sprintf(' (%s)', $this->formatDuration($probe->duration));
         }
 
-        $this->telegramClient->sendMessage($chatId, $caption . "\n\nChoose quality:", [
+        $this->telegramClient->sendMessage($chatId, $caption . "\n\n" . $this->t('telegram.bot.choose_quality', [], $locale), [
             'inline_keyboard' => \array_chunk($buttons, 2),
         ]);
     }
@@ -336,11 +433,12 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         string $title,
         string $rejectedQuality,
     ): void {
+        $locale  = $this->localeOf($this->userRepository->findOneByTelegramUserId($telegramUserId));
         $offered = $this->offeredQualities($url, $rejectedQuality);
 
         if ([] === $offered) {
             try {
-                $this->telegramClient->sendMessage($chatId, 'No other quality fits the Telegram limit.', $this->hiddenKeyboard());
+                $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.no_quality_fits', [], $locale), $this->hiddenKeyboard());
             } catch (\Throwable $exception) {
                 $this->logger->error('Failed to send the empty quality selection answer', ['error' => $exception->getMessage()]);
             }
@@ -363,14 +461,17 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
 
         $buttons = [];
 
-        foreach (self::QUALITIES as [$quality, $label]) {
+        foreach (self::QUALITY_CODES as $quality) {
             if (\in_array($quality, $offered, true)) {
-                $buttons[] = ['text' => $label, 'callback_data' => \sprintf('dl:%s:%s', $token, $quality)];
+                $buttons[] = [
+                    'text'          => $this->t('telegram.bot.quality.' . $quality, [], $locale),
+                    'callback_data' => \sprintf('dl:%s:%s', $token, $quality),
+                ];
             }
         }
 
         try {
-            $this->telegramClient->sendMessage($chatId, 'Choose quality:', [
+            $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.choose_quality', [], $locale), [
                 'inline_keyboard' => \array_chunk($buttons, 2),
             ]);
         } catch (\Throwable $exception) {
@@ -390,7 +491,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
      */
     private function offeredQualities(string $url, string $rejectedQuality): array
     {
-        $names          = \array_column(self::QUALITIES, 0);
+        $names          = self::QUALITY_CODES;
         $rejectedIndex  = \array_search($rejectedQuality, $names, true);
         $rejectedIndex  = false === $rejectedIndex ? -1 : $rejectedIndex;
         $limitBytes     = $this->telegramMaxUploadMb * 1024 * 1024;
@@ -437,6 +538,14 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             return;
         }
 
+        if (1 === \preg_match('/^lang:([a-z]{2})$/', $data, $languageMatches)
+            && \in_array($languageMatches[1], self::LANGUAGE_CODES, true)
+        ) {
+            $this->handleLanguageChoice($languageMatches[1], $callbackId, $chatId, $messageId, $userId);
+
+            return;
+        }
+
         if (1 === \preg_match('/^retry:(\d+)$/', $data, $retryMatches)) {
             $this->handleRetry((int) $retryMatches[1], $callbackId, $chatId, $userId);
 
@@ -444,7 +553,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         }
 
         if (1 !== \preg_match('/^dl:([a-f0-9]{32}):(best|moderate|poor|audio)$/', $data, $matches)) {
-            $this->telegramClient->answerCallbackQuery($callbackId, 'Unknown action.');
+            $this->telegramClient->answerCallbackQuery($callbackId, $this->t('telegram.bot.unknown_action'));
 
             return;
         }
@@ -458,7 +567,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             || ($pending['token'] ?? null) !== $matches[1]
             || (int) ($pending['telegram_user_id'] ?? 0) !== $userId
         ) {
-            $this->telegramClient->answerCallbackQuery($callbackId, 'This selection has expired. Send the link again.');
+            $this->telegramClient->answerCallbackQuery($callbackId, $this->t('telegram.bot.selection_expired'));
 
             return;
         }
@@ -467,7 +576,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $user    = $this->resolveUser($chatId, $userId);
 
         if (!$user instanceof User) {
-            $this->telegramClient->answerCallbackQuery($callbackId, 'Please link your account first.');
+            $this->telegramClient->answerCallbackQuery($callbackId, $this->t('telegram.bot.link_account_first'));
 
             return;
         }
@@ -487,23 +596,23 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
                 $title,
             );
         } catch (InsufficientDiskSpaceException) {
-            $this->telegramClient->answerCallbackQuery($callbackId, 'Not enough free disk space. Try again later.');
+            $this->telegramClient->answerCallbackQuery($callbackId, $this->t('telegram.bot.disk_space', [], $this->localeOf($user)));
 
             return;
         } catch (\Throwable $exception) {
             $this->logger->error('Failed to queue a Telegram download', ['url' => $url, 'error' => $exception->getMessage()]);
-            $this->telegramClient->answerCallbackQuery($callbackId, 'Could not queue the download.');
+            $this->telegramClient->answerCallbackQuery($callbackId, $this->t('telegram.bot.queue_failed', [], $this->localeOf($user)));
 
             return;
         }
 
-        $this->telegramClient->answerCallbackQuery($callbackId, 'Queued');
+        $this->telegramClient->answerCallbackQuery($callbackId, $this->t('telegram.bot.queued_toast', [], $this->localeOf($user)));
 
         try {
             $this->telegramClient->editMessageText(
                 $chatId,
                 $messageId,
-                \sprintf('Queued: %s (%s)', $title, $quality),
+                $this->t('telegram.bot.queued_edit', ['%title%' => $title, '%quality%' => $this->t('telegram.bot.quality.' . $quality, [], $this->localeOf($user))], $this->localeOf($user)),
             );
         } catch (\Throwable $exception) {
             $this->logger->info('Failed to edit the Telegram quality message', ['error' => $exception->getMessage()]);
@@ -524,24 +633,52 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             || $task->getUser()?->getId() !== $user->getId()
             || DownloadTask::STATUS_ERROR !== $task->getStatus()
         ) {
-            $this->telegramClient->answerCallbackQuery($callbackId, 'This download cannot be retried.');
+            $this->telegramClient->answerCallbackQuery($callbackId, $this->t('telegram.bot.retry_impossible', [], $this->localeOf($user)));
 
             return;
         }
 
         // Re-download would queue a second task: the single-slot rule applies.
         if ([] !== $this->downloadTaskRepository->findActiveByUser($user, 1)) {
-            $this->telegramClient->answerCallbackQuery($callbackId, self::ACTIVE_DOWNLOAD_HINT);
+            $this->telegramClient->answerCallbackQuery($callbackId, $this->t('telegram.bot.active_download_hint', [], $this->localeOf($user)));
 
             return;
         }
 
         $retried = $this->downloadRetryService->reDownload($taskId, $user, AuditChannel::TELEGRAM);
 
+        $locale = $this->localeOf($user);
+
         $this->telegramClient->answerCallbackQuery(
             $callbackId,
-            $retried ? 'Queued again.' : 'This download cannot be retried.',
+            $retried
+                ? $this->t('telegram.bot.retried', [], $locale)
+                : $this->t('telegram.bot.retry_impossible', [], $locale),
         );
+    }
+
+    private function handleLanguageChoice(string $locale, string $callbackId, int $chatId, int $messageId, int $userId): void
+    {
+        $user = $this->userRepository->findOneByTelegramUserId($userId);
+
+        if (!$user instanceof User) {
+            $this->telegramClient->answerCallbackQuery($callbackId, $this->t('telegram.bot.link_account_first'));
+
+            return;
+        }
+
+        $user->setBotLocale($locale);
+        $this->entityManager->flush();
+
+        $this->telegramClient->answerCallbackQuery($callbackId, $this->t('telegram.language.saved', [], $locale));
+
+        if ($messageId > 0) {
+            try {
+                $this->telegramClient->editMessageText($chatId, $messageId, $this->t('telegram.language.saved', [], $locale), ['inline_keyboard' => []]);
+            } catch (\Throwable $exception) {
+                $this->logger->info('Failed to edit the language message', ['error' => $exception->getMessage()]);
+            }
+        }
     }
 
     private function resolveUser(int $chatId, int $userId): ?User
@@ -549,13 +686,13 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $user = $this->userRepository->findOneByTelegramUserId($userId);
 
         if (!$user instanceof User) {
-            $this->telegramClient->sendMessage($chatId, 'Your Telegram account is not linked. Use /login to link it.', $this->hiddenKeyboard());
+            $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.not_linked'), $this->hiddenKeyboard());
 
             return null;
         }
 
         if (!$user->getIsEnabled()) {
-            $this->telegramClient->sendMessage($chatId, 'This account is disabled.', $this->hiddenKeyboard());
+            $this->telegramClient->sendMessage($chatId, $this->t('telegram.bot.account_disabled', [], $this->localeOf($user)), $this->hiddenKeyboard());
 
             return null;
         }
@@ -565,10 +702,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
 
     private function linkedWelcome(User $user): string
     {
-        return \sprintf(
-            "You are linked as %s.\n\nSend me an https:// video link or use /help.",
-            $this->telegramLabel($user),
-        );
+        return $this->t('telegram.bot.linked_welcome', ['%account%' => $this->telegramLabel($user)], $this->localeOf($user));
     }
 
     private function telegramLabel(User $user): string
