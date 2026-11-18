@@ -22,3 +22,5 @@ framework:
         routing:
             App\Message\DownloadMessage: async
             App\Message\TelegramDeliveryMessage: async
+            # The webhook acknowledges at once and the worker processes the update.
+            App\Message\TelegramUpdateMessage: async
