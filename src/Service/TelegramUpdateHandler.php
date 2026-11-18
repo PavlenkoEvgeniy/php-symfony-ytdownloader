@@ -47,6 +47,10 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         private DownloadSizeEstimatorInterface $sizeEstimator,
         #[Autowire(env: 'int:TELEGRAM_MAX_UPLOAD_MB')]
         private int $telegramMaxUploadMb,
+        #[Autowire(env: 'string:APP_VERSION')]
+        private string $appVersion,
+        #[Autowire('%kernel.project_dir%')]
+        private string $projectDir,
     ) {
     }
 
@@ -117,6 +121,7 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
             '/logout' => $this->handleLogout($chatId, $userId),
             '/cancel' => $this->handleCancel($chatId, $userId),
             '/status' => $this->handleStatus($chatId, $userId),
+            '/info'   => $this->handleInfo($chatId),
             default   => $this->sendHelp($chatId),
         };
     }
@@ -242,11 +247,32 @@ final readonly class TelegramUpdateHandler implements TelegramUpdateHandlerInter
         $this->telegramClient->sendMessage($chatId, "Active downloads:\n" . \implode("\n", $lines), $this->hiddenKeyboard());
     }
 
+    private function handleInfo(int $chatId): void
+    {
+        $this->telegramClient->sendMessage(
+            $chatId,
+            \sprintf("Version: %s\nUpdated: %s UTC", $this->appVersion, $this->lastUpdateTime()),
+            $this->hiddenKeyboard(),
+        );
+    }
+
+    /**
+     * The release checkout rewrites .env at every deploy (the version bump),
+     * so its mtime marks when this version arrived.
+     */
+    private function lastUpdateTime(): string
+    {
+        $envFile   = \rtrim($this->projectDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . '.env';
+        $timestamp = \is_file($envFile) ? @\filemtime($envFile) : false;
+
+        return false === $timestamp ? 'unknown' : \gmdate('Y-m-d H:i', $timestamp);
+    }
+
     private function sendHelp(int $chatId): void
     {
         $this->telegramClient->sendMessage(
             $chatId,
-            "Commands:\n/start — start\n/login — link your account\n/logout — unlink\n/cancel — cancel queued downloads\n/status — active downloads\n/help — this message\n\nOr send an https:// video link.",
+            "Commands:\n/start — start\n/login — link your account\n/logout — unlink\n/cancel — cancel queued downloads\n/status — active downloads\n/info — version and last update\n/help — this message\n\nOr send an https:// video link.",
             $this->hiddenKeyboard(),
         );
     }

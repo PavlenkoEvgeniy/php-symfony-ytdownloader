@@ -1385,6 +1385,49 @@ final class TelegramUpdateHandlerTest extends TestCase
         $this->assertStringContainsString('bestaudio', $probed[1]);
     }
 
+    /**
+     * Verifies /info reports the version and the deployment time from the
+     * .env mtime in UTC.
+     */
+    public function testInfoReportsVersionAndUpdateTime(): void
+    {
+        $dir = \sys_get_temp_dir() . '/yt_info_' . \bin2hex(\random_bytes(4));
+        \mkdir($dir);
+        \touch($dir . '/.env', 1795010000);
+
+        try {
+            $client = $this->createMock(TelegramClientInterface::class);
+            $client->expects($this->once())
+                ->method('sendMessage')
+                ->with(
+                    42,
+                    \sprintf("Version: 1.2.3\nUpdated: %s UTC", \gmdate('Y-m-d H:i', 1795010000)),
+                    ['remove_keyboard' => true],
+                );
+
+            $this->handler(client: $client, appVersion: '1.2.3', projectDir: $dir)
+                ->handle($this->message('/info'));
+        } finally {
+            @\unlink($dir . '/.env');
+            @\rmdir($dir);
+        }
+    }
+
+    /**
+     * Verifies /info degrades to "unknown" instead of failing when the
+     * deployment file is missing.
+     */
+    public function testInfoWithoutDeployFileSaysUnknown(): void
+    {
+        $client = $this->createMock(TelegramClientInterface::class);
+        $client->expects($this->once())
+            ->method('sendMessage')
+            ->with(42, "Version: 9.9.9\nUpdated: unknown UTC", ['remove_keyboard' => true]);
+
+        $this->handler(client: $client, appVersion: '9.9.9', projectDir: '/nonexistent-' . \bin2hex(\random_bytes(4)))
+            ->handle($this->message('/info'));
+    }
+
     private function handler(
         ?UserRepositoryInterface $users = null,
         ?DownloadTaskRepositoryInterface $tasks = null,
@@ -1398,6 +1441,8 @@ final class TelegramUpdateHandlerTest extends TestCase
         string $hostUrl = 'https://test.local',
         ?DownloadSizeEstimatorInterface $sizeEstimator = null,
         int $telegramMaxUploadMb = 2048,
+        string $appVersion = '0.0.0-test',
+        string $projectDir = '',
     ): TelegramUpdateHandler {
         return new TelegramUpdateHandler(
             $users ?? $this->createStub(UserRepositoryInterface::class),
@@ -1413,6 +1458,8 @@ final class TelegramUpdateHandlerTest extends TestCase
             new FormatResolver(),
             $sizeEstimator ?? $this->createStub(DownloadSizeEstimatorInterface::class),
             $telegramMaxUploadMb,
+            $appVersion,
+            $projectDir,
         );
     }
 

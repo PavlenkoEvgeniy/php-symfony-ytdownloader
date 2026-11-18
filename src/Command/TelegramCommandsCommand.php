@@ -25,6 +25,7 @@ final readonly class TelegramCommandsCommand
         ['command' => 'logout', 'description' => 'Unlink your account'],
         ['command' => 'cancel', 'description' => 'Cancel queued downloads'],
         ['command' => 'status', 'description' => 'List active downloads'],
+        ['command' => 'info', 'description' => 'Version and last update'],
         ['command' => 'help', 'description' => 'Show the command list'],
     ];
 
