@@ -15,9 +15,9 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * Confirms a Telegram update at once: probing a link and replying happen in
- * the background worker. A synchronous handler outlived Telegram's webhook
- * window and every timeout redelivered the update, repeating its side
- * effects and starving the updates queued behind it.
+ * the background worker. A synchronous handler outlived the webhook window
+ * and every timeout redelivered the update, repeating its side effects and
+ * starving the updates queued behind it.
  */
 #[Route('/telegram/hook', name: 'telegram_hook', methods: [Request::METHOD_POST])]
 final class HookController extends AbstractController

@@ -157,9 +157,11 @@ docker-pgsql:
 	docker exec -it ytdownloader-pgsql bash
 
 # Rebuild cache as www-data; the root rm drops caches left by root processes.
+# The rm retries: a php-fpm request can recreate cache files between the
+# worker stop and the delete ("Directory not empty" on the first try).
 cache-clear:
 	docker exec ytdownloader-php-fpm sh -c 'for i in $$(seq 1 60); do supervisorctl status queue-reset-once 2>/dev/null | grep -Eq "RUNNING|STARTING" || exit 0; sleep 1; done; exit 1'
-	docker exec ytdownloader-php-fpm rm -rf var/cache
+	docker exec ytdownloader-php-fpm sh -c 'for i in $$(seq 1 5); do rm -rf var/cache && [ ! -d var/cache ] && exit 0; sleep 1; done; ls -la var/cache; exit 1'
 	docker exec -u www-data -e HOME=/tmp ytdownloader-php-fpm php bin/console cache:clear
 	docker exec ytdownloader-php-fpm chown -R www-data:www-data var/cache
 

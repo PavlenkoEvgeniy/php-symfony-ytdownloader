@@ -13,7 +13,7 @@
         "doctrine/doctrine-bundle": "^2.19.1",
         "doctrine/doctrine-migrations-bundle": "^3.7.1",
         "doctrine/orm": "^3.7.2",
-        "easycorp/easyadmin-bundle": "^4.29.16",
+        "easycorp/easyadmin-bundle": "^4.29.17",
         "gedmo/doctrine-extensions": "^3.22.1",
         "knplabs/knp-paginator-bundle": "^6.11",
         "lexik/jwt-authentication-bundle": "^3.2",
