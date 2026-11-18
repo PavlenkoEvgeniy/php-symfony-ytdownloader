@@ -17,15 +17,22 @@ final class TelegramUpdateMessageHandlerTest extends TestCase
      */
     public function testFreshUpdateIsClaimedAndHandled(): void
     {
-        $update = ['update_id' => 42, 'message' => ['text' => 'hello']];
+        $update = ['update_id' => 42, 'message' => ['message_id' => 7, 'chat' => ['id' => 42]]];
 
+        $claims     = [];
         $statements = [];
         $connection = $this->createStub(Connection::class);
         $connection->method('executeStatement')->willReturnCallback(
-            static function (string $sql) use (&$statements): int {
+            static function (string $sql, array $params = []) use (&$claims, &$statements): int {
                 $statements[] = $sql;
 
-                return 'INSERT' === \strtok(\ltrim($sql), ' ') ? 1 : 0;
+                if (\str_contains($sql, 'INSERT')) {
+                    $claims[] = $params['key'];
+
+                    return 1;
+                }
+
+                return 0;
             },
         );
 
@@ -34,43 +41,80 @@ final class TelegramUpdateMessageHandlerTest extends TestCase
 
         (new TelegramUpdateMessageHandler($handler, $connection))(new TelegramUpdateMessage($update));
 
+        $this->assertSame(['message:42:7'], $claims);
         $this->assertCount(2, $statements);
         $this->assertStringContainsString('ON CONFLICT DO NOTHING', $statements[0]);
         $this->assertStringContainsString('DELETE', $statements[1]);
     }
 
     /**
-     * Verifies a duplicate arrival loses the atomic claim and has no side effects.
+     * Verifies the same message delivered again - even with a different
+     * update id, as the Bot API server renumbers them - loses the claim.
      */
-    public function testDuplicateUpdateIsSkipped(): void
+    public function testRedeliveredMessageIsSkippedRegardlessOfUpdateId(): void
     {
-        $update = ['update_id' => 42, 'message' => ['text' => 'hello']];
+        $first = ['update_id' => 67911788, 'message' => ['message_id' => 901, 'chat' => ['id' => 5177124243]]];
+        $again = ['update_id' => 239585547, 'message' => ['message_id' => 901, 'chat' => ['id' => 5177124243]]];
 
-        $statements = [];
+        $claims     = [];
         $connection = $this->createStub(Connection::class);
         $connection->method('executeStatement')->willReturnCallback(
-            static function (string $sql) use (&$statements): int {
-                $statements[] = $sql;
+            static function (string $sql, array $params = []) use (&$claims): int {
+                if (!\str_contains($sql, 'INSERT')) {
+                    return 0;
+                }
 
-                return 0;
+                $claims[] = $params['key'];
+
+                // First claim wins, the second is the conflict loser.
+                return 1 === \count($claims) ? 1 : 0;
             },
         );
 
         $handler = $this->createMock(TelegramUpdateHandlerInterface::class);
-        $handler->expects($this->never())->method('handle');
+        $handler->expects($this->once())->method('handle');
 
-        (new TelegramUpdateMessageHandler($handler, $connection))(new TelegramUpdateMessage($update));
+        $messageHandler = new TelegramUpdateMessageHandler($handler, $connection);
+        $messageHandler(new TelegramUpdateMessage($first));
+        $messageHandler(new TelegramUpdateMessage($again));
 
-        $this->assertCount(1, $statements);
-        $this->assertStringContainsString('ON CONFLICT DO NOTHING', $statements[0]);
+        $this->assertSame(['message:5177124243:901', 'message:5177124243:901'], $claims);
     }
 
     /**
-     * Verifies an update without an id is handled without touching the database.
+     * Verifies a callback query is claimed by its own unique id.
      */
-    public function testUpdateWithoutIdIsHandledWithoutClaim(): void
+    public function testCallbackQueryClaimUsesCallbackId(): void
     {
-        $update = ['message' => ['text' => 'hello']];
+        $update = ['update_id' => 5, 'callback_query' => ['id' => 'callback-1']];
+
+        $claims     = [];
+        $connection = $this->createStub(Connection::class);
+        $connection->method('executeStatement')->willReturnCallback(
+            static function (string $sql, array $params = []) use (&$claims): int {
+                if (\str_contains($sql, 'INSERT')) {
+                    $claims[] = $params['key'];
+                }
+
+                return 1;
+            },
+        );
+
+        $handler = $this->createMock(TelegramUpdateHandlerInterface::class);
+        $handler->expects($this->once())->method('handle');
+
+        (new TelegramUpdateMessageHandler($handler, $connection))(new TelegramUpdateMessage($update));
+
+        $this->assertSame(['callback:callback-1'], $claims);
+    }
+
+    /**
+     * Verifies a payload without any stable identity is handled without a
+     * database claim.
+     */
+    public function testUpdateWithoutIdentityIsHandledWithoutClaim(): void
+    {
+        $update = ['foo' => 'bar'];
 
         $connection = $this->createMock(Connection::class);
         $connection->expects($this->never())->method('executeStatement');
