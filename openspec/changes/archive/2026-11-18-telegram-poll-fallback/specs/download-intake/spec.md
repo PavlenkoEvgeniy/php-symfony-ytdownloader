@@ -5,12 +5,11 @@
 ### Requirement: Telegram updates are acknowledged immediately
 
 Telegram updates SHALL be received through the webhook or by polling the Bot
-API server; both paths SHALL feed the same processing, and the webhook SHALL
-confirm an accepted update to Telegram at once while processing happens in
-the background. When the same update arrives more than once through any
-combination of paths, its side effects SHALL happen at most once. Polling
-SHALL resume after the newest known update, and an update that cannot be
-accepted SHALL be answered so that Telegram retries it.
+API server; both paths feed the same processing, the webhook confirms an
+accepted update at once, and processing happens in the background. Repeated
+arrival of one update through any combination of paths SHALL have its side
+effects at most once. Polling SHALL resume after the newest known update;
+an update that cannot be accepted SHALL be answered so Telegram retries.
 
 #### Scenario: Acknowledgements do not wait for processing
 
