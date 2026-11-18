@@ -19,7 +19,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 final readonly class TelegramUpdateMessageHandler
 {
-    private const string CLAIM_SQL = 'INSERT INTO telegram_update_dedupe (update_id) VALUES (:id) ON CONFLICT DO NOTHING';
+    private const string CLAIM_SQL = 'INSERT INTO telegram_update_dedupe (dedupe_key) VALUES (:key) ON CONFLICT DO NOTHING';
 
     private const string PRUNE_SQL = "DELETE FROM telegram_update_dedupe WHERE seen_at < NOW() - INTERVAL '7 days'";
 
@@ -45,14 +45,15 @@ final readonly class TelegramUpdateMessageHandler
      */
     private function claim(array $update): bool
     {
-        $updateId = $update['update_id'] ?? null;
+        $key = $this->dedupeKey($update);
 
-        if (!\is_int($updateId)) {
-            // A payload without an id cannot be told apart from a fresh one.
+        if (null === $key) {
+            // A payload without a stable identity cannot be told apart from
+            // a fresh one.
             return true;
         }
 
-        $inserted = (int) $this->connection->executeStatement(self::CLAIM_SQL, ['id' => $updateId]);
+        $inserted = (int) $this->connection->executeStatement(self::CLAIM_SQL, ['key' => $key]);
 
         if (0 === $inserted) {
             return false;
@@ -63,5 +64,33 @@ final readonly class TelegramUpdateMessageHandler
         $this->connection->executeStatement(self::PRUNE_SQL);
 
         return true;
+    }
+
+    /**
+     * The local Bot API server renumbers updates, so update_id differs
+     * between the webhook and the poller; the message identity does not.
+     *
+     * @param array<string, mixed> $update
+     */
+    private function dedupeKey(array $update): ?string
+    {
+        $message = $update['message'] ?? null;
+
+        if (\is_array($message)
+            && \is_int($message['chat']['id'] ?? null)
+            && \is_int($message['message_id'] ?? null)
+        ) {
+            return \sprintf('message:%d:%d', $message['chat']['id'], $message['message_id']);
+        }
+
+        $callbackId = $update['callback_query']['id'] ?? null;
+
+        if (\is_string($callbackId)) {
+            return 'callback:' . $callbackId;
+        }
+
+        $updateId = $update['update_id'] ?? null;
+
+        return \is_int($updateId) ? 'update:' . $updateId : null;
     }
 }
