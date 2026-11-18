@@ -114,7 +114,10 @@
             "substring",
             "redownload",
             "redownloaded",
-            "oversized"
+            "oversized",
+            "redelivery",
+            "acknowledgement",
+            "deduplication"
         ],
         "paths": [
             "vendor"
