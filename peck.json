@@ -120,7 +120,8 @@
             "deduplication",
             "dedup",
             "backoff",
-            "poller"
+            "poller",
+            "dedupe"
         ],
         "paths": [
             "vendor"

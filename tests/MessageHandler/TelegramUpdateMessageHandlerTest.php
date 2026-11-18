@@ -7,83 +7,77 @@ namespace App\Tests\MessageHandler;
 use App\Message\TelegramUpdateMessage;
 use App\MessageHandler\TelegramUpdateMessageHandler;
 use App\Service\TelegramUpdateHandlerInterface;
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
-use Psr\Cache\CacheItemInterface;
-use Psr\Cache\CacheItemPoolInterface;
 
 final class TelegramUpdateMessageHandlerTest extends TestCase
 {
     /**
-     * Verifies a fresh update is marked as seen and handled once.
+     * Verifies a fresh update wins the atomic claim and is handled once.
      */
-    public function testFreshUpdateIsMarkedAndHandled(): void
+    public function testFreshUpdateIsClaimedAndHandled(): void
     {
         $update = ['update_id' => 42, 'message' => ['text' => 'hello']];
 
-        $stored = null;
-        $item   = $this->cacheItem($stored);
+        $statements = [];
+        $connection = $this->createStub(Connection::class);
+        $connection->method('executeStatement')->willReturnCallback(
+            static function (string $sql) use (&$statements): int {
+                $statements[] = $sql;
 
-        $cache = $this->createMock(CacheItemPoolInterface::class);
-        $cache->expects($this->once())->method('getItem')->with('telegram_update_42')->willReturn($item);
-        $cache->expects($this->once())->method('save')->with($item);
+                return 'INSERT' === \strtok(\ltrim($sql), ' ') ? 1 : 0;
+            },
+        );
 
         $handler = $this->createMock(TelegramUpdateHandlerInterface::class);
         $handler->expects($this->once())->method('handle')->with($update);
 
-        (new TelegramUpdateMessageHandler($handler, $cache))(new TelegramUpdateMessage($update));
+        (new TelegramUpdateMessageHandler($handler, $connection))(new TelegramUpdateMessage($update));
 
-        $this->assertTrue($stored);
+        $this->assertCount(2, $statements);
+        $this->assertStringContainsString('ON CONFLICT DO NOTHING', $statements[0]);
+        $this->assertStringContainsString('DELETE', $statements[1]);
     }
 
     /**
-     * Verifies a redelivered update is dropped without any side effect.
+     * Verifies a duplicate arrival loses the atomic claim and has no side effects.
      */
-    public function testRedeliveredUpdateIsSkipped(): void
+    public function testDuplicateUpdateIsSkipped(): void
     {
         $update = ['update_id' => 42, 'message' => ['text' => 'hello']];
 
-        $cache = $this->createMock(CacheItemPoolInterface::class);
-        $cache->expects($this->once())
-            ->method('getItem')
-            ->with('telegram_update_42')
-            ->willReturn($this->cacheItem(isHit: true));
-        $cache->expects($this->never())->method('save');
+        $statements = [];
+        $connection = $this->createStub(Connection::class);
+        $connection->method('executeStatement')->willReturnCallback(
+            static function (string $sql) use (&$statements): int {
+                $statements[] = $sql;
+
+                return 0;
+            },
+        );
 
         $handler = $this->createMock(TelegramUpdateHandlerInterface::class);
         $handler->expects($this->never())->method('handle');
 
-        (new TelegramUpdateMessageHandler($handler, $cache))(new TelegramUpdateMessage($update));
+        (new TelegramUpdateMessageHandler($handler, $connection))(new TelegramUpdateMessage($update));
+
+        $this->assertCount(1, $statements);
+        $this->assertStringContainsString('ON CONFLICT DO NOTHING', $statements[0]);
     }
 
     /**
-     * Verifies an update without an id is handled without touching the cache.
+     * Verifies an update without an id is handled without touching the database.
      */
-    public function testUpdateWithoutIdIsHandledWithoutDeduplication(): void
+    public function testUpdateWithoutIdIsHandledWithoutClaim(): void
     {
         $update = ['message' => ['text' => 'hello']];
 
-        $cache = $this->createMock(CacheItemPoolInterface::class);
-        $cache->expects($this->never())->method('getItem');
-        $cache->expects($this->never())->method('save');
+        $connection = $this->createMock(Connection::class);
+        $connection->expects($this->never())->method('executeStatement');
 
         $handler = $this->createMock(TelegramUpdateHandlerInterface::class);
         $handler->expects($this->once())->method('handle')->with($update);
 
-        (new TelegramUpdateMessageHandler($handler, $cache))(new TelegramUpdateMessage($update));
-    }
-
-    private function cacheItem(mixed &$stored = null, bool $isHit = false): CacheItemInterface
-    {
-        $item = $this->createStub(CacheItemInterface::class);
-
-        $item->method('set')->willReturnCallback(static function (mixed $value) use (&$stored, $item): CacheItemInterface {
-            $stored = $value;
-
-            return $item;
-        });
-        $item->method('expiresAfter')->willReturnCallback(static fn (): CacheItemInterface => $item);
-        $item->method('isHit')->willReturn($isHit);
-
-        return $item;
+        (new TelegramUpdateMessageHandler($handler, $connection))(new TelegramUpdateMessage($update));
     }
 }

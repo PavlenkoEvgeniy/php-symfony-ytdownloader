@@ -5,23 +5,37 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Exception\TelegramApiException;
+use Psr\Cache\CacheItemPoolInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final readonly class TelegramClient implements TelegramClientInterface
 {
+    /** Hard per-chat output ceiling: text, media and edits share one window. */
+    private const int FLOOD_WINDOW_SECONDS  = 60;
+    private const int FLOOD_MAX_MESSAGES    = 10;
+    private const string FLOOD_CACHE_PREFIX = 'telegram_flood_';
+
     public function __construct(
         private HttpClientInterface $httpClient,
         #[Autowire(env: 'string:TELEGRAM_BOT_TOKEN')]
         private string $telegramBotToken,
         #[Autowire(env: 'string:TELEGRAM_API_BASE_URL')]
         private string $telegramApiBaseUrl,
+        #[Autowire(service: 'cache.app')]
+        private CacheItemPoolInterface $cache,
+        private LoggerInterface $logger,
     ) {
     }
 
     #[\Override]
     public function sendMessage(int $chatId, string $text, ?array $replyMarkup = null): int
     {
+        if (!$this->allowSend($chatId)) {
+            return 0;
+        }
+
         $payload = [
             'chat_id' => (string) $chatId,
             'text'    => $text,
@@ -39,6 +53,10 @@ final readonly class TelegramClient implements TelegramClientInterface
     #[\Override]
     public function editMessageText(int $chatId, int $messageId, string $text, ?array $replyMarkup = null): void
     {
+        if (!$this->allowSend($chatId)) {
+            return;
+        }
+
         $this->request('editMessageText', [
             'chat_id'      => (string) $chatId,
             'message_id'   => $messageId,
@@ -88,6 +106,10 @@ final readonly class TelegramClient implements TelegramClientInterface
         string $caption,
         array $extraFields = [],
     ): int {
+        if (!$this->allowSend($chatId)) {
+            return 0;
+        }
+
         $handle = \is_file($filePath) ? \fopen($filePath, 'rb') : false;
 
         if (false === $handle) {
@@ -105,6 +127,40 @@ final readonly class TelegramClient implements TelegramClientInterface
         }
 
         return (int) ($result['message_id'] ?? 0);
+    }
+
+    /**
+     * The hard per-chat ceiling: however a bug or a delivery loop misbehaves,
+     * a chat never receives more than the configured messages in one window.
+     * The excess is dropped and logged instead of surfaced.
+     */
+    private function allowSend(int $chatId): bool
+    {
+        $item  = $this->cache->getItem(self::FLOOD_CACHE_PREFIX . $chatId);
+        $state = $item->isHit() ? $item->get() : null;
+        $now   = \time();
+
+        if (!\is_array($state) || ($now - (int) $state['window']) >= self::FLOOD_WINDOW_SECONDS) {
+            $state = ['window' => $now, 'count' => 0];
+        }
+
+        if ((int) $state['count'] >= self::FLOOD_MAX_MESSAGES) {
+            $this->logger->error('Telegram flood guard dropped a message', [
+                'chat_id'        => $chatId,
+                'window_seconds' => self::FLOOD_WINDOW_SECONDS,
+                'ceiling'        => self::FLOOD_MAX_MESSAGES,
+            ]);
+
+            return false;
+        }
+
+        ++$state['count'];
+
+        $item->set($state);
+        $item->expiresAfter(self::FLOOD_WINDOW_SECONDS * 2);
+        $this->cache->save($item);
+
+        return true;
     }
 
     /**

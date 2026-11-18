@@ -6,31 +6,32 @@ namespace App\MessageHandler;
 
 use App\Message\TelegramUpdateMessage;
 use App\Service\TelegramUpdateHandlerInterface;
-use Psr\Cache\CacheItemPoolInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Doctrine\DBAL\Connection;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 /**
- * Processes a Telegram update outside the webhook request. Telegram may
- * redeliver the same update when an acknowledgement is lost, so the update
- * id is marked in the cache before handling starts: repeating a reply storm
- * is worse than losing one accepted update.
+ * Processes a Telegram update outside the webhook request. The webhook and
+ * the poller may deliver the same update, possibly to two workers at once,
+ * so the claim is a single atomic insert: only the first arrival wins and
+ * the rest are dropped before any side effect. Repeating a reply storm is
+ * worse than losing one accepted update.
  */
 #[AsMessageHandler]
 final readonly class TelegramUpdateMessageHandler
 {
-    private const int SEEN_UPDATE_TTL = 1800;
+    private const string CLAIM_SQL = 'INSERT INTO telegram_update_dedupe (update_id) VALUES (:id) ON CONFLICT DO NOTHING';
+
+    private const string PRUNE_SQL = "DELETE FROM telegram_update_dedupe WHERE seen_at < NOW() - INTERVAL '7 days'";
 
     public function __construct(
         private TelegramUpdateHandlerInterface $telegramUpdateHandler,
-        #[Autowire(service: 'cache.app')]
-        private CacheItemPoolInterface $cache,
+        private Connection $connection,
     ) {
     }
 
     public function __invoke(TelegramUpdateMessage $message): void
     {
-        if ($this->isRedelivery($message->update)) {
+        if (!$this->claim($message->update)) {
             return;
         }
 
@@ -39,26 +40,28 @@ final readonly class TelegramUpdateMessageHandler
 
     /**
      * @param array<string, mixed> $update
+     *
+     * @return bool False when another arrival already owns this update
      */
-    private function isRedelivery(array $update): bool
+    private function claim(array $update): bool
     {
         $updateId = $update['update_id'] ?? null;
 
         if (!\is_int($updateId)) {
             // A payload without an id cannot be told apart from a fresh one.
-            return false;
-        }
-
-        $item = $this->cache->getItem('telegram_update_' . $updateId);
-
-        if ($item->isHit()) {
             return true;
         }
 
-        $item->set(true);
-        $item->expiresAfter(self::SEEN_UPDATE_TTL);
-        $this->cache->save($item);
+        $inserted = (int) $this->connection->executeStatement(self::CLAIM_SQL, ['id' => $updateId]);
 
-        return false;
+        if (0 === $inserted) {
+            return false;
+        }
+
+        // Volume is a handful of updates per day, so pruning on the claim
+        // path keeps the table tiny without a scheduled job.
+        $this->connection->executeStatement(self::PRUNE_SQL);
+
+        return true;
     }
 }

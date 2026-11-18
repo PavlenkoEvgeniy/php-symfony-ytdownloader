@@ -7,6 +7,8 @@ namespace App\Tests\Service;
 use App\Exception\TelegramApiException;
 use App\Service\TelegramClient;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
@@ -25,7 +27,7 @@ final class TelegramClientTest extends TestCase
             return new MockResponse('{"ok":true,"result":{}}');
         });
 
-        new TelegramClient($httpClient, 'test-token', 'http://telegram-bot-api:8081')
+        new TelegramClient($httpClient, 'test-token', 'http://telegram-bot-api:8081', new ArrayAdapter(), $this->createStub(LoggerInterface::class))
             ->sendMessage(42, 'hello', ['inline_keyboard' => []]);
 
         $this->assertSame('POST', $captured['method']);
@@ -52,7 +54,7 @@ final class TelegramClientTest extends TestCase
         });
 
         try {
-            $messageId = new TelegramClient($httpClient, 'token', 'https://api.telegram.org')
+            $messageId = new TelegramClient($httpClient, 'token', 'https://api.telegram.org', new ArrayAdapter(), $this->createStub(LoggerInterface::class))
                 ->sendVideo(42, $file, 'caption');
         } finally {
             @\unlink($file);
@@ -83,7 +85,7 @@ final class TelegramClientTest extends TestCase
         try {
             $this->expectException(TelegramApiException::class);
 
-            new TelegramClient($httpClient, 'token', 'https://api.telegram.org')
+            new TelegramClient($httpClient, 'token', 'https://api.telegram.org', new ArrayAdapter(), $this->createStub(LoggerInterface::class))
                 ->sendDocument(42, $file, 'caption');
         } finally {
             @\unlink($file);
@@ -103,7 +105,7 @@ final class TelegramClientTest extends TestCase
             return new MockResponse('{"ok":true,"result":{}}');
         });
 
-        new TelegramClient($httpClient, 'token', 'https://api.telegram.org')->editMessageText(42, 7, 'halfway');
+        new TelegramClient($httpClient, 'token', 'https://api.telegram.org', new ArrayAdapter(), $this->createStub(LoggerInterface::class))->editMessageText(42, 7, 'halfway');
 
         $this->assertSame('https://api.telegram.org/bottoken/editMessageText', $captured['url']);
 
@@ -127,7 +129,7 @@ final class TelegramClientTest extends TestCase
             return new MockResponse('{"ok":true,"result":true}');
         });
 
-        new TelegramClient($httpClient, 'token', 'https://api.telegram.org')->answerCallbackQuery('query-1', 'Queued');
+        new TelegramClient($httpClient, 'token', 'https://api.telegram.org', new ArrayAdapter(), $this->createStub(LoggerInterface::class))->answerCallbackQuery('query-1', 'Queued');
 
         $this->assertSame('https://api.telegram.org/bottoken/answerCallbackQuery', $captured['url']);
 
@@ -149,7 +151,7 @@ final class TelegramClientTest extends TestCase
             return new MockResponse('{"ok":true,"result":true}');
         });
 
-        new TelegramClient($httpClient, 'token', 'https://api.telegram.org')->answerCallbackQuery('query-1');
+        new TelegramClient($httpClient, 'token', 'https://api.telegram.org', new ArrayAdapter(), $this->createStub(LoggerInterface::class))->answerCallbackQuery('query-1');
 
         $body = (string) $captured['options']['body'];
         $this->assertStringContainsString('"callback_query_id":"query-1"', $body);
@@ -174,7 +176,7 @@ final class TelegramClientTest extends TestCase
         });
 
         try {
-            $messageId = new TelegramClient($httpClient, 'token', 'https://api.telegram.org')->sendAudio(42, $file, 'song');
+            $messageId = new TelegramClient($httpClient, 'token', 'https://api.telegram.org', new ArrayAdapter(), $this->createStub(LoggerInterface::class))->sendAudio(42, $file, 'song');
         } finally {
             @\unlink($file);
         }
@@ -191,7 +193,7 @@ final class TelegramClientTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('is not readable');
 
-        new TelegramClient(new MockHttpClient(), 'token', 'https://api.telegram.org')->sendVideo(
+        new TelegramClient(new MockHttpClient(), 'token', 'https://api.telegram.org', new ArrayAdapter(), $this->createStub(LoggerInterface::class))->sendVideo(
             42,
             '/does/not/exist/video.mp4',
             'caption',
@@ -210,7 +212,7 @@ final class TelegramClientTest extends TestCase
         $this->expectException(TelegramApiException::class);
         $this->expectExceptionMessage('Telegram API method "sendMessage" failed with HTTP 0: network is down');
 
-        new TelegramClient($httpClient, 'token', 'https://api.telegram.org')->sendMessage(42, 'hello');
+        new TelegramClient($httpClient, 'token', 'https://api.telegram.org', new ArrayAdapter(), $this->createStub(LoggerInterface::class))->sendMessage(42, 'hello');
     }
 
     /**
@@ -223,6 +225,58 @@ final class TelegramClientTest extends TestCase
         $this->expectException(TelegramApiException::class);
         $this->expectExceptionMessage('Telegram API method "sendMessage" failed with HTTP 200: invalid response');
 
-        new TelegramClient($httpClient, 'token', 'https://api.telegram.org')->sendMessage(42, 'hello');
+        new TelegramClient($httpClient, 'token', 'https://api.telegram.org', new ArrayAdapter(), $this->createStub(LoggerInterface::class))->sendMessage(42, 'hello');
+    }
+
+    /**
+     * Verifies the per-chat ceiling delivers ten messages and drops the rest
+     * without reaching the HTTP client.
+     */
+    public function testFloodCeilingDropsExcessMessages(): void
+    {
+        $requests = 0;
+
+        $httpClient = new MockHttpClient(static function () use (&$requests): MockResponse {
+            ++$requests;
+
+            return new MockResponse('{"ok":true,"result":{"message_id":1}}');
+        });
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->exactly(5))->method('error');
+
+        $client = new TelegramClient($httpClient, 'token', 'https://api.telegram.org', new ArrayAdapter(), $logger);
+
+        $ids = [];
+
+        for ($i = 0; $i < 15; ++$i) {
+            $ids[] = $client->sendMessage(42, 'hello');
+        }
+
+        $this->assertSame(10, $requests);
+        $this->assertSame([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0], $ids);
+    }
+
+    /**
+     * Verifies the ceiling is per chat: exhausting one chat keeps others open.
+     */
+    public function testFloodCeilingIsPerChat(): void
+    {
+        $uris = [];
+
+        $httpClient = new MockHttpClient(static function (string $method, string $url) use (&$uris): MockResponse {
+            $uris[] = $url;
+
+            return new MockResponse('{"ok":true,"result":{"message_id":1}}');
+        });
+
+        $client = new TelegramClient($httpClient, 'token', 'https://api.telegram.org', new ArrayAdapter(), $this->createStub(LoggerInterface::class));
+
+        for ($i = 0; $i < 10; ++$i) {
+            $client->sendMessage(42, 'hello');
+        }
+
+        $this->assertSame(1, $client->sendMessage(43, 'hello to another chat'));
+        $this->assertSame(0, $client->sendMessage(42, 'one too many'));
     }
 }
