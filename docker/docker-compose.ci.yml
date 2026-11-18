@@ -13,6 +13,8 @@ services:
     working_dir: /application
     environment:
       - PHP_WORKER_INSTALL_BCMATH=true
+      # The stack has no Bot API server here; the poller would only log errors.
+      - TELEGRAM_POLL_ENABLED=false
     volumes:
       - ./../:/application
       - ./sourcefiles/php-fpm/php-ini-overrides.ini:/usr/local/etc/php/conf.d/99-overrides.ini

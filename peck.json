@@ -117,7 +117,10 @@
             "oversized",
             "redelivery",
             "acknowledgement",
-            "deduplication"
+            "deduplication",
+            "dedup",
+            "backoff",
+            "poller"
         ],
         "paths": [
             "vendor"
