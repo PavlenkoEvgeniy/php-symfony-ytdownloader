@@ -9,20 +9,20 @@
         "ext-iconv": "*",
         "botman/botman": "^2.8.11",
         "botman/driver-telegram": "^2.0.6",
-        "doctrine/dbal": "^3.10.6",
-        "doctrine/doctrine-bundle": "^2.19.1",
+        "doctrine/dbal": "^3.10.7",
+        "doctrine/doctrine-bundle": "^2.19.4",
         "doctrine/doctrine-migrations-bundle": "^3.7.1",
-        "doctrine/orm": "^3.7.2",
+        "doctrine/orm": "^3.8.0",
         "easycorp/easyadmin-bundle": "^4.29.17",
-        "gedmo/doctrine-extensions": "^3.22.1",
+        "gedmo/doctrine-extensions": "^3.22.2",
         "knplabs/knp-paginator-bundle": "^6.11",
         "lexik/jwt-authentication-bundle": "^3.2",
         "oskarstark/readable-filesize-extension": "^1.5.2",
-        "p3sdev/php-ytdlp-wrapper": "^1.0.4",
+        "p3sdev/php-ytdlp-wrapper": "^1.1.1",
         "peckphp/peck": "^0.2.0",
         "phpdocumentor/reflection-docblock": "^5.6.7",
-        "phpstan/phpdoc-parser": "^2.3.5",
-        "predis/predis": "^3.6.1",
+        "phpstan/phpdoc-parser": "^2.4.1",
+        "predis/predis": "^3.7.1",
         "symfony/asset": "7.4.*",
         "symfony/asset-mapper": "7.4.*",
         "symfony/console": "7.4.*",
@@ -56,7 +56,7 @@
         "symfony/web-link": "7.4.*",
         "symfony/yaml": "7.4.*",
         "twig/extra-bundle": "^2.12|^3.29.0",
-        "twig/twig": "^2.12|^3.29.0"
+        "twig/twig": "^2.12|^3.30.0"
     },
     "config": {
         "allow-plugins": {
@@ -118,15 +118,15 @@
     },
     "require-dev": {
         "cweagans/composer-patches": "^2.0.0",
-        "dg/bypass-finals": "^1.11.0",
+        "dg/bypass-finals": "^1.11.1",
         "doctrine/doctrine-fixtures-bundle": "^4.3.1",
-        "friendsofphp/php-cs-fixer": "^3.95.27",
+        "friendsofphp/php-cs-fixer": "^3.95.32",
         "helmich/phpunit-json-assert": "^3.5.5",
-        "phpstan/phpstan": "^2.2.14",
-        "phpstan/phpstan-doctrine": "^2.0.28",
-        "phpstan/phpstan-phpunit": "^2.0.18",
-        "phpstan/phpstan-symfony": "^2.0.20",
-        "phpunit/phpunit": "^9.6.36",
+        "phpstan/phpstan": "^2.3.7",
+        "phpstan/phpstan-doctrine": "^2.1.2",
+        "phpstan/phpstan-phpunit": "^2.1.2",
+        "phpstan/phpstan-symfony": "^2.1.1",
+        "phpunit/phpunit": "^9.6.39",
         "symfony/browser-kit": "7.4.*",
         "symfony/css-selector": "7.4.*",
         "symfony/debug-bundle": "7.4.*",
@@ -134,6 +134,6 @@
         "symfony/phpunit-bridge": "^7.4.22",
         "symfony/stopwatch": "7.4.*",
         "symfony/web-profiler-bundle": "7.4.*",
-        "vimeo/psalm": "^6.18.0"
+        "vimeo/psalm": "^6.21.2"
     }
 }
