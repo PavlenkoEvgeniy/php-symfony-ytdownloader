@@ -116,19 +116,6 @@ final class VideoDownloaderOptionTest extends TestCase
     }
 
     /**
-     * Verifies all enum cases can be iterated.
-     */
-    public function testCanIterateAllEnumCases(): void
-    {
-        $count = 0;
-        foreach (VideoDownloaderOption::cases() as $case) {
-            ++$count;
-        }
-
-        $this->assertGreaterThan(0, $count);
-    }
-
-    /**
      * Verifies enum cases can be used as array values.
      */
     public function testEnumCasesCanBeUsedInArrays(): void

@@ -125,7 +125,7 @@ final readonly class VideoDownloaderService implements VideoProcessorInterface
 
         $reason = $this->shortenReason((string) $firstError);
 
-        if (null !== $firstError && \str_contains($firstError, 'larger than max-filesize')) {
+        if (\str_contains($firstError, 'larger than max-filesize')) {
             $refusalReason = $this->refusalReason($firstError);
 
             $this->logger->info('Rejected by the Telegram size guard', ['reason' => $refusalReason]);
